@@ -1,0 +1,199 @@
+#pragma once
+
+// Standard includes
+#include <vector>
+#include <atomic>
+
+// External tools include
+#include "flychams_core/tools/external_tools.hpp"
+
+// AirSim interfaces includes
+// Status message
+#include <airsim_interfaces/msg/status.hpp>
+// Global commands
+#include <airsim_interfaces/srv/reset.hpp>
+#include <airsim_interfaces/srv/run.hpp>
+#include <airsim_interfaces/srv/pause.hpp>
+// Vehicle commands
+#include <airsim_interfaces/srv/takeoff_group.hpp>
+#include <airsim_interfaces/srv/land_group.hpp>
+#include <airsim_interfaces/srv/hover_group.hpp>
+#include <airsim_interfaces/msg/vel_cmd.hpp>
+#include <airsim_interfaces/msg/gimbal_angle_cmd.hpp>
+#include <airsim_interfaces/msg/camera_fov_cmd.hpp>
+// Target commands
+#include <airsim_interfaces/srv/spawn_object_group.hpp>
+#include <airsim_interfaces/srv/despawn_object_group.hpp>
+#include <airsim_interfaces/msg/object_pose_cmd_group.hpp>
+// Window commands
+#include <airsim_interfaces/msg/window_image_cmd_group.hpp>
+
+// Core includes
+#include "flychams_core/types/core_types.hpp"
+#include "flychams_core/types/ros_types.hpp"
+#include "flychams_core/utils/ros_utils.hpp"
+
+namespace flychams::core
+{
+    /**
+     * ════════════════════════════════════════════════════════════════
+     * @brief AirSim-specific implementation of the external tools utility
+     *
+     * @details
+     * This class implements the external tools interface for the AirSim
+     * framework, providing specific implementations for vehicle control,
+     * target management, and GUI operations.
+     *
+     * ════════════════════════════════════════════════════════════════
+     * @author Jose Francisco Lopez Ruiz
+     * @date 2025-02-14
+     * ════════════════════════════════════════════════════════════════
+     */
+    class AirsimTools : public ExternalTools
+    {
+    public: // Constructors/Destructors
+        AirsimTools(NodePtr node);
+        ~AirsimTools() override;
+        void shutdown() override;
+
+    public: // Types
+        using StatusMsg = airsim_interfaces::msg::Status;
+        using ResetSrv = airsim_interfaces::srv::Reset;
+        using RunSrv = airsim_interfaces::srv::Run;
+        using PauseSrv = airsim_interfaces::srv::Pause;
+        using TakeoffGroupSrv = airsim_interfaces::srv::TakeoffGroup;
+        using LandGroupSrv = airsim_interfaces::srv::LandGroup;
+        using HoverGroupSrv = airsim_interfaces::srv::HoverGroup;
+        using VelCmdMsg = airsim_interfaces::msg::VelCmd;
+        using GimbalAngleCmdMsg = airsim_interfaces::msg::GimbalAngleCmd;
+        using CameraFovCmdMsg = airsim_interfaces::msg::CameraFovCmd;
+        using SpawnObjectGroupSrv = airsim_interfaces::srv::SpawnObjectGroup;
+        using DespawnObjectGroupSrv = airsim_interfaces::srv::DespawnObjectGroup;
+        using ObjectPoseCmdGroupMsg = airsim_interfaces::msg::ObjectPoseCmdGroup;
+        using WindowImageCmdGroupMsg = airsim_interfaces::msg::WindowImageCmdGroup;
+
+    public: // Vehicle adders
+        void addVehicle(const ID& vehicle_id);
+        void removeVehicle(const ID& vehicle_id);
+
+    public: // Status methods
+        void waitConnection() const override;
+        bool isConnected() const override;
+        void waitRunning() const override;
+        bool isRunning() const override;
+
+    public: // Global control methods
+        bool resetSimulation() override;
+        bool runSimulation() override;
+        bool pauseSimulation() override;
+
+    public: // Vehicle control methods
+        bool takeoffVehicleGroup(const IDs& vehicle_ids) override;
+        bool landVehicleGroup(const IDs& vehicle_ids) override;
+        bool hoverVehicleGroup(const IDs& vehicle_ids) override;
+        void setVehicleVelocity(const ID& vehicle_id, const float& vel_cmd_x, const float& vel_cmd_y, const float& vel_cmd_z, const float& vel_cmd_dt, const std::string& frame_id) override;
+        void setGimbalAngles(const ID& vehicle_id, const IDs& camera_ids, const std::vector<QuaternionMsg>& target_quats, const std::string& frame_id) override;
+        void setCameraFovs(const ID& vehicle_id, const IDs& camera_ids, const std::vector<float>& target_fovs, const std::string& frame_id) override;
+
+    public: // Object control methods
+        bool spawnObjectGroup(const IDs& object_ids, const std::vector<PoseMsg>& poses, const std::vector<float>& scales, const std::vector<TargetType>& object_types) override;
+        bool despawnObjectGroup(const IDs& object_ids) override;
+        void setObjectPoseGroup(const IDs& object_ids, const std::vector<PoseMsg>& poses, const std::string& frame_id) override;
+
+    public: // Window control methods
+        void setWindowImageGroup(const IDs& window_ids, const IDs& vehicle_ids, const IDs& camera_ids, const std::vector<int>& crop_x, const std::vector<int>& crop_y, const std::vector<int>& crop_w, const std::vector<int>& crop_h) override;
+
+    private: // Utility methods
+        int getWindowIndex(const ID& window_id) const
+        {
+            if (window_id == "SCENE")
+            {
+                return 0;
+            }
+            else if (window_id == "AGENT")
+            {
+                return 1;
+            }
+            else if (window_id == "DATA")
+            {
+                return 2;
+            }
+            else if (window_id == "MAP")
+            {
+                return 3;
+            }
+            else if (window_id == "CENTRAL")
+            {
+                return 4;
+            }
+            else if (window_id == "TRACKING00")
+            {
+                return 5;
+            }
+            else if (window_id == "TRACKING01")
+            {
+                return 6;
+            }
+            else if (window_id == "TRACKING02")
+            {
+                return 7;
+            }
+            else if (window_id == "TRACKING03")
+            {
+                return 8;
+            }
+            else
+            {
+                RCLCPP_WARN(node_->get_logger(), "Invalid window ID: %s", window_id.c_str());
+                return -1;
+            }
+        }
+
+        std::vector<int> getWindowIndices(const IDs& window_ids) const
+        {
+            std::vector<int> indices;
+            for (const auto& window_id : window_ids)
+            {
+                indices.push_back(getWindowIndex(window_id));
+            }
+            return indices;
+        }
+
+    private: // Data
+        // Simulation status
+        std::atomic<bool> is_connected_;
+        std::atomic<bool> is_running_;
+
+    private: // Callbacks
+        void status_cb(const airsim_interfaces::msg::Status::SharedPtr msg);
+
+    private: // ROS components
+        // Node pointer
+        NodePtr node_;
+
+        // Status subscriber
+        SubscriberPtr<StatusMsg> airsim_status_sub_;
+
+        // Global commands
+        ClientPtr<ResetSrv> reset_client_;
+        ClientPtr<RunSrv> run_client_;
+        ClientPtr<PauseSrv> pause_client_;
+
+        // Vehicle commands
+        ClientPtr<TakeoffGroupSrv> takeoff_group_client_;
+        ClientPtr<LandGroupSrv> land_group_client_;
+        ClientPtr<HoverGroupSrv> hover_group_client_;
+        std::unordered_map<ID, PublisherPtr<VelCmdMsg>> vel_cmd_pub_map_;
+        std::unordered_map<ID, PublisherPtr<GimbalAngleCmdMsg>> gimbal_angle_cmd_pub_map_;
+        std::unordered_map<ID, PublisherPtr<CameraFovCmdMsg>> camera_fov_cmd_pub_map_;
+
+        // Object commands
+        ClientPtr<SpawnObjectGroupSrv> spawn_object_group_client_;
+        ClientPtr<DespawnObjectGroupSrv> despawn_object_group_client_;
+        PublisherPtr<ObjectPoseCmdGroupMsg> object_pose_cmd_group_pub_;
+
+        // Window commands
+        PublisherPtr<WindowImageCmdGroupMsg> window_image_cmd_group_pub_;
+    };
+
+} // namespace flychams::core

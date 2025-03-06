@@ -1,0 +1,10 @@
+/flychams/**:
+  ros__parameters:
+    global_frames:
+      world: "world"
+    agent_frames:
+      local: "AGENTID"
+      body: "AGENTID/odom"
+    head_frames:
+      body: "AGENTID/HEADID/body"
+      optical: "AGENTID/HEADID/optical"

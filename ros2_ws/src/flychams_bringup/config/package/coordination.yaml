@@ -1,0 +1,29 @@
+/flychams/**:
+  ros__parameters:
+    agent_positioning:
+      # Update rate (Hz)
+      positioning_update_rate: 10.0
+      # Solver parameters
+      solver_params:
+        convergence_tolerance: 1.0e-6     # Solver convergence tolerance
+        max_iterations: 100               # Maximum number of iterations
+        eps: 1.0                          # Threshold difference between solutions of successive iterations to terminate the algorithm
+
+    agent_assignment:
+      # Update rate (Hz)
+      assignment_update_rate: 1.0
+      assignment_publish_rate: 20.0
+      # Cost weights for the sub-optimal problem
+      cost_weights:
+        observation: 1.0
+        distance: 10.0
+        switch: 3500.0
+      # Solver parameters
+      solver_params:
+        convergence_tolerance: 1.0e-6     # Solver convergence tolerance
+        max_iterations: 100               # Maximum number of iterations
+        eps: 1.0                          # Threshold difference between solutions of successive iterations to terminate the algorithm
+
+    agent_tracking:
+      # Update rate (Hz)
+      tracking_update_rate: 20.0

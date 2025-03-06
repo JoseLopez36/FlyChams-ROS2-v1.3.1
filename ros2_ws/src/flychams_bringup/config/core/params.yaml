@@ -1,0 +1,22 @@
+/flychams/**:
+  ros__parameters:
+    # Tracking parameters
+    tracking:
+      num_tracking_windows: 4 # Must match number of tracking IDs
+    # Window IDs
+    window_ids:
+      scene_id: "SCENE"
+      agent_id: "AGENT"
+      data_id: "DATA"
+      map_id: "MAP"
+      central_id: "CENTRAL"
+      tracking_ids: [
+        "TRACKING00",
+        "TRACKING01",
+        "TRACKING02",
+        "TRACKING03"
+        ]
+    # Region of interest parameters
+    roi:
+      kappa_s: 0.8           # Half-width fraction
+      s_min_pix: 200.0       # pixels

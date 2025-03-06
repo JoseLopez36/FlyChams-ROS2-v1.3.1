@@ -1,0 +1,23 @@
+/flychams/**:
+  ros__parameters:
+    global_topics:
+      metrics: "/flychams/global_metrics"
+    agent_topics:
+      registration: "/flychams/agent_registration"
+      odom: "/airsim/AGENTID/odom"
+      camera_info_array: "/airsim/AGENTID/camera_info_array"
+      goal: "/flychams/AGENTID/goal"
+      info: "/flychams/AGENTID/info"
+      tracking_goal: "/flychams/AGENTID/tracking_goal"
+      metrics: "/flychams/AGENTID/metrics"
+      markers: "/flychams/AGENTID/markers"
+    target_topics:
+      registration: "/flychams/target_registration"
+      info: "/flychams/TARGETID/info"
+      metrics: "/flychams/TARGETID/metrics"
+      markers: "/flychams/TARGETID/markers"
+    cluster_topics:
+      registration: "/flychams/cluster_registration"
+      info: "/flychams/CLUSTERID/info"
+      metrics: "/flychams/CLUSTERID/metrics"
+      markers: "/flychams/CLUSTERID/markers"

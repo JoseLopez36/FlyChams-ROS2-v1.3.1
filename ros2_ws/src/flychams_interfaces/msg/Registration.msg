@@ -1,0 +1,1 @@
+string[] element_ids     # Identifiers of the elements in the registration
