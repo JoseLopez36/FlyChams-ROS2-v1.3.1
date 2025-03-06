@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cd ~/FlyingChameleons/FlyChams-Cosys-AirSim || { echo "Directory ~/FlyingChameleons/FlyChams-Cosys-AirSim was not found."; exit 1; }
+cd $FLYCHAMS_COSYS_AIRSIM_PATH || { echo "Directory $FLYCHAMS_COSYS_AIRSIM_PATH was not found."; exit 1; }
 
 echo "Building AirSim dependencies..."
 

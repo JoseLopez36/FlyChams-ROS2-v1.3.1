@@ -1,5 +1,5 @@
 #!/bin/bash
-CONTAINER_NAME=cosys-airsim-ros2-container
+CONTAINER_NAME=flychams-ros2-container
 
 RUNNING_CONTAINER=$(docker ps -q -f "name=${CONTAINER_NAME}")
 

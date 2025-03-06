@@ -1,2 +1,2 @@
 #!/bin/bash
-docker build -t cosys-airsim-ros2 -f Dockerfile-ROS2 .
+docker build -t flychams-ros2 -f Dockerfile-FlyChams-ROS2 .

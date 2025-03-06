@@ -15,7 +15,7 @@ find_package(ament_cmake REQUIRED)
 find_package(rosidl_default_runtime REQUIRED)
 find_package(airsim_interfaces REQUIRED)
 
-set(AIRSIM_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/../../../FlyChams-Cosys-AirSim)
+set(AIRSIM_ROOT $FLYCHAMS_COSYS_AIRSIM_PATH)
 
 add_subdirectory("${AIRSIM_ROOT}/cmake/rpclib_wrapper" rpclib_wrapper)
 add_subdirectory("${AIRSIM_ROOT}/cmake/AirLib" AirLib)

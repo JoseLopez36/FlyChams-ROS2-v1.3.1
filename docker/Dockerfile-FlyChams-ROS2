@@ -19,7 +19,7 @@ RUN     apt-get update && \
 # Additional installation
 RUN     apt-get update && \
         apt-get install -y \
-	ros-iron-rviz2 \
+        ros-iron-rviz2 \
         ros-iron-plotjuggler-ros \
         && rm -rf /var/lib/apt/lists/* && \
         apt-get clean
@@ -37,11 +37,14 @@ RUN     chown -R $UNAME:$UNAME /home/$UNAME
 USER    $UNAME
 WORKDIR /home/${UNAME}       
 RUN     echo "source /opt/ros/iron/setup.bash" >> ~/.bashrc
+RUN     echo "export FLYCHAMS_ROS2_PATH=/home/${UNAME}/FlyChams-ROS2" >> ~/.bashrc
+RUN     echo "export FLYCHAMS_COSYS_AIRSIM_PATH=/home/${UNAME}/FlyChams-Cosys-AirSim" >> ~/.bashrc
 
 # Cosys-AirSim installation (Release: 5.2-v3.2)
-#RUN git clone --recursive https://github.com/Cosys-Lab/Cosys-AirSim.git && \
-#    cd Cosys-AirSim && \
-#    git checkout tags/5.2-v3.2 -b 5.2-v3.2 && \
-#    chmod +x setup.sh build.sh && \
-#    ./setup.sh && \
-#    ./build.sh
+RUN git clone --recursive https://github.com/JoseLopez36/FlyChams-Cosys-AirSim.git && \
+        cd FlyChams-Cosys-AirSim && \
+        git checkout tags/5.2-v3.2 -b 5.2-v3.2 && \
+        chmod +x setup.sh build.sh clean.sh && \
+        ./clean.sh && \
+        ./setup.sh && \
+        ./build.sh

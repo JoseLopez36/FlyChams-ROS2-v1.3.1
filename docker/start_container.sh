@@ -1,5 +1,5 @@
 #!/bin/bash
-CONTAINER_NAME=cosys-airsim-ros2-container
+CONTAINER_NAME=flychams-ros2-container
 
 # Check if container is already running
 if docker ps --format "{{.Names}}" | grep -q "^${CONTAINER_NAME}$"; then
@@ -8,7 +8,7 @@ if docker ps --format "{{.Names}}" | grep -q "^${CONTAINER_NAME}$"; then
 else
     echo "Container is not running, starting it"
     docker run --rm -it \
-    -v ${FLYCHAMS_PATH}:/home/testuser/FlyingChameleons \
+    -v ${FLYCHAMS_ROS2_PATH}:/home/testuser/FlyChams-ROS2 \
     --name ${CONTAINER_NAME} \
-    cosys-airsim-ros2:latest bash
+    flychams-ros2:latest bash
 fi

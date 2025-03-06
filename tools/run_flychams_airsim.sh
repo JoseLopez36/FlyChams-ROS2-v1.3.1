@@ -12,7 +12,7 @@ export DISPLAY="$WSL_IP:0.0"
 echo "DISPLAY=$DISPLAY"
 
 # Get ROS2 workspace directory
-ROS_WS="$HOME/FlyingChameleons/ros2_ws"
+ROS_WS="$FLYCHAMS_ROS2_PATH/ros2_ws"
 
 # Source ROS2 workspace
 if [ -f "$ROS_WS/install/setup.bash" ]; then
