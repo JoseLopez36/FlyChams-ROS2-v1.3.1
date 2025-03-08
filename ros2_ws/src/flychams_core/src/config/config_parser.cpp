@@ -118,6 +118,14 @@ namespace flychams::core
 						mission->tracking_scene_resolution(1) = tracking_scene_resolution_vec[1];
 					}
 
+					auto tracking_view_resolution_str = getCellValueOrDefault<std::string>(row.findCell(11), "(640x480)");
+					auto tracking_view_resolution_vec = parseStringToVector<int>(tracking_view_resolution_str, 2, 'x');
+					if (tracking_view_resolution_vec.size() >= 2)
+					{
+						mission->tracking_view_resolution(0) = tracking_view_resolution_vec[0];
+						mission->tracking_view_resolution(1) = tracking_view_resolution_vec[1];
+					}
+
 					// Only first found mission is loaded
 					return mission;
 				}

@@ -335,7 +335,7 @@ namespace flychams::coordination
         const float r = data->tab_r(i);
 
         // Calculate the reference distance to the target
-        const float d_ref = (r * f * lambda_ref) / (s_ref * rho);
+        const float d_ref = (r * f * lambda_ref) / s_ref;
 
         // Calculate what would be the ideal reference position in the case of a single target (perfect verticallity)
         Vector3r p_ref = z;
@@ -344,10 +344,10 @@ namespace flychams::coordination
         // Determine the nested intervals
         const float L0 = d_ref;
         const float U0 = d_ref;
-        const float L1 = (r * f * lambda_min) / (s_ref * rho);
-        const float U1 = (r * f * lambda_max) / (s_ref * rho);
-        const float L2 = (r * f * lambda_min) / (s_max * rho);
-        const float U2 = (r * f * lambda_max) / (s_min * rho);
+        const float L1 = (r * f * lambda_min) / s_ref;
+        const float U1 = (r * f * lambda_max) / s_ref;
+        const float L2 = (r * f * lambda_min) / s_max;
+        const float U2 = (r * f * lambda_max) / s_min;
 
         // Calculate the index terms based on intervals
         const float psi_i = 1.0f * pow((std::max)(0.0f, d - U0), 2) + 2.0f * pow((std::max)(0.0f, d - U1), 2) + 10.0f * pow((std::max)(0.0f, d - U2), 2);
@@ -396,7 +396,7 @@ namespace flychams::coordination
         const float r = data->tab_r(i);
 
         // Calculate the reference distance to the target
-        const float d_ref = (r * f * lambda_ref) / (s_ref * rho);
+        const float d_ref = (r * f * lambda_ref) / s_ref;
 
         // Calculate what would be the ideal reference position in the case of a single target (perfect verticallity)
         Vector3r p_ref = z;
@@ -405,10 +405,10 @@ namespace flychams::coordination
         // Determine the nested intervals
         const float L0 = d_ref;
         const float U0 = d_ref;
-        const float L1 = (r * f * lambda_min) / (s_ref * rho);
-        const float U1 = (r * f * lambda_max) / (s_ref * rho);
-        const float L2 = (r * f * lambda_min) / (s_max * rho);
-        const float U2 = (r * f * lambda_max) / (s_min * rho);
+        const float L1 = (r * f * lambda_min) / s_ref;
+        const float U1 = (r * f * lambda_max) / s_ref;
+        const float L2 = (r * f * lambda_min) / s_max;
+        const float U2 = (r * f * lambda_max) / s_min;
 
         // Calculate the index terms based on intervals
         const float alpha = 2.0f;

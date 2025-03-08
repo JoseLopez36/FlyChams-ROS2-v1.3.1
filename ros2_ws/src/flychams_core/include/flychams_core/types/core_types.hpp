@@ -417,8 +417,9 @@ namespace flychams::core
         // Scene resolution (pix)
         int scene_width;
         int scene_height;
-        // Proportional regularized pixel size (m/pix)
-        float rho;
+        // View resolution (pix)
+        int view_width;
+        int view_height;
     };
 
     /**
