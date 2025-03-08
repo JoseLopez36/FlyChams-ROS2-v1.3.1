@@ -231,13 +231,14 @@ namespace airsim_wrapper
         void client_reset();
         void client_pause(const bool& is_paused);
         void client_enable_control();
-        void client_takeoff(const float& timeout, const std::string& vehicle_name);
-        void client_land(const float& timeout, const std::string& vehicle_name);
+        void client_takeoff(const float& timeout, const std::string& vehicle_name, const bool& wait = false);
+        void client_land(const float& timeout, const std::string& vehicle_name, const bool& wait = false);
         void client_hover(const std::string& vehicle_name);
         void client_move_by_velocity(const float& vx, const float& vy, const float& vz, const float& dt, const std::string& vehicle_name);
         void client_set_camera_pose(const std::string& camera_name, const msr::airlib::Pose& pose, const std::string& vehicle_name);
         void client_set_camera_fov(const std::string& camera_name, const float& fov, const std::string& vehicle_name);
         void client_set_object_pose(const std::string& object_name, const msr::airlib::Pose& pose);
+        void client_flush_plot();
         void client_plot_points(const std::vector<msr::airlib::Vector3r>& points, const std::vector<float>& color, const float& size, const float& duration, const bool& is_persistent);
         void client_set_window_image(const int& window_index, const std::string& vehicle_name, const std::string& camera_name, const int& x, const int& y, const int& w, const int& h);
         void client_spawn_object(const std::string& object_name, const std::string& blueprint, const msr::airlib::Pose& pose, const msr::airlib::Vector3r& scale, const bool& physics_enabled);
@@ -310,8 +311,12 @@ namespace airsim_wrapper
         // AirSim clients
         std::unique_ptr<msr::airlib::MultirotorRpcLibClient> airsim_client_state_;
         std::unique_ptr<msr::airlib::MultirotorRpcLibClient> airsim_client_control_;
+        std::unique_ptr<msr::airlib::MultirotorRpcLibClient> airsim_client_object_;
+        std::unique_ptr<msr::airlib::MultirotorRpcLibClient> airsim_client_window_;
         std::mutex state_mutex_;
         std::mutex control_mutex_;
+        std::mutex object_mutex_;
+        std::mutex window_mutex_;
 
         // Node and callback group
         std::shared_ptr<rclcpp::Node> nh_;

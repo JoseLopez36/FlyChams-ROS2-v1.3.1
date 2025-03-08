@@ -1,0 +1,178 @@
+{
+    "SettingsVersion": 2.0,
+    "SimMode": "Multirotor",
+    "ClockType": "",
+    "ClockSpeed": 0.5,
+    "ViewMode": "NoDisplay",
+    "RecordUIVisible": false,
+    "LogMessagesVisible": false,
+    "ApiServerPort": 41451,
+    "OriginGeopoint": {
+        "Latitude": 47.63999938964844,
+        "Longitude": -122.13999938964844,
+        "Altitude": 122.0
+    },
+    "TimeOfDay": {
+        "Enabled": true,
+        "StartDateTime": "2024-12-13 20:0:0",
+        "CelestialClockSpeed": 1,
+        "StartDateTimeDst": false,
+        "UpdateIntervalSecs": 1
+    },
+    "Wind": {
+        "X": 0.0,
+        "Y": -0.0,
+        "Z": -0.0
+    },
+    "Vehicles": {
+        "AGENT05": {
+            "VehicleType": "SimpleFlight",
+            "Model": "Quadcopter",
+            "AutoCreate": true,
+            "DefaultVehicleState": "Armed",
+            "EnableCollisions": true,
+            "UseSerial": true,
+            "LockStep": false,
+            "UseTcp": false,
+            "TcpPort": 4560,
+            "ControlPortLocal": 14540,
+            "ControlPortRemote": 14580,
+            "Sensors": {
+                "Barometer": {
+                    "SensorType": 1,
+                    "Enabled": true,
+                    "PressureFactorSigma": 0.0001825
+                }
+            },
+            "Parameters": {
+                "NAV_RCL_ACT": 0,
+                "NAV_DLL_ACT": 0,
+                "COM_OBL_ACT": 1,
+                "LPE_LAT": 47.63999938964844,
+                "LPE_LON": -122.13999938964844
+            },
+            "X": 15.0,
+            "Y": -20.0,
+            "Z": -50.0,
+            "Roll": 0.0,
+            "Pitch": -0.0,
+            "Yaw": -0.0,
+            "Cameras": {
+                "HEAD13": {
+                    "CaptureSettings": [
+                        {
+                            "ImageType": 0,
+                            "Width": 8192,
+                            "Height": 5456,
+                            "FOV_Degrees": 24.814834594726563
+                        }
+                    ],
+                    "X": 0.0,
+                    "Y": -0.0,
+                    "Z": 0.15000000596046448,
+                    "Roll": 90.0,
+                    "Pitch": -90.0,
+                    "Yaw": -0.0
+                },
+                "AGENTCAM_AGENT05": {
+                    "CaptureSettings": [
+                        {
+                            "ImageType": 0,
+                            "Width": 1280,
+                            "Height": 720,
+                            "FOV_Degrees": 70
+                        }
+                    ],
+                    "X": -1.5,
+                    "Y": 1.5,
+                    "Z": -1.5,
+                    "Roll": 0.0,
+                    "Pitch": -33.33000183105469,
+                    "Yaw": -45.0
+                },
+                "SCENECAM": {
+                    "CaptureSettings": [
+                        {
+                            "ImageType": 0,
+                            "Width": 1920,
+                            "Height": 1080,
+                            "FOV_Degrees": 90
+                        }
+                    ],
+                    "X": -75.0,
+                    "Y": 75.0,
+                    "Z": -75.0,
+                    "Roll": 0.0,
+                    "Pitch": -33.33000183105469,
+                    "Yaw": -45.0,
+                    "External": true
+                }
+            }
+        }
+    },
+    "SubWindows": [
+        {
+            "WindowID": 0,
+            "CameraName": "SCENECAM",
+            "ImageType": 0,
+            "VehicleName": "",
+            "Visible": true
+        },
+        {
+            "WindowID": 1,
+            "CameraName": "",
+            "ImageType": 0,
+            "VehicleName": "",
+            "Visible": true
+        },
+        {
+            "WindowID": 2,
+            "CameraName": "",
+            "ImageType": 0,
+            "VehicleName": "",
+            "Visible": true
+        },
+        {
+            "WindowID": 3,
+            "CameraName": "",
+            "ImageType": 0,
+            "VehicleName": "",
+            "Visible": true
+        },
+        {
+            "WindowID": 4,
+            "CameraName": "",
+            "ImageType": 0,
+            "VehicleName": "",
+            "Visible": true
+        },
+        {
+            "WindowID": 5,
+            "CameraName": "",
+            "ImageType": 0,
+            "VehicleName": "",
+            "Visible": true
+        },
+        {
+            "WindowID": 6,
+            "CameraName": "",
+            "ImageType": 0,
+            "VehicleName": "",
+            "Visible": true
+        },
+        {
+            "WindowID": 7,
+            "CameraName": "",
+            "ImageType": 0,
+            "VehicleName": "",
+            "Visible": true
+        },
+        {
+            "WindowID": 8,
+            "CameraName": "",
+            "ImageType": 0,
+            "VehicleName": "",
+            "Visible": true
+        }
+    ]
+}
