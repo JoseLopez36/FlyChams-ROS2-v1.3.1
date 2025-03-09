@@ -10,7 +10,6 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(flychams_core REQUIRED)
-find_package(OpenCV REQUIRED)
 
 # Create dashboard library
 set(DASHBOARD_SRC
@@ -23,29 +22,27 @@ add_library(${PROJECT_NAME} SHARED ${DASHBOARD_SRC})
 target_include_directories(${PROJECT_NAME} PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
-  ${OpenCV_INCLUDE_DIRS}
 )
 
 # Export dependencies
 ament_target_dependencies(${PROJECT_NAME}
-  rclcpp flychams_core OpenCV
+  rclcpp flychams_core
 )
 
 # Link to required libraries
 target_link_libraries(${PROJECT_NAME}
   rclcpp::rclcpp
-  ${OpenCV_LIBS}
 )
 
 # Create executable for GUI node
 add_executable(gui_node src/gui_node.cpp)
 target_link_libraries(gui_node ${PROJECT_NAME})
-ament_target_dependencies(gui_node rclcpp flychams_core OpenCV)
+ament_target_dependencies(gui_node rclcpp flychams_core)
 
 # Create executable for visualization node
 add_executable(visualization_node src/visualization_node.cpp)
 target_link_libraries(visualization_node ${PROJECT_NAME})
-ament_target_dependencies(visualization_node rclcpp flychams_core OpenCV)
+ament_target_dependencies(visualization_node rclcpp flychams_core)
 
 # Install targets and headers
 install(TARGETS ${PROJECT_NAME}
@@ -69,7 +66,6 @@ ament_export_targets(${PROJECT_NAME} HAS_LIBRARY_TARGET)
 ament_export_dependencies(
   rclcpp
   flychams_core
-  OpenCV
 )
 ament_export_libraries(${PROJECT_NAME})
 ament_export_include_directories(include)

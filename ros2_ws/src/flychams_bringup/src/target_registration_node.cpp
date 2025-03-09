@@ -40,6 +40,7 @@ public: // Constructor/Destructor
         // Cycle through all target groups in the config
         std::vector<float> target_scales;
         std::vector<TargetType> target_types;
+        std::vector<ColorMsg> highlight_colors;
         for (const auto& [id, config_ptr] : config_tools_->getGroups())
         {
             // Extract number of targets in group
@@ -69,14 +70,20 @@ public: // Constructor/Destructor
                 // Add target to vectors
                 target_controllers_.push_back(target_controller);
                 target_ids_.push_back(target_id);
-                target_poses_.push_back(target_controller->getPose());
+                target_positions_.push_back(target_controller->getPosition());
                 target_scales.push_back(1.0f);
                 target_types.push_back(TargetType::Human);
+                ColorMsg color;
+                color.r = 1.0f;
+                color.g = 0.0f;
+                color.b = 0.0f;
+                color.a = 1.0f;
+                highlight_colors.push_back(color);
             }
         }
 
-        // Spawn targets
-        ext_tools_->spawnObjectGroup(target_ids_, target_poses_, target_scales, target_types);
+        // Add targets to simulation
+        ext_tools_->addTargetGroup(target_ids_, target_types, target_positions_, false, highlight_colors);
 
         // Set target update timer
         prev_time_ = RosUtils::getTimeNow(node_);
@@ -91,7 +98,7 @@ public: // Constructor/Destructor
         update_timer_.reset();
         target_controllers_.clear();
         target_ids_.clear();
-        target_poses_.clear();
+        target_positions_.clear();
     }
 
 private: // Methods
@@ -108,18 +115,18 @@ private: // Methods
             // Update target controller
             target_controllers_[i]->updateControl(dt);
 
-            // Update target pose
-            target_poses_[i] = target_controllers_[i]->getPose();
+            // Update target position
+            target_positions_[i] = target_controllers_[i]->getPosition();
         }
 
-        // Command targets to move to given poses
-        ext_tools_->setObjectPoseGroup(target_ids_, target_poses_, tf_tools_->getWorldFrame());
+        // Update targets in simulation
+        ext_tools_->updateTargetGroup(target_ids_, target_positions_);
     }
 
 private: // Components
     // Target update
     std::vector<ID> target_ids_;
-    std::vector<PoseMsg> target_poses_;
+    std::vector<PointMsg> target_positions_;
     std::vector<TargetController::SharedPtr> target_controllers_;
     Time prev_time_;
     TimerPtr update_timer_;

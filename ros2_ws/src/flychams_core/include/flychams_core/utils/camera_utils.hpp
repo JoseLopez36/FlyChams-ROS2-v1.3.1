@@ -1,5 +1,8 @@
 #pragma once
 
+// OpenCV includes
+#include <opencv2/opencv.hpp>
+
 // Core includes
 #include "flychams_core/types/core_types.hpp"
 #include "flychams_core/types/ros_types.hpp"
@@ -22,31 +25,41 @@ namespace flychams::core
             return 2.0f * std::atan(sensor_width / (2.0f * focal));
         }
 
-        static Vector2r projectPoint(const PointMsg& bP, const TransformMsg& bTc, const CameraInfoMsg& camera_info)
+        static Matrix2Xr projectPoints(const Matrix3Xr& bP, const Matrix4r& bTc, const Matrix3r& k_ref)
         {
-            // Extract camera parameters
-            const float& fx = camera_info.k[0];  // Focal length x
-            const float& fy = camera_info.k[4];  // Focal length y
-            const float& cx = camera_info.k[2];  // Principal point x
-            const float& cy = camera_info.k[5];  // Principal point y
+            // Get number of points
+            const int n = static_cast<int>(bP.cols());
 
-            // Convert camera pose (base frame) to a tf2::Transform
-            TransformTf bTc_tf;
-            tf2::fromMsg(bTc, bTc_tf);
-            TransformTf cTb_tf = bTc_tf.inverse();
+            // Pre-compute elements
+            const Matrix4r cTb = bTc.inverse();
+            const cv::Mat K = (cv::Mat_<float>(3, 3) << k_ref(0, 0), 0.0f, k_ref(0, 2), 0.0f, k_ref(1, 1), k_ref(1, 2), 0.0f, 0.0f, 1.0f);
+            const cv::Mat dist_coeffs = cv::Mat::zeros(5, 1, CV_64F); // Assuming no distortion
 
-            // Apply the inverse transform to the input point (in base frame)
-            Vector3Tf bP_tf(bP.x, bP.y, bP.z);
-            Vector3Tf cP_tf = cTb_tf * bP_tf;
+            // Iterate through all points and convert to OpenCV format
+            std::vector<cv::Point3f> P(n);
+            for (int i = 0; i < n; i++)
+            {
+                // Transform point from base frame to camera frame
+                const Vector3r bPi = bP.col(i);
+                const Vector4r bPi_(bPi.x(), bPi.y(), bPi.z(), 1.0f);
+                const Vector4r cPi_ = cTb * bPi_;
 
-            // Project point on image plane
-            float cX = cP_tf.getX();
-            float cY = cP_tf.getY();
-            float cZ = cP_tf.getZ();
+                // Convert
+                P[i] = cv::Point3f(cPi_.x(), cPi_.y(), cPi_.z());
+            }
 
-            float u = (fx * cX / cZ) + cx;
-            float v = (fy * cY / cZ) + cy;
-            return Vector2r(u, v);
+            // Project points using OpenCV
+            std::vector<cv::Point2f> p(n);
+            cv::projectPoints(P, cv::Mat::zeros(3, 1, CV_64F), cv::Mat::zeros(3, 1, CV_64F), K, dist_coeffs, p);
+
+            // Return projected points as matrix
+            Matrix2Xr cP(2, n);
+            for (int i = 0; i < n; i++)
+            {
+                const auto& pi = p[i];
+                cP.col(i) << pi.x, pi.y;
+            }
+            return cP;
         }
     };
 

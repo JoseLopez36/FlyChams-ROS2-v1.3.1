@@ -82,20 +82,18 @@ namespace flychams::coordination
     // PUBLIC: MultiWindowTracking methods
     // ════════════════════════════════════════════════════════════════════════════
 
-    Crop TrackingUtils::computeWindowCrop(const core::Vector3r& wPt, const float& r, const core::Vector3r& wPc, const core::Vector2r& p, const core::WindowParameters& window_params, const core::ProjectionParameters& projection_params)
+    Vector2i TrackingUtils::computeWindowSize(const core::Vector3r& wPt, const float& r, const core::Vector3r& wPc, const core::WindowParameters& window_params, const core::ProjectionParameters& projection_params)
     {
         // wPt: Target position in world frame (m)
         // r: Equivalent radius of the target's area of interest (m)
         // wPc: Camera position in world frame (m)
-        // p: Target projection in the camera (pix)
         // window_params: Window parameters
         // projection_params: Projection parameters
 
         // Extract parameters
         const auto& f = window_params.camera_params.f_ref;
-        const auto& rho = window_params.camera_params.rho;
-        const auto& full_width = window_params.full_width;
-        const auto& full_height = window_params.full_height;
+        const auto& view_width = window_params.view_width;
+        const auto& view_height = window_params.view_height;
         const auto& lambda_min = window_params.lambda_min;
         const auto& lambda_max = window_params.lambda_max;
         const auto& s_ref = projection_params.s_ref;
@@ -104,22 +102,33 @@ namespace flychams::coordination
         float d = (wPt - wPc).norm();
 
         // Attempt to adjust the resolution factor to achieve the desired apparent size of the object
-        float lambda = (d * s_ref * rho) / (r * f);
+        float lambda = (d * s_ref) / (r * f);
 
         // Clamp the resolution factor within the camera's resolution limits
         lambda = std::max(std::min(lambda, lambda_max), lambda_min);
 
-        // Compute crop parameters
-        const float width = lambda * static_cast<float>(full_width);
-        const float height = lambda * static_cast<float>(full_height);
-        const float x = p(0) - width / 2.0f;
-        const float y = p(1) - height / 2.0f;
+        // Compute window size using the resolution factor
+        const float width = static_cast<float>(view_width) / lambda;
+        const float height = static_cast<float>(view_height) / lambda;
+
+        return {
+            static_cast<int>(std::round(width)),
+            static_cast<int>(std::round(height))
+        };
+    }
+
+    Vector2i TrackingUtils::computeWindowCorner(const core::Vector2r& p, const core::Vector2i& size)
+    {
+        // p: Projected point on central camera (pix)
+        // size: Window size (pix)
+
+        // Compute window corner to place the crop in the center of the image
+        const float x = p(0) - static_cast<float>(size(0)) / 2.0f;
+        const float y = p(1) - static_cast<float>(size(1)) / 2.0f;
 
         return {
             static_cast<int>(std::round(x)),
-            static_cast<int>(std::round(y)),
-            static_cast<int>(std::round(width)),
-            static_cast<int>(std::round(height))
+            static_cast<int>(std::round(y))
         };
     }
 

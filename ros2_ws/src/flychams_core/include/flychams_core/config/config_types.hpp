@@ -201,7 +201,8 @@ namespace flychams::core
         Autopilot autopilot;
         float clock_speed;
         bool record_metrics;
-        bool record_markers;
+        bool draw_rviz_markers;
+        bool draw_world_markers;
     };
     using SimulationConfigPtr = std::shared_ptr<SimulationConfig>;
 

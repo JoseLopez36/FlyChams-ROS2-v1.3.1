@@ -31,24 +31,52 @@ namespace flychams::core
             return node->get_clock()->now();
         }
 
-        static TimerPtr createTimer(NodePtr node, const std::function<void()>& callback, const std::chrono::milliseconds& period)
+        static TimerPtr createTimer(NodePtr node, const std::function<void()>& callback, const std::chrono::milliseconds& period, CallbackGroupPtr callback_group = nullptr)
         {
-            return node->create_timer(period, callback);
+            if (callback_group == nullptr)
+            {
+                return node->create_timer(period, callback);
+            }
+            else
+            {
+                return node->create_timer(period, callback, callback_group);
+            }
         }
 
-        static TimerPtr createTimerByRate(NodePtr node, float rate, const std::function<void()>& callback)
+        static TimerPtr createTimerByRate(NodePtr node, float rate, const std::function<void()>& callback, CallbackGroupPtr callback_group = nullptr)
         {
-            return node->create_timer(std::chrono::duration<float>(1.0f / rate), callback);
+            if (callback_group == nullptr)
+            {
+                return node->create_timer(std::chrono::duration<float>(1.0f / rate), callback);
+            }
+            else
+            {
+                return node->create_timer(std::chrono::duration<float>(1.0f / rate), callback, callback_group);
+            }
         }
 
-        static TimerPtr createWallTimer(NodePtr node, const std::function<void()>& callback, const std::chrono::milliseconds& period)
+        static TimerPtr createWallTimer(NodePtr node, const std::function<void()>& callback, const std::chrono::milliseconds& period, CallbackGroupPtr callback_group = nullptr)
         {
-            return node->create_wall_timer(period, callback);
+            if (callback_group == nullptr)
+            {
+                return node->create_wall_timer(period, callback);
+            }
+            else
+            {
+                return node->create_wall_timer(period, callback, callback_group);
+            }
         }
 
-        static TimerPtr createWallTimerByRate(NodePtr node, float rate, const std::function<void()>& callback)
+        static TimerPtr createWallTimerByRate(NodePtr node, float rate, const std::function<void()>& callback, CallbackGroupPtr callback_group = nullptr)
         {
-            return node->create_wall_timer(std::chrono::duration<float>(1.0f / rate), callback);
+            if (callback_group == nullptr)
+            {
+                return node->create_wall_timer(std::chrono::duration<float>(1.0f / rate), callback);
+            }
+            else
+            {
+                return node->create_wall_timer(std::chrono::duration<float>(1.0f / rate), callback, callback_group);
+            }
         }
 
         // ════════════════════════════════════════════════════════════════════════════

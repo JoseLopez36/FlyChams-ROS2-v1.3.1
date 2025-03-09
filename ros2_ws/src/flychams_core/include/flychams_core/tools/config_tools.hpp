@@ -167,13 +167,13 @@ namespace flychams::core
             params.s_ref = s_ref_pix * rho; // [m]
 
             // Print parameters for debugging
-            RCLCPP_INFO(node_->get_logger(), "Projection parameters:");
-            RCLCPP_INFO(node_->get_logger(), "  s_min_pix: %.2f [pix]", params.s_min_pix);
-            RCLCPP_INFO(node_->get_logger(), "  s_max_pix: %.2f [pix]", params.s_max_pix);
-            RCLCPP_INFO(node_->get_logger(), "  s_ref_pix: %.2f [pix]", params.s_ref_pix);
-            RCLCPP_INFO(node_->get_logger(), "  s_min: %.6f [m]", params.s_min);
-            RCLCPP_INFO(node_->get_logger(), "  s_max: %.6f [m]", params.s_max);
-            RCLCPP_INFO(node_->get_logger(), "  s_ref: %.6f [m]", params.s_ref);
+            // RCLCPP_INFO(node_->get_logger(), "Projection parameters:");
+            // RCLCPP_INFO(node_->get_logger(), "  s_min_pix: %.2f [pix]", params.s_min_pix);
+            // RCLCPP_INFO(node_->get_logger(), "  s_max_pix: %.2f [pix]", params.s_max_pix);
+            // RCLCPP_INFO(node_->get_logger(), "  s_ref_pix: %.2f [pix]", params.s_ref_pix);
+            // RCLCPP_INFO(node_->get_logger(), "  s_min: %.6f [m]", params.s_min);
+            // RCLCPP_INFO(node_->get_logger(), "  s_max: %.6f [m]", params.s_max);
+            // RCLCPP_INFO(node_->get_logger(), "  s_ref: %.6f [m]", params.s_ref);
 
             return params;
         }
@@ -189,7 +189,7 @@ namespace flychams::core
             // Camera ID
             params.id = head_id;
 
-            // Camera focal lengths (m)
+            // Camera focal length limits (m)
             params.f_min = head_ptr->min_focal;
             params.f_max = head_ptr->max_focal;
             params.f_ref = camera_ptr->default_focal;
@@ -207,13 +207,20 @@ namespace flychams::core
             float rho_y = params.sensor_height / static_cast<float>(params.height);     // [m/pix]
             params.rho = std::sqrt(rho_x * rho_y);                                      // [m/pix]
 
+            // Camera reference intrinsic matrix K
+            params.k_ref = Matrix3r::Identity();
+            params.k_ref(0, 0) = params.f_ref / rho_x;
+            params.k_ref(1, 1) = params.f_ref / rho_y;
+            params.k_ref(0, 2) = params.width / 2.0f;
+            params.k_ref(1, 2) = params.height / 2.0f;
+
             // Print camera parameters for debugging
-            RCLCPP_INFO(node_->get_logger(), "Camera parameters for agent %s, head %s:", agent_id.c_str(), head_id.c_str());
-            RCLCPP_INFO(node_->get_logger(), "  ID: %s", params.id.c_str());
-            RCLCPP_INFO(node_->get_logger(), "  Focal lengths: min=%.3f, max=%.3f, ref=%.3f [m]", params.f_min, params.f_max, params.f_ref);
-            RCLCPP_INFO(node_->get_logger(), "  Resolution: %d x %d [pix]", params.width, params.height);
-            RCLCPP_INFO(node_->get_logger(), "  Sensor dimensions: %.6f x %.6f [m]", params.sensor_width, params.sensor_height);
-            RCLCPP_INFO(node_->get_logger(), "  Regularized pixel size: %.6f [m/pix]", params.rho);
+            // RCLCPP_INFO(node_->get_logger(), "Camera parameters for agent %s, head %s:", agent_id.c_str(), head_id.c_str());
+            // RCLCPP_INFO(node_->get_logger(), "  ID: %s", params.id.c_str());
+            // RCLCPP_INFO(node_->get_logger(), "  Focal lengths: min=%.3f, max=%.3f, ref=%.3f [m]", params.f_min, params.f_max, params.f_ref);
+            // RCLCPP_INFO(node_->get_logger(), "  Resolution: %d x %d [pix]", params.width, params.height);
+            // RCLCPP_INFO(node_->get_logger(), "  Sensor dimensions: %.6f x %.6f [m]", params.sensor_width, params.sensor_height);
+            // RCLCPP_INFO(node_->get_logger(), "  Regularized pixel size: %.6f [m/pix]", params.rho);
 
             return params;
         }
@@ -244,11 +251,11 @@ namespace flychams::core
             params.lambda_ref = std::max(0.25f, params.lambda_min);
 
             // Print window parameters for debugging
-            RCLCPP_INFO(node_->get_logger(), "Window parameters for agent %s, source head %s:", agent_id.c_str(), source_head_id.c_str());
-            RCLCPP_INFO(node_->get_logger(), "  Full resolution: %d x %d", params.full_width, params.full_height);
-            RCLCPP_INFO(node_->get_logger(), "  Scene resolution: %d x %d", params.scene_width, params.scene_height);
-            RCLCPP_INFO(node_->get_logger(), "  View resolution: %d x %d", params.view_width, params.view_height);
-            RCLCPP_INFO(node_->get_logger(), "  Lambda values: min=%.3f, max=%.3f, ref=%.3f", params.lambda_min, params.lambda_max, params.lambda_ref);
+            // RCLCPP_INFO(node_->get_logger(), "Window parameters for agent %s, source head %s:", agent_id.c_str(), source_head_id.c_str());
+            // RCLCPP_INFO(node_->get_logger(), "  Full resolution: %d x %d", params.full_width, params.full_height);
+            // RCLCPP_INFO(node_->get_logger(), "  Scene resolution: %d x %d", params.scene_width, params.scene_height);
+            // RCLCPP_INFO(node_->get_logger(), "  View resolution: %d x %d", params.view_width, params.view_height);
+            // RCLCPP_INFO(node_->get_logger(), "  Lambda values: min=%.3f, max=%.3f, ref=%.3f", params.lambda_min, params.lambda_max, params.lambda_ref);
 
             return params;
         }

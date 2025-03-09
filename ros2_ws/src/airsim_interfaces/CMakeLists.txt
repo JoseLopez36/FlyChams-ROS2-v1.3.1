@@ -30,12 +30,13 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/VelCmd.msg"
   "msg/CameraFovCmd.msg"
   "msg/GimbalAngleCmd.msg"
-  # Object services and messages
-  "srv/SpawnObjectGroup.srv"
-  "srv/DespawnObjectGroup.srv"
-  "msg/ObjectPoseCmdGroup.msg"
   # Window services and messages
   "msg/WindowImageCmdGroup.msg"
+  # Tracking services and messages
+  "srv/AddTargetGroup.srv"
+  "srv/AddClusterGroup.srv"
+  "msg/UpdateTargetCmdGroup.msg"
+  "msg/UpdateClusterCmdGroup.msg"
   DEPENDENCIES std_msgs geometry_msgs sensor_msgs LIBRARY_NAME ${PROJECT_NAME}
 )
 

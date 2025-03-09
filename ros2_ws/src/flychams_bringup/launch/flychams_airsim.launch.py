@@ -19,14 +19,14 @@ def generate_launch_description():
         'target_registration': True,
         'cluster_registration': True,
         # Control nodes
-        'agent_control': True,
-        'head_control': False,
+        'agent_control': False,
+        'head_control': True,
         # Perception nodes
         'clustering': True,
         # Coordination nodes
         'agent_positioning': True,
         'agent_assignment': True,
-        'agent_tracking': False,
+        'agent_tracking': True,
         # Dashboard nodes
         'gui': True,
         'visualization': True
@@ -35,7 +35,7 @@ def generate_launch_description():
     # Define output and logging severity
     output_to_screen = {
         # AirSim Wrapper nodes
-        'airsim': ['screen', 'warn'],
+        'airsim': ['screen', 'info'],
         # Bringup nodes
         'agent_registration': ['screen', 'error'],
         'target_registration': ['screen', 'error'],
@@ -46,7 +46,7 @@ def generate_launch_description():
         # Perception nodes
         'clustering': ['screen', 'error'],
         # Coordination nodes
-        'agent_positioning': ['screen', 'info'],
+        'agent_positioning': ['screen', 'error'],
         'agent_assignment': ['screen', 'error'],
         'agent_tracking': ['screen', 'error'],
         # Dashboard nodes
@@ -143,7 +143,7 @@ def generate_launch_description():
                     'host_ip': 'localhost',
                     'host_port': 41451,
                     'enable_api_control': True,
-                    'enable_world_plot': True
+                    'enable_world_plot': False
                 }]
             )
         )

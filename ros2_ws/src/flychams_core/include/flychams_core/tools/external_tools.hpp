@@ -52,13 +52,14 @@ namespace flychams::core
         virtual void setGimbalAngles(const ID& vehicle_id, const IDs& camera_ids, const std::vector<QuaternionMsg>& target_quats, const std::string& frame_id) = 0;
         virtual void setCameraFovs(const ID& vehicle_id, const IDs& camera_ids, const std::vector<float>& target_fovs, const std::string& frame_id) = 0;
 
-    public: // Object control methods (override)
-        virtual bool spawnObjectGroup(const IDs& object_ids, const std::vector<PoseMsg>& poses, const std::vector<float>& scales, const std::vector<TargetType>& object_types) = 0;
-        virtual bool despawnObjectGroup(const IDs& object_ids) = 0;
-        virtual void setObjectPoseGroup(const IDs& object_ids, const std::vector<PoseMsg>& poses, const std::string& frame_id) = 0;
-
     public: // Window control methods (override)
         virtual void setWindowImageGroup(const IDs& window_ids, const IDs& vehicle_ids, const IDs& camera_ids, const std::vector<int>& crop_x, const std::vector<int>& crop_y, const std::vector<int>& crop_w, const std::vector<int>& crop_h) = 0;
+
+    public: // Tracking control methods (override)
+        virtual bool addTargetGroup(const IDs& target_ids, const std::vector<TargetType>& target_types, const std::vector<PointMsg>& positions, const bool& highlight, const std::vector<ColorMsg>& highlight_colors) = 0;
+        virtual bool addClusterGroup(const IDs& cluster_ids, const std::vector<PointMsg>& centers, const std::vector<float>& radii, const bool& highlight, const std::vector<ColorMsg>& highlight_colors) = 0;
+        virtual void updateTargetGroup(const IDs& target_ids, const std::vector<PointMsg>& positions) = 0;
+        virtual void updateClusterGroup(const IDs& cluster_ids, const std::vector<PointMsg>& centers, const std::vector<float>& radii) = 0;
     };
 
     ExternalTools::SharedPtr externalToolsFactory(NodePtr node, const Framework& framework);

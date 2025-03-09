@@ -46,16 +46,16 @@ namespace flychams::bringup
     private: // Data
         // Trajectory
         TargetTrajectory::SharedPtr trajectory_;
-        // Pose
-        core::PoseMsg pose_;
+        // Position
+        core::PointMsg position_;
 
     public: // Public methods
         // Initialize
         void initializeTrajectory(const std::string& trajectory_path);
         // Update
         void updateControl(const float& dt);
-        // Get pose
-        core::PoseMsg getPose() const;
+        // Get position
+        core::PointMsg getPosition() const;
 
     private: // Methods
         TargetTrajectory::Point updatePosition(const float& dt);

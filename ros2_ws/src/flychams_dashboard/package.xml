@@ -16,7 +16,6 @@
   <!-- Dependencies -->
   <depend>rclcpp</depend>
   <depend>flychams_core</depend>
-  <depend>opencv</depend>
 
   <!-- Export -->
   <export>

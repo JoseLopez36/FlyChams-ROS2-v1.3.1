@@ -175,7 +175,9 @@ namespace flychams::core
 
 					simulation->record_metrics = getCellValueOrDefault<bool>(row.findCell(5), false);
 
-					simulation->record_markers = getCellValueOrDefault<bool>(row.findCell(6), false);
+					simulation->draw_rviz_markers = getCellValueOrDefault<bool>(row.findCell(6), false);
+
+					simulation->draw_world_markers = getCellValueOrDefault<bool>(row.findCell(7), false);
 
 					// Only first found simulation is loaded
 					return simulation;

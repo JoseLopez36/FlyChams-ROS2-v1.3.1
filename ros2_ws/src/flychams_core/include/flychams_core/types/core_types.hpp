@@ -92,17 +92,13 @@ namespace flychams::core
     enum class TargetType
     {
         None,     // No type assigned
-        Human,    // Human target
-        Vehicle,  // Vehicle target
-        Animal,   // Animal target
-        Object    // Object target
+        Cube,     // Cube target
+        Human
     };
     inline TargetType targetTypeFromString(const std::string& target_type)
     {
+        if (target_type == "Cube") return TargetType::Cube;
         if (target_type == "Human") return TargetType::Human;
-        if (target_type == "Vehicle") return TargetType::Vehicle;
-        if (target_type == "Animal") return TargetType::Animal;
-        if (target_type == "Object") return TargetType::Object;
         return TargetType::None;
     }
 
@@ -386,6 +382,8 @@ namespace flychams::core
     {
         // Camera ID
         std::string id;
+        // Camera intrinsic matrix K
+        Matrix3r k_ref;
         // Focal lengths (m)
         float f_min;
         float f_max;

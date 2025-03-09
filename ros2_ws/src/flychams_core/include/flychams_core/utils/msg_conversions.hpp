@@ -3,7 +3,7 @@
 // Core includes
 #include "flychams_core/types/core_types.hpp"
 #include "flychams_core/types/ros_types.hpp"
-#include "flychams_core/utils/camera_utils.hpp"
+#include "flychams_core/utils/math_utils.hpp"
 
 namespace flychams::core
 {
@@ -43,6 +43,15 @@ namespace flychams::core
                 fromMsg(pose.position),
                 fromMsg(pose.orientation)
             };
+        }
+
+        static Matrix4r fromMsg(const TransformMsg& transform)
+        {
+            Pose pose = {
+                fromMsg(transform.translation),
+                fromMsg(transform.rotation)
+            };
+            return MathUtils::poseToMatrix(pose);
         }
 
         static Twist fromMsg(const TwistMsg& twist)

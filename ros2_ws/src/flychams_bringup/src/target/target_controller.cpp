@@ -37,26 +37,24 @@ namespace flychams::bringup
         trajectory_ = std::make_shared<TargetTrajectory>();
         trajectory_->parse(trajectory_path);
 
-        // Initialize pose
-        pose_.position.x = trajectory_->getStartPoint().x;
-        pose_.position.y = trajectory_->getStartPoint().y;
-        pose_.position.z = trajectory_->getStartPoint().z;
-        pose_.orientation.w = 1.0f;
+        // Initialize position
+        position_.x = trajectory_->getStartPoint().x;
+        position_.y = trajectory_->getStartPoint().y;
+        position_.z = trajectory_->getStartPoint().z;
     }
 
     void TargetController::updateControl(const float& dt)
     {
-        // Update target pose
+        // Update target position
         const auto& curr_point = updatePosition(dt);
-        pose_.position.x = curr_point.x;
-        pose_.position.y = curr_point.y;
-        pose_.position.z = curr_point.z;
-        pose_.orientation.w = 1.0f;
+        position_.x = curr_point.x;
+        position_.y = curr_point.y;
+        position_.z = curr_point.z;
     }
 
-    PoseMsg TargetController::getPose() const
+    PointMsg TargetController::getPosition() const
     {
-        return pose_;
+        return position_;
     }
 
     // ════════════════════════════════════════════════════════════════════════════

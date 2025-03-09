@@ -17,7 +17,7 @@ namespace flychams::dashboard
         markers_update_rate_ = RosUtils::getParameterOr<float>(node_, "visualization.markers_update_rate", 10.0f);
         // Get recording flags from config
         bool record_metrics = config_tools_->getSimulation()->record_metrics;
-        bool record_markers = config_tools_->getSimulation()->record_markers;
+        bool draw_rviz_markers = config_tools_->getSimulation()->draw_rviz_markers;
 
         // Initialize data
         curr_agent_metrics_.clear();
@@ -35,23 +35,25 @@ namespace flychams::dashboard
         // Initialize global metrics publisher
         global_metrics_pubs_ = topic_tools_->createGlobalMetricsPublisher();
 
+        // Initialize callback group
+        callback_group_ = node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+
         // Set update timers
         prev_time_ = RosUtils::getTimeNow(node_);
         if (record_metrics)
         {
             metrics_timer_ = RosUtils::createWallTimerByRate(node_, metrics_update_rate_,
-                std::bind(&VisualizationFactory::updateMetrics, this));
+                std::bind(&VisualizationFactory::updateMetrics, this), callback_group_);
         }
-        if (record_markers)
+        if (draw_rviz_markers)
         {
-            markers_timer_ = RosUtils::createWallTimerByRate(node_, markers_update_rate_,
-                std::bind(&VisualizationFactory::updateMarkers, this));
+            rviz_markers_timer_ = RosUtils::createWallTimerByRate(node_, markers_update_rate_,
+                std::bind(&VisualizationFactory::updateRvizMarkers, this), callback_group_);
         }
     }
 
     void VisualizationFactory::onShutdown()
     {
-        std::lock_guard<std::mutex> lock(mutex_);
         // Destroy data
         curr_agent_metrics_.clear();
         prev_agent_metrics_.clear();
@@ -77,7 +79,7 @@ namespace flychams::dashboard
         global_metrics_pubs_.reset();
         // Destroy update timers
         metrics_timer_.reset();
-        markers_timer_.reset();
+        rviz_markers_timer_.reset();
     }
 
     // ════════════════════════════════════════════════════════════════════════════
@@ -93,7 +95,6 @@ namespace flychams::dashboard
         const PointMsg& curr_pos_msg = tf_tools_->transformPointMsg(msg->pose.pose.position, source_frame, target_frame);
         const Vector3Msg& curr_vel_msg = tf_tools_->transformVelocityMsg(msg->twist.twist.linear, child_frame, target_frame);
         // Update agent metrics under lock
-        std::lock_guard<std::mutex> lock(mutex_);
         curr_agent_metrics_[agent_id].curr_x = curr_pos_msg.x;
         curr_agent_metrics_[agent_id].curr_y = curr_pos_msg.y;
         curr_agent_metrics_[agent_id].curr_z = curr_pos_msg.z;
@@ -105,7 +106,6 @@ namespace flychams::dashboard
     void VisualizationFactory::agentGoalCallback(const core::ID& agent_id, const core::AgentGoalMsg::SharedPtr msg)
     {
         // Get target position
-        std::lock_guard<std::mutex> lock(mutex_);
         curr_agent_metrics_[agent_id].goal_x = msg->position.x;
         curr_agent_metrics_[agent_id].goal_y = msg->position.y;
         curr_agent_metrics_[agent_id].goal_z = msg->position.z;
@@ -115,7 +115,6 @@ namespace flychams::dashboard
     void VisualizationFactory::targetInfoCallback(const core::ID& target_id, const core::TargetInfoMsg::SharedPtr msg)
     {
         // Update target metrics under lock
-        std::lock_guard<std::mutex> lock(mutex_);
         curr_target_metrics_[target_id].curr_x = msg->position.x;
         curr_target_metrics_[target_id].curr_y = msg->position.y;
         curr_target_metrics_[target_id].curr_z = msg->position.z;
@@ -124,7 +123,6 @@ namespace flychams::dashboard
     void VisualizationFactory::clusterInfoCallback(const core::ID& cluster_id, const core::ClusterInfoMsg::SharedPtr msg)
     {
         // Update cluster metrics under lock
-        std::lock_guard<std::mutex> lock(mutex_);
         curr_cluster_metrics_[cluster_id].curr_center_x = msg->center.x;
         curr_cluster_metrics_[cluster_id].curr_center_y = msg->center.y;
         curr_cluster_metrics_[cluster_id].curr_center_z = msg->center.z;
@@ -141,9 +139,6 @@ namespace flychams::dashboard
         auto curr_time = RosUtils::getTimeNow(node_);
         float dt = (curr_time - prev_time_).seconds();
         prev_time_ = curr_time;
-
-        // Update and publish metrics under lock
-        std::lock_guard<std::mutex> lock(mutex_);
 
         // Update agent metrics
         for (const auto& agent_id : agent_ids_)
@@ -195,13 +190,10 @@ namespace flychams::dashboard
         global_metrics_pubs_->publish(global_metrics_msg);
     }
 
-    void VisualizationFactory::updateMarkers()
+    void VisualizationFactory::updateRvizMarkers()
     {
         // Get current time
         auto curr_time = RosUtils::getTimeNow(node_);
-
-        // Update markers under lock
-        std::lock_guard<std::mutex> lock(mutex_);
 
         // Update agent markers
         for (const auto& agent_id : agent_ids_)
@@ -251,7 +243,6 @@ namespace flychams::dashboard
 
     void VisualizationFactory::addAgent(const core::ID& agent_id)
     {
-        std::lock_guard<std::mutex> lock(mutex_);
         // Add agent to set
         agent_ids_.insert(agent_id);
         // Add metrics
@@ -260,16 +251,18 @@ namespace flychams::dashboard
         // Add markers
         agent_markers_.insert({ agent_id, MarkersFactory::createAgentMarkers(tf_tools_->getWorldFrame(), markers_update_rate_ * 1.1f) });
         // Add subscribers
+        auto options = rclcpp::SubscriptionOptions();
+        options.callback_group = callback_group_;
         agent_odom_subs_.insert({ agent_id, topic_tools_->createAgentOdomSubscriber(agent_id,
             [this, agent_id](const OdometryMsg::SharedPtr msg)
             {
                 this->agentOdomCallback(agent_id, msg);
-            }) });
+            }, options) });
         agent_goal_subs_.insert({ agent_id, topic_tools_->createAgentGoalSubscriber(agent_id,
             [this, agent_id](const AgentGoalMsg::SharedPtr msg)
             {
                 this->agentGoalCallback(agent_id, msg);
-            }) });
+            }, options) });
         // Add publishers
         agent_metrics_pubs_.insert({ agent_id, topic_tools_->createAgentMetricsPublisher(agent_id) });
         agent_markers_pubs_.insert({ agent_id, topic_tools_->createAgentMarkersPublisher(agent_id) });
@@ -278,7 +271,6 @@ namespace flychams::dashboard
 
     void VisualizationFactory::removeAgent(const core::ID& agent_id)
     {
-        std::lock_guard<std::mutex> lock(mutex_);
         // Remove agent from set
         agent_ids_.erase(agent_id);
         // Remove metrics
@@ -296,7 +288,6 @@ namespace flychams::dashboard
 
     void VisualizationFactory::addTarget(const core::ID& target_id)
     {
-        std::lock_guard<std::mutex> lock(mutex_);
         // Add target to set
         target_ids_.insert(target_id);
         // Add metrics
@@ -305,11 +296,13 @@ namespace flychams::dashboard
         // Add markers
         target_markers_.insert({ target_id, MarkersFactory::createTargetMarkers(tf_tools_->getWorldFrame(), markers_update_rate_ * 1.1f) });
         // Add subscriber
+        auto options = rclcpp::SubscriptionOptions();
+        options.callback_group = callback_group_;
         target_info_subs_.insert({ target_id, topic_tools_->createTargetInfoSubscriber(target_id,
             [this, target_id](const TargetInfoMsg::SharedPtr msg)
             {
                 this->targetInfoCallback(target_id, msg);
-            }) });
+            }, options) });
         // Add publishers   
         target_metrics_pubs_.insert({ target_id, topic_tools_->createTargetMetricsPublisher(target_id) });
         target_markers_pubs_.insert({ target_id, topic_tools_->createTargetMarkersPublisher(target_id) });
@@ -317,7 +310,6 @@ namespace flychams::dashboard
 
     void VisualizationFactory::removeTarget(const core::ID& target_id)
     {
-        std::lock_guard<std::mutex> lock(mutex_);
         // Remove target from set
         target_ids_.erase(target_id);
         // Remove metrics
@@ -334,7 +326,6 @@ namespace flychams::dashboard
 
     void VisualizationFactory::addCluster(const core::ID& cluster_id)
     {
-        std::lock_guard<std::mutex> lock(mutex_);
         // Add cluster to set
         cluster_ids_.insert(cluster_id);
         // Add metrics
@@ -343,11 +334,13 @@ namespace flychams::dashboard
         // Add markers
         cluster_markers_.insert({ cluster_id, MarkersFactory::createClusterMarkers(tf_tools_->getWorldFrame(), markers_update_rate_ * 1.1f) });
         // Add subscriber
+        auto options = rclcpp::SubscriptionOptions();
+        options.callback_group = callback_group_;
         cluster_info_subs_.insert({ cluster_id, topic_tools_->createClusterInfoSubscriber(cluster_id,
             [this, cluster_id](const ClusterInfoMsg::SharedPtr msg)
             {
                 this->clusterInfoCallback(cluster_id, msg);
-            }) });
+            }, options) });
         // Add publishers
         cluster_metrics_pubs_.insert({ cluster_id, topic_tools_->createClusterMetricsPublisher(cluster_id) });
         cluster_markers_pubs_.insert({ cluster_id, topic_tools_->createClusterMarkersPublisher(cluster_id) });
@@ -355,7 +348,6 @@ namespace flychams::dashboard
 
     void VisualizationFactory::removeCluster(const core::ID& cluster_id)
     {
-        std::lock_guard<std::mutex> lock(mutex_);
         // Remove cluster from set
         cluster_ids_.erase(cluster_id);
         // Remove metrics

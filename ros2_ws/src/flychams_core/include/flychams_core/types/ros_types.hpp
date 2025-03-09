@@ -86,6 +86,8 @@ namespace flychams::core
     // Subscriber
     template<typename T>
     using SubscriberPtr = typename rclcpp::Subscription<T>::SharedPtr;
+    // Callback group
+    using CallbackGroupPtr = std::shared_ptr<rclcpp::CallbackGroup>;
     // Service
     template<typename T>
     using ServicePtr = typename rclcpp::Service<T>::SharedPtr;
@@ -119,6 +121,8 @@ namespace flychams::core
     // Marker
     using MarkerMsg = visualization_msgs::msg::Marker;
     using MarkerArrayMsg = visualization_msgs::msg::MarkerArray;
+    // Color
+    using ColorMsg = std_msgs::msg::ColorRGBA;
 
     // ════════════════════════════════════════════════════════════════
     // TF2 TYPES: Transform types

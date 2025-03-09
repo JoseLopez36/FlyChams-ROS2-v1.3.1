@@ -21,12 +21,13 @@
 #include <airsim_interfaces/msg/vel_cmd.hpp>
 #include <airsim_interfaces/msg/gimbal_angle_cmd.hpp>
 #include <airsim_interfaces/msg/camera_fov_cmd.hpp>
-// Target commands
-#include <airsim_interfaces/srv/spawn_object_group.hpp>
-#include <airsim_interfaces/srv/despawn_object_group.hpp>
-#include <airsim_interfaces/msg/object_pose_cmd_group.hpp>
 // Window commands
 #include <airsim_interfaces/msg/window_image_cmd_group.hpp>
+// Tracking commands
+#include <airsim_interfaces/srv/add_target_group.hpp>
+#include <airsim_interfaces/srv/add_cluster_group.hpp>
+#include <airsim_interfaces/msg/update_target_cmd_group.hpp>
+#include <airsim_interfaces/msg/update_cluster_cmd_group.hpp>
 
 // Core includes
 #include "flychams_core/types/core_types.hpp"
@@ -67,10 +68,11 @@ namespace flychams::core
         using VelCmdMsg = airsim_interfaces::msg::VelCmd;
         using GimbalAngleCmdMsg = airsim_interfaces::msg::GimbalAngleCmd;
         using CameraFovCmdMsg = airsim_interfaces::msg::CameraFovCmd;
-        using SpawnObjectGroupSrv = airsim_interfaces::srv::SpawnObjectGroup;
-        using DespawnObjectGroupSrv = airsim_interfaces::srv::DespawnObjectGroup;
-        using ObjectPoseCmdGroupMsg = airsim_interfaces::msg::ObjectPoseCmdGroup;
         using WindowImageCmdGroupMsg = airsim_interfaces::msg::WindowImageCmdGroup;
+        using AddTargetGroupSrv = airsim_interfaces::srv::AddTargetGroup;
+        using AddClusterGroupSrv = airsim_interfaces::srv::AddClusterGroup;
+        using UpdateTargetCmdGroupMsg = airsim_interfaces::msg::UpdateTargetCmdGroup;
+        using UpdateClusterCmdGroupMsg = airsim_interfaces::msg::UpdateClusterCmdGroup;
 
     public: // Vehicle adders
         void addVehicle(const ID& vehicle_id);
@@ -95,13 +97,14 @@ namespace flychams::core
         void setGimbalAngles(const ID& vehicle_id, const IDs& camera_ids, const std::vector<QuaternionMsg>& target_quats, const std::string& frame_id) override;
         void setCameraFovs(const ID& vehicle_id, const IDs& camera_ids, const std::vector<float>& target_fovs, const std::string& frame_id) override;
 
-    public: // Object control methods
-        bool spawnObjectGroup(const IDs& object_ids, const std::vector<PoseMsg>& poses, const std::vector<float>& scales, const std::vector<TargetType>& object_types) override;
-        bool despawnObjectGroup(const IDs& object_ids) override;
-        void setObjectPoseGroup(const IDs& object_ids, const std::vector<PoseMsg>& poses, const std::string& frame_id) override;
-
     public: // Window control methods
         void setWindowImageGroup(const IDs& window_ids, const IDs& vehicle_ids, const IDs& camera_ids, const std::vector<int>& crop_x, const std::vector<int>& crop_y, const std::vector<int>& crop_w, const std::vector<int>& crop_h) override;
+
+    public: // Tracking control methods
+        bool addTargetGroup(const IDs& target_ids, const std::vector<TargetType>& target_types, const std::vector<PointMsg>& positions, const bool& highlight, const std::vector<ColorMsg>& highlight_colors) override;
+        bool addClusterGroup(const IDs& cluster_ids, const std::vector<PointMsg>& centers, const std::vector<float>& radii, const bool& highlight, const std::vector<ColorMsg>& highlight_colors) override;
+        void updateTargetGroup(const IDs& target_ids, const std::vector<PointMsg>& positions) override;
+        void updateClusterGroup(const IDs& cluster_ids, const std::vector<PointMsg>& centers, const std::vector<float>& radii) override;
 
     private: // Utility methods
         int getWindowIndex(const ID& window_id) const
@@ -144,7 +147,7 @@ namespace flychams::core
             }
             else
             {
-                RCLCPP_WARN(node_->get_logger(), "Invalid window ID: %s", window_id.c_str());
+                RCLCPP_ERROR(node_->get_logger(), "Invalid window ID: %s", window_id.c_str());
                 return -1;
             }
         }
@@ -187,13 +190,14 @@ namespace flychams::core
         std::unordered_map<ID, PublisherPtr<GimbalAngleCmdMsg>> gimbal_angle_cmd_pub_map_;
         std::unordered_map<ID, PublisherPtr<CameraFovCmdMsg>> camera_fov_cmd_pub_map_;
 
-        // Object commands
-        ClientPtr<SpawnObjectGroupSrv> spawn_object_group_client_;
-        ClientPtr<DespawnObjectGroupSrv> despawn_object_group_client_;
-        PublisherPtr<ObjectPoseCmdGroupMsg> object_pose_cmd_group_pub_;
-
         // Window commands
         PublisherPtr<WindowImageCmdGroupMsg> window_image_cmd_group_pub_;
+
+        // Tracking commands
+        ClientPtr<AddTargetGroupSrv> add_target_group_client_;
+        ClientPtr<AddClusterGroupSrv> add_cluster_group_client_;
+        PublisherPtr<UpdateTargetCmdGroupMsg> update_target_cmd_group_pub_;
+        PublisherPtr<UpdateClusterCmdGroupMsg> update_cluster_cmd_group_pub_;
     };
 
 } // namespace flychams::core

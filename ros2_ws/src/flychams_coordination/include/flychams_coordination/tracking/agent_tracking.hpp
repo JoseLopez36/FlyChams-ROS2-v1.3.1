@@ -44,6 +44,7 @@ namespace flychams::coordination
     private: // Parameters
         // Agent parameters
         core::ID agent_id_;
+        core::ID central_head_id_;
         // Module parameters
         core::TrackingParameters tracking_params_;
         // Window IDs
@@ -56,9 +57,6 @@ namespace flychams::coordination
         // Clusters
         std::pair<core::Matrix3Xr, core::RowVectorXr> clusters_;
         bool has_clusters_;
-        // Central camera info
-        core::CameraInfoMsg central_camera_info_;
-        bool has_central_camera_info_;
         // Computed tracking goal
         core::TrackingGoalMsg goal_;
         std::vector<core::Vector3r> prev_angles_;
@@ -75,7 +73,7 @@ namespace flychams::coordination
         void updateTracking();
         // Implementation
         void computeMultiCameraTracking(const core::Matrix3Xr& tab_P, const core::RowVectorXr& tab_r, core::TrackingGoalMsg& goal);
-        void computeMultiWindowTracking(const core::Matrix3Xr& tab_P, const core::RowVectorXr& tab_r, const core::CameraInfoMsg& camera_info, core::TrackingGoalMsg& goal);
+        void computeMultiWindowTracking(const core::Matrix3Xr& tab_P, const core::RowVectorXr& tab_r, core::TrackingGoalMsg& goal);
 
     private:
         // Subscribers

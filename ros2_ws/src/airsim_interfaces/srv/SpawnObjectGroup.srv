@@ -1,6 +1,0 @@
-string[] object_names
-string[] blueprints
-geometry_msgs/Pose[] poses
-float32[] scales
----
-bool success

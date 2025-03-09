@@ -322,7 +322,6 @@ namespace flychams::coordination
         const float& s_max = tracking_params.projection_params[i].s_max;
         const float& s_ref = tracking_params.projection_params[i].s_ref;
         const float& f = tracking_params.window_params[i].camera_params.f_ref;
-        const float& rho = tracking_params.window_params[i].camera_params.rho;
         const float& lambda_min = tracking_params.window_params[i].lambda_min;
         const float& lambda_max = tracking_params.window_params[i].lambda_max;
         const float& lambda_ref = tracking_params.window_params[i].lambda_ref;
@@ -373,7 +372,6 @@ namespace flychams::coordination
         const float& s_max = tracking_params.projection_params[i].s_max;
         const float& s_ref = tracking_params.projection_params[i].s_ref;
         const float& f = tracking_params.window_params[i].camera_params.f_ref;
-        const float& rho = tracking_params.window_params[i].camera_params.rho;
         const float& lambda_min = tracking_params.window_params[i].lambda_min;
         const float& lambda_max = tracking_params.window_params[i].lambda_max;
         const float& lambda_ref = tracking_params.window_params[i].lambda_ref;

@@ -69,13 +69,14 @@ STRICT_MODE_ON
 #include <airsim_interfaces/msg/gimbal_angle_cmd.hpp>
 #include <airsim_interfaces/msg/camera_fov_cmd.hpp>
 
-// Object commands
-#include <airsim_interfaces/srv/spawn_object_group.hpp>
-#include <airsim_interfaces/srv/despawn_object_group.hpp>
-#include <airsim_interfaces/msg/object_pose_cmd_group.hpp>
-
-// Sub-window commands
+// Window commands
 #include <airsim_interfaces/msg/window_image_cmd_group.hpp>
+
+// Tracking commands
+#include <airsim_interfaces/srv/add_target_group.hpp>
+#include <airsim_interfaces/srv/add_cluster_group.hpp>
+#include <airsim_interfaces/msg/update_target_cmd_group.hpp>
+#include <airsim_interfaces/msg/update_cluster_cmd_group.hpp>
 
 namespace airsim_wrapper
 {
@@ -149,11 +150,10 @@ namespace airsim_wrapper
 
             // Vehicle data
             nav_msgs::msg::Odometry curr_odom;
-            airsim_interfaces::msg::CameraInfoArray camera_info_array;
             // Vehicle setting
             VehicleSetting vehicle_setting;
             // Camera data
-            std::vector<std::unique_ptr<CameraROS>> cameras;
+            std::unordered_map<std::string, std::unique_ptr<CameraROS>> camera_map;
             // Publisher
             rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_pub;
             rclcpp::Publisher<airsim_interfaces::msg::CameraInfoArray>::SharedPtr camera_info_array_pub;
@@ -181,8 +181,9 @@ namespace airsim_wrapper
         void vel_cmd_cb(const std::string& vehicle_name, const airsim_interfaces::msg::VelCmd::SharedPtr vel_cmd_msg);
         void gimbal_angle_cmd_cb(const std::string& vehicle_name, const airsim_interfaces::msg::GimbalAngleCmd::SharedPtr gimbal_angle_cmd_msg);
         void camera_fov_cmd_cb(const std::string& vehicle_name, const airsim_interfaces::msg::CameraFovCmd::SharedPtr camera_fov_cmd_msg);
-        void object_pose_cmd_group_cb(const airsim_interfaces::msg::ObjectPoseCmdGroup::SharedPtr object_pose_cmd_group_msg);
         void window_image_cmd_group_cb(const airsim_interfaces::msg::WindowImageCmdGroup::SharedPtr window_image_cmd_group_msg);
+        void update_target_cmd_group_cb(const airsim_interfaces::msg::UpdateTargetCmdGroup::SharedPtr update_target_cmd_group_msg);
+        void update_cluster_cmd_group_cb(const airsim_interfaces::msg::UpdateClusterCmdGroup::SharedPtr update_cluster_cmd_group_msg);
 
         /// Service callbacks
         bool reset_srv_cb(const std::shared_ptr<airsim_interfaces::srv::Reset::Request> request, const std::shared_ptr<airsim_interfaces::srv::Reset::Response> response);
@@ -191,14 +192,14 @@ namespace airsim_wrapper
         bool takeoff_group_srv_cb(const std::shared_ptr<airsim_interfaces::srv::TakeoffGroup::Request> request, const std::shared_ptr<airsim_interfaces::srv::TakeoffGroup::Response> response);
         bool land_group_srv_cb(const std::shared_ptr<airsim_interfaces::srv::LandGroup::Request> request, const std::shared_ptr<airsim_interfaces::srv::LandGroup::Response> response);
         bool hover_group_srv_cb(const std::shared_ptr<airsim_interfaces::srv::HoverGroup::Request> request, const std::shared_ptr<airsim_interfaces::srv::HoverGroup::Response> response);
-        bool spawn_object_group_cb(const std::shared_ptr<airsim_interfaces::srv::SpawnObjectGroup::Request> request, const std::shared_ptr<airsim_interfaces::srv::SpawnObjectGroup::Response> response);
-        bool despawn_object_group_cb(const std::shared_ptr<airsim_interfaces::srv::DespawnObjectGroup::Request> request, const std::shared_ptr<airsim_interfaces::srv::DespawnObjectGroup::Response> response);
+        bool add_target_group_cb(const std::shared_ptr<airsim_interfaces::srv::AddTargetGroup::Request> request, const std::shared_ptr<airsim_interfaces::srv::AddTargetGroup::Response> response);
+        bool add_cluster_group_cb(const std::shared_ptr<airsim_interfaces::srv::AddClusterGroup::Request> request, const std::shared_ptr<airsim_interfaces::srv::AddClusterGroup::Response> response);
 
     // ════════════════════════════════════════════════════════════════
     // PRIVATE: State Update
     private:
         void update_vehicle_odom(VehicleROS* vehicle_ros, const msr::airlib::Kinematics::State& kinematics_estimated);
-        void update_camera_info(CameraROS* camera_ros, float new_fov);
+        void update_camera_info(CameraROS* camera_ros, const float& hfov);
 
     // ════════════════════════════════════════════════════════════════
     // PRIVATE: State Publish
@@ -224,25 +225,36 @@ namespace airsim_wrapper
     // ════════════════════════════════════════════════════════════════
     // PRIVATE: AirSim Client Methods
     private:
+        // State methods
         rclcpp::Time client_get_timestamp();
         bool client_get_paused();
         msr::airlib::MultirotorState client_get_multirotor_state(const std::string& vehicle_name);
         msr::airlib::CameraInfo client_get_camera_info(const std::string& vehicle_name, const std::string& camera_name);
+        msr::airlib::Vector2r client_get_camera_fov(const std::string& vehicle_name, const std::string& camera_name);
+
+        // Global methods
         void client_reset();
         void client_pause(const bool& is_paused);
         void client_enable_control();
+
+        // Vehicle methods
         void client_takeoff(const float& timeout, const std::string& vehicle_name, const bool& wait = false);
         void client_land(const float& timeout, const std::string& vehicle_name, const bool& wait = false);
         void client_hover(const std::string& vehicle_name);
         void client_move_by_velocity(const float& vx, const float& vy, const float& vz, const float& dt, const std::string& vehicle_name);
         void client_set_camera_pose(const std::string& camera_name, const msr::airlib::Pose& pose, const std::string& vehicle_name);
         void client_set_camera_fov(const std::string& camera_name, const float& fov, const std::string& vehicle_name);
-        void client_set_object_pose(const std::string& object_name, const msr::airlib::Pose& pose);
-        void client_flush_plot();
-        void client_plot_points(const std::vector<msr::airlib::Vector3r>& points, const std::vector<float>& color, const float& size, const float& duration, const bool& is_persistent);
+
+        // Window methods
         void client_set_window_image(const int& window_index, const std::string& vehicle_name, const std::string& camera_name, const int& x, const int& y, const int& w, const int& h);
-        void client_spawn_object(const std::string& object_name, const std::string& blueprint, const msr::airlib::Pose& pose, const msr::airlib::Vector3r& scale, const bool& physics_enabled);
-        void client_destroy_object(const std::string& object_name);
+
+        // Tracking methods
+        void client_add_targets(const std::vector<std::string>& target_names, const std::vector<std::string>& target_types, const std::vector<msr::airlib::Vector3r>& positions, const bool& highlight, const std::vector<std::vector<float>>& highlight_color_rgba);
+        void client_add_clusters(const std::vector<std::string>& cluster_names, const std::vector<msr::airlib::Vector3r>& centers, const std::vector<float>& radii, const bool& highlight, const std::vector<std::vector<float>>& highlight_color_rgba);
+        void client_remove_targets(const std::vector<std::string>& target_names);
+        void client_remove_clusters(const std::vector<std::string>& cluster_names);
+        void client_update_targets(const std::vector<std::string>& target_names, const std::vector<msr::airlib::Vector3r>& positions);
+        void client_update_clusters(const std::vector<std::string>& cluster_names, const std::vector<msr::airlib::Vector3r>& centers, const std::vector<float>& radii);
 
     // ════════════════════════════════════════════════════════════════
     // PRIVATE: Utility Methods
@@ -255,6 +267,9 @@ namespace airsim_wrapper
         msr::airlib::Pose get_airlib_pose(const float& x, const float& y, const float& z, const msr::airlib::Quaternionr& airlib_quat) const;
         msr::airlib::Pose get_airlib_pose(const geometry_msgs::msg::Pose& geometry_msgs_pose) const;
         msr::airlib::Vector3r get_airlib_point(const geometry_msgs::msg::Point& geometry_msgs_point) const;
+        std::vector<msr::airlib::Vector3r> get_airlib_points(const std::vector<geometry_msgs::msg::Point>& geometry_msgs_points) const;
+        std::vector<float> get_airlib_color(const std_msgs::msg::ColorRGBA& std_msgs_color) const;
+        std::vector<std::vector<float>> get_airlib_colors(const std::vector<std_msgs::msg::ColorRGBA>& std_msgs_colors) const;
         geometry_msgs::msg::Transform get_transform_msg_from_airsim(const msr::airlib::Vector3r& position, const msr::airlib::AirSimSettings::Rotation& rotation);
         geometry_msgs::msg::Transform get_transform_msg_from_airsim(const msr::airlib::Vector3r& position, const msr::airlib::Quaternionr& quaternion);
         geometry_msgs::msg::Pose get_pose_msg_from_airsim(const msr::airlib::Vector3r& position, const msr::airlib::AirSimSettings::Rotation& rotation);
@@ -279,15 +294,16 @@ namespace airsim_wrapper
         rclcpp::Service<airsim_interfaces::srv::LandGroup>::SharedPtr land_group_srvr_;
         rclcpp::Service<airsim_interfaces::srv::HoverGroup>::SharedPtr hover_group_srvr_;
 
-        // Object group services
-        rclcpp::Service<airsim_interfaces::srv::SpawnObjectGroup>::SharedPtr spawn_object_group_srvr_;
-        rclcpp::Service<airsim_interfaces::srv::DespawnObjectGroup>::SharedPtr despawn_object_group_srvr_;
-
-        // Object group subscribers
-        rclcpp::Subscription<airsim_interfaces::msg::ObjectPoseCmdGroup>::SharedPtr object_pose_cmd_group_sub_;
-
         // Window group subscribers
         rclcpp::Subscription<airsim_interfaces::msg::WindowImageCmdGroup>::SharedPtr window_image_cmd_group_sub_;
+
+        // Tracking group services
+        rclcpp::Service<airsim_interfaces::srv::AddTargetGroup>::SharedPtr add_target_group_srvr_;
+        rclcpp::Service<airsim_interfaces::srv::AddClusterGroup>::SharedPtr add_cluster_group_srvr_;
+
+        // Tracking group subscribers
+        rclcpp::Subscription<airsim_interfaces::msg::UpdateTargetCmdGroup>::SharedPtr update_target_cmd_group_sub_;
+        rclcpp::Subscription<airsim_interfaces::msg::UpdateClusterCmdGroup>::SharedPtr update_cluster_cmd_group_sub_;
 
     // ════════════════════════════════════════════════════════════════
     // PRIVATE: Member Variables
@@ -311,17 +327,15 @@ namespace airsim_wrapper
         // AirSim clients
         std::unique_ptr<msr::airlib::MultirotorRpcLibClient> airsim_client_state_;
         std::unique_ptr<msr::airlib::MultirotorRpcLibClient> airsim_client_control_;
-        std::unique_ptr<msr::airlib::MultirotorRpcLibClient> airsim_client_object_;
-        std::unique_ptr<msr::airlib::MultirotorRpcLibClient> airsim_client_window_;
-        std::mutex state_mutex_;
-        std::mutex control_mutex_;
-        std::mutex object_mutex_;
-        std::mutex window_mutex_;
+        std::unique_ptr<msr::airlib::RpcLibClientBase> airsim_client_window_;
+        std::unique_ptr<msr::airlib::RpcLibClientBase> airsim_client_tracking_;
 
-        // Node and callback group
+        // Node and callback groups
         std::shared_ptr<rclcpp::Node> nh_;
-        std::shared_ptr<rclcpp::CallbackGroup> cb_;
+        std::shared_ptr<rclcpp::CallbackGroup> cb_state_;
         std::shared_ptr<rclcpp::CallbackGroup> cb_control_;
+        std::shared_ptr<rclcpp::CallbackGroup> cb_window_;
+        std::shared_ptr<rclcpp::CallbackGroup> cb_tracking_;
 
         // TF components
         const std::string AIRSIM_FRAME_ID = "world";

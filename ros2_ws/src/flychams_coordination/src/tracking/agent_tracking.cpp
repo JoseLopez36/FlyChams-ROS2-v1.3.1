@@ -20,13 +20,14 @@ namespace flychams::coordination
         // Get tracking parameters
         tracking_params_ = config_tools_->getTrackingParameters(agent_id_);
 
+        // Get central head ID
+        central_head_id_ = config_tools_->getAgent(agent_id_)->central_head_id;
+
         // Initialize agent data
         curr_pos_ = Vector3r::Zero();
         has_odom_ = false;
         clusters_ = std::make_pair(Matrix3Xr::Zero(3, 0), RowVectorXr::Zero(0));
         has_clusters_ = false;
-        central_camera_info_ = CameraInfoMsg();
-        has_central_camera_info_ = false;
         prev_angles_ = std::vector<Vector3r>(tracking_params_.n);
         is_first_update_ = true;
 
@@ -53,9 +54,9 @@ namespace flychams::coordination
             break;
 
         case TrackingMode::MultiWindowTracking:
+            goal_.camera_id = tracking_params_.window_params[0].camera_params.id;
             goal_.unit_types = std::vector<uint8_t>(n);
             goal_.window_ids = std::vector<std::string>(n);
-            goal_.camera_id = tracking_params_.window_params[0].camera_params.id;
             goal_.crops = std::vector<CropMsg>(n);
 
             for (int i = 0; i < n; i++)
@@ -68,18 +69,17 @@ namespace flychams::coordination
 
         default:
             RCLCPP_ERROR(node_->get_logger(), "AgentTracking: Invalid tracking mode for agent %s", agent_id_.c_str());
+            rclcpp::shutdown();
             return;
         }
 
-        // Subscribe to odom, agent info and central camera info topics
+        // Subscribe to odom and agent info topics
         odom_sub_ = topic_tools_->createAgentOdomSubscriber(agent_id_,
             std::bind(&AgentTracking::odomCallback, this, std::placeholders::_1));
         info_sub_ = topic_tools_->createAgentInfoSubscriber(agent_id_,
             std::bind(&AgentTracking::infoCallback, this, std::placeholders::_1));
-        camera_info_sub_ = topic_tools_->createAgentCameraInfoArraySubscriber(agent_id_,
-            std::bind(&AgentTracking::cameraInfoCallback, this, std::placeholders::_1));
 
-        // Publish to tracking goal topic
+        // Publish to tracking goal topic   
         goal_pub_ = topic_tools_->createTrackingGoalPublisher(agent_id_);
 
         // Set update timers
@@ -124,14 +124,6 @@ namespace flychams::coordination
         has_clusters_ = true;
     }
 
-    void AgentTracking::cameraInfoCallback(const core::CameraInfoArrayMsg::SharedPtr msg)
-    {
-        // Get camera info
-        std::lock_guard<std::mutex> lock(mutex_);
-        central_camera_info_ = msg->infos[0];
-        has_central_camera_info_ = true;
-    }
-
     // ════════════════════════════════════════════════════════════════════════════
     // UPDATE: Update tracking
     // ════════════════════════════════════════════════════════════════════════════
@@ -140,10 +132,10 @@ namespace flychams::coordination
     {
         std::lock_guard<std::mutex> lock(mutex_);
 
-        // Check if agent has odometry, clusters and central camera info
-        if (!has_odom_ || !has_clusters_ || !has_central_camera_info_)
+        // Check if agent has odometry and clusters
+        if (!has_odom_ || !has_clusters_)
         {
-            RCLCPP_WARN(node_->get_logger(), "Agent %s has no odometry, clusters or central camera info", agent_id_.c_str());
+            RCLCPP_WARN(node_->get_logger(), "Agent %s has no odometry or clusters", agent_id_.c_str());
             return;
         }
 
@@ -155,7 +147,7 @@ namespace flychams::coordination
             break;
 
         case TrackingMode::MultiWindowTracking:
-            computeMultiWindowTracking(clusters_.first, clusters_.second, central_camera_info_, goal_);
+            computeMultiWindowTracking(clusters_.first, clusters_.second, goal_);
             break;
 
         default:
@@ -164,6 +156,7 @@ namespace flychams::coordination
         }
 
         // Publish tracking goal
+        goal_.header.stamp = RosUtils::getTimeNow(node_);
         goal_pub_->publish(goal_);
         RCLCPP_INFO(node_->get_logger(), "Tracking goal published for agent %s", agent_id_.c_str());
     }
@@ -210,35 +203,45 @@ namespace flychams::coordination
         is_first_update_ = false;
     }
 
-    void AgentTracking::computeMultiWindowTracking(const Matrix3Xr& tab_P, const RowVectorXr& tab_r, const CameraInfoMsg& camera_info, TrackingGoalMsg& goal)
+    void AgentTracking::computeMultiWindowTracking(const Matrix3Xr& tab_P, const RowVectorXr& tab_r, TrackingGoalMsg& goal)
     {
-        // Get the transform between world and optical frame
-        const TransformMsg& wTc = tf_tools_->getTransformBetweenFrames(tf_tools_->getWorldFrame(), tf_tools_->getHeadOpticalFrame(agent_id_, camera_info.header.frame_id));
-        const Vector3r& wPc = MsgConversions::fromMsg(wTc.translation);
+        // Get central camera parameters
+        const auto& camera_params = tracking_params_.window_params[0].camera_params;
 
+        // Get the transform between world and optical frame
+        const std::string& world_frame = tf_tools_->getWorldFrame();
+        const std::string& optical_frame = tf_tools_->getHeadOpticalFrame(agent_id_, central_head_id_);
+        const TransformMsg& world_to_optical = tf_tools_->getTransformBetweenFrames(world_frame, optical_frame);
+        const Matrix4r& wTc = MsgConversions::fromMsg(world_to_optical);
+        const Vector3r& wPc = wTc.block<3, 1>(0, 3);
+
+        // Project points on central camera
+        Matrix2Xr tab_p = CameraUtils::projectPoints(tab_P, wTc, camera_params.k_ref);
+
+        // Update tracking goal
         for (int i = 0; i < tracking_params_.n; i++)
         {
             // Get window and central camera parameters
             const auto& window_params = tracking_params_.window_params[i];
             const auto& projection_params = tracking_params_.projection_params[i];
 
-            // Get target position and interest radius
+            // Get target position, interest radius and projected point
             const auto& wPt = tab_P.col(i);
             const auto& r = tab_r(i);
-
-            // Project target on central camera
-            PointMsg wPt_msg;
-            MsgConversions::toMsg(wPt, wPt_msg);
-            const Vector2r p = CameraUtils::projectPoint(wPt_msg, wTc, camera_info);
+            const auto& p = tab_p.col(i);
 
             // Create tracking crop parameters
-            Crop crop = TrackingUtils::computeWindowCrop(wPt, r, wPc, p, window_params, projection_params);
+            Vector2i size = TrackingUtils::computeWindowSize(wPt, r, wPc, window_params, projection_params);
+            Vector2i corner = TrackingUtils::computeWindowCorner(p, size);
 
             // Update tracking goal
-            goal.crops[i].x = crop.corner(0);
-            goal.crops[i].y = crop.corner(1);
-            goal.crops[i].w = crop.size(0);
-            goal.crops[i].h = crop.size(1);
+            goal.crops[i].x = corner(0);
+            goal.crops[i].y = corner(1);
+            goal.crops[i].w = size(0);
+            goal.crops[i].h = size(1);
+
+            // Print tracking goal
+            RCLCPP_INFO(node_->get_logger(), "Tracking goal for window %d: x=%d, y=%d, w=%d, h=%d", i, goal.crops[i].x, goal.crops[i].y, goal.crops[i].w, goal.crops[i].h);
         }
     }
 

@@ -40,8 +40,8 @@ namespace airsim_wrapper
         , enable_world_plot_(enable_world_plot)
         , airsim_client_state_(nullptr)
         , airsim_client_control_(nullptr)
-        , airsim_client_object_(nullptr)
         , airsim_client_window_(nullptr)
+        , airsim_client_tracking_(nullptr)
 
         , nh_(nh)
         , publish_clock_(false)
@@ -121,11 +121,11 @@ namespace airsim_wrapper
 
         // Create timers
         nh_->get_parameter("update_airsim_state_every_n_sec", update_airsim_state_every_n_sec_);
-        airsim_state_update_timer_ = nh_->create_wall_timer(std::chrono::duration<double>(update_airsim_state_every_n_sec_), std::bind(&AirsimWrapper::drone_state_timer_cb, this));
+        airsim_state_update_timer_ = nh_->create_wall_timer(std::chrono::duration<double>(update_airsim_state_every_n_sec_), std::bind(&AirsimWrapper::drone_state_timer_cb, this), cb_state_);
         nh_->get_parameter("update_sim_clock_every_n_sec", update_sim_clock_every_n_sec_);
-        sim_clock_update_timer_ = nh_->create_wall_timer(std::chrono::duration<double>(update_sim_clock_every_n_sec_), std::bind(&AirsimWrapper::clock_timer_cb, this));
+        sim_clock_update_timer_ = nh_->create_wall_timer(std::chrono::duration<double>(update_sim_clock_every_n_sec_), std::bind(&AirsimWrapper::clock_timer_cb, this), cb_state_);
         nh_->get_parameter("update_airsim_status_every_n_sec", update_airsim_status_every_n_sec_);
-        airsim_status_update_timer_ = nh_->create_wall_timer(std::chrono::duration<double>(update_airsim_status_every_n_sec_), std::bind(&AirsimWrapper::status_timer_cb, this));
+        airsim_status_update_timer_ = nh_->create_wall_timer(std::chrono::duration<double>(update_airsim_status_every_n_sec_), std::bind(&AirsimWrapper::status_timer_cb, this), cb_state_);
     }
 
     AirsimWrapper::~AirsimWrapper()
@@ -137,11 +137,8 @@ namespace airsim_wrapper
     void AirsimWrapper::shutdown()
     {
         // Reset simulation
-        {
-            std::lock_guard<std::mutex> lock(control_mutex_);
-            client_pause(true);
-            client_reset();
-        }
+        client_pause(true);
+        client_reset();
         is_running_.store(false);
         // Destroy timers
         airsim_state_update_timer_.reset();
@@ -165,13 +162,13 @@ namespace airsim_wrapper
             airsim_client_control_ = std::unique_ptr<msr::airlib::MultirotorRpcLibClient>(new msr::airlib::MultirotorRpcLibClient(host_ip_, host_port_));
             airsim_client_control_->confirmConnection();
 
-            // Create airsim client for object control
-            airsim_client_object_ = std::unique_ptr<msr::airlib::MultirotorRpcLibClient>(new msr::airlib::MultirotorRpcLibClient(host_ip_, host_port_));
-            airsim_client_object_->confirmConnection();
-
             // Create airsim client for window control
-            airsim_client_window_ = std::unique_ptr<msr::airlib::MultirotorRpcLibClient>(new msr::airlib::MultirotorRpcLibClient(host_ip_, host_port_));
+            airsim_client_window_ = std::unique_ptr<msr::airlib::RpcLibClientBase>(new msr::airlib::RpcLibClientBase(host_ip_, host_port_));
             airsim_client_window_->confirmConnection();
+
+            // Create airsim client for tracking control
+            airsim_client_tracking_ = std::unique_ptr<msr::airlib::RpcLibClientBase>(new msr::airlib::RpcLibClientBase(host_ip_, host_port_));
+            airsim_client_tracking_->confirmConnection();
         }
         catch (rpc::rpc_error& e) {
             std::string msg = e.get_error().as<std::string>();
@@ -188,12 +185,30 @@ namespace airsim_wrapper
         nh_->get_parameter_or("world_frame_id", world_frame_id_, world_frame_id_);
         nh_->get_parameter_or("odom_frame_id", odom_frame_id_, odom_frame_id_);
 
+        // Initialize callback groups
+        cb_state_ = nh_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+        cb_control_ = nh_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+        cb_window_ = nh_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+        cb_tracking_ = nh_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+
         // Create ROS communications
         create_ros_comms_from_settings_json();
     }
 
     void AirsimWrapper::create_ros_comms_from_settings_json()
     {
+        // Get control subscriber options
+        auto control_sub_options = rclcpp::SubscriptionOptions();
+        control_sub_options.callback_group = cb_control_;
+
+        // Get window subscriber options
+        auto window_sub_options = rclcpp::SubscriptionOptions();
+        window_sub_options.callback_group = cb_window_;
+
+        // Get tracking subscriber options
+        auto tracking_sub_options = rclcpp::SubscriptionOptions();
+        tracking_sub_options.callback_group = cb_tracking_;
+
         // Initialize vehicle map from settings
         RCLCPP_INFO(nh_->get_logger(), "Initializing vehicle map from settings...");
         // Iterate over vehicles
@@ -221,24 +236,26 @@ namespace airsim_wrapper
                 vehicle_name + "/vel_cmd", 10,
                 [this, vehicle_name](const airsim_interfaces::msg::VelCmd::SharedPtr msg) {
                     this->vel_cmd_cb(vehicle_name, msg);
-                }
+                },
+                control_sub_options
             );
             vehicle_ros->gimbal_angle_cmd_sub = nh_->create_subscription<airsim_interfaces::msg::GimbalAngleCmd>(
                 vehicle_name + "/gimbal_angle_cmd", 10,
                 [this, vehicle_name](const airsim_interfaces::msg::GimbalAngleCmd::SharedPtr msg) {
                     this->gimbal_angle_cmd_cb(vehicle_name, msg);
-                }
+                },
+                control_sub_options
             );
             vehicle_ros->camera_fov_cmd_sub = nh_->create_subscription<airsim_interfaces::msg::CameraFovCmd>(
                 vehicle_name + "/camera_fov_cmd", 10,
                 [this, vehicle_name](const airsim_interfaces::msg::CameraFovCmd::SharedPtr msg) {
                     this->camera_fov_cmd_cb(vehicle_name, msg);
-                }
+                },
+                control_sub_options
             );
 
             // Iterate over camera map
-            vehicle_ros->camera_info_array = airsim_interfaces::msg::CameraInfoArray();
-            vehicle_ros->camera_info_array.infos.clear();
+            vehicle_ros->camera_map.clear();
             for (auto& [camera_name, camera_setting] : vehicle_setting->cameras)
             {
                 RCLCPP_INFO(nh_->get_logger(), "Initializing camera %s from settings...", camera_name.c_str());
@@ -254,8 +271,7 @@ namespace airsim_wrapper
                 initialize_camera_tf(vehicle_ros.get(), camera_ros.get(), camera_setting);
 
                 // Add camera to vehicle's camera map
-                vehicle_ros->camera_info_array.infos.push_back(camera_ros->camera_info);
-                vehicle_ros->cameras.push_back(std::move(camera_ros));
+                vehicle_ros->camera_map.emplace(camera_name, std::move(camera_ros));
             }
 
             // Add vehicle to map
@@ -279,13 +295,17 @@ namespace airsim_wrapper
         takeoff_group_srvr_ = nh_->create_service<airsim_interfaces::srv::TakeoffGroup>("group_of_robots/takeoff", std::bind(&AirsimWrapper::takeoff_group_srv_cb, this, _1, _2));
         land_group_srvr_ = nh_->create_service<airsim_interfaces::srv::LandGroup>("group_of_robots/land", std::bind(&AirsimWrapper::land_group_srv_cb, this, _1, _2));
         hover_group_srvr_ = nh_->create_service<airsim_interfaces::srv::HoverGroup>("group_of_robots/hover", std::bind(&AirsimWrapper::hover_group_srv_cb, this, _1, _2));
-        // Create group of objects services
-        spawn_object_group_srvr_ = nh_->create_service<airsim_interfaces::srv::SpawnObjectGroup>("group_of_objects/spawn", std::bind(&AirsimWrapper::spawn_object_group_cb, this, _1, _2));
-        despawn_object_group_srvr_ = nh_->create_service<airsim_interfaces::srv::DespawnObjectGroup>("group_of_objects/despawn", std::bind(&AirsimWrapper::despawn_object_group_cb, this, _1, _2));
-        // Create group of objects subscribers
-        object_pose_cmd_group_sub_ = nh_->create_subscription<airsim_interfaces::msg::ObjectPoseCmdGroup>("group_of_objects/pose_cmd", 10, std::bind(&AirsimWrapper::object_pose_cmd_group_cb, this, _1));
         // Create group of windows subscribers
-        window_image_cmd_group_sub_ = nh_->create_subscription<airsim_interfaces::msg::WindowImageCmdGroup>("group_of_windows/image_cmd", 10, std::bind(&AirsimWrapper::window_image_cmd_group_cb, this, _1));
+        window_image_cmd_group_sub_ = nh_->create_subscription<airsim_interfaces::msg::WindowImageCmdGroup>(
+            "group_of_windows/image_cmd", 10, std::bind(&AirsimWrapper::window_image_cmd_group_cb, this, _1), window_sub_options);
+        // Create tracking services
+        add_target_group_srvr_ = nh_->create_service<airsim_interfaces::srv::AddTargetGroup>("group_of_targets/add", std::bind(&AirsimWrapper::add_target_group_cb, this, _1, _2));
+        add_cluster_group_srvr_ = nh_->create_service<airsim_interfaces::srv::AddClusterGroup>("group_of_clusters/add", std::bind(&AirsimWrapper::add_cluster_group_cb, this, _1, _2));
+        // Create tracking subscribers
+        update_target_cmd_group_sub_ = nh_->create_subscription<airsim_interfaces::msg::UpdateTargetCmdGroup>(
+            "group_of_targets/update_cmd", 10, std::bind(&AirsimWrapper::update_target_cmd_group_cb, this, _1), tracking_sub_options);
+        update_cluster_cmd_group_sub_ = nh_->create_subscription<airsim_interfaces::msg::UpdateClusterCmdGroup>(
+            "group_of_clusters/update_cmd", 10, std::bind(&AirsimWrapper::update_cluster_cmd_group_cb, this, _1), tracking_sub_options);
     }
 
     void AirsimWrapper::initialize_vehicle_odom(VehicleROS* vehicle_ros, const VehicleSetting& vehicle_setting)
@@ -397,10 +417,7 @@ namespace airsim_wrapper
         try
         {
             // Send command to server
-            {
-                std::lock_guard<std::mutex> lock(control_mutex_);
-                client_move_by_velocity(vx, vy, vz, dt, vehicle_name);
-            }
+            client_move_by_velocity(vx, vy, vz, dt, vehicle_name);
         }
         catch (rpc::rpc_error& e) {
             std::string msg = e.get_error().as<std::string>();
@@ -429,10 +446,7 @@ namespace airsim_wrapper
                 msr::airlib::Pose pose = get_airlib_pose(pose_msg);
 
                 // Send command to server
-                {
-                    std::lock_guard<std::mutex> lock(control_mutex_);
-                    client_set_camera_pose(camera_name, pose, vehicle_name);
-                }
+                client_set_camera_pose(camera_name, pose, vehicle_name);
             }
         }
         catch (rpc::rpc_error& e) {
@@ -455,53 +469,7 @@ namespace airsim_wrapper
                 const auto& fov_cmd = fov_cmds[i];
 
                 // Send command to server
-                {
-                    std::lock_guard<std::mutex> lock(control_mutex_);
-                    client_set_camera_fov(camera_name, fov_cmd, vehicle_name);
-                }
-            }
-        }
-        catch (rpc::rpc_error& e) {
-            std::string msg = e.get_error().as<std::string>();
-            RCLCPP_ERROR(nh_->get_logger(), "Exception raised by the API:\n%s", msg.c_str());
-            return; // Stop execution of this callback
-        }
-    }
-
-    void AirsimWrapper::object_pose_cmd_group_cb(const airsim_interfaces::msg::ObjectPoseCmdGroup::SharedPtr object_pose_cmd_group_msg)
-    {
-        // Extract message data
-        const auto& object_names = object_pose_cmd_group_msg->object_names;
-        const auto& poses = object_pose_cmd_group_msg->poses;
-        try
-        {
-            // Set object poses
-            std::vector<msr::airlib::Vector3r> points;
-            for (size_t i = 0; i < object_names.size(); i++)
-            {
-                const auto& object_name = object_names[i];
-                const auto& pose = poses[i];
-
-                // Convert pose to airlib
-                msr::airlib::Pose pose_airlib = get_airlib_pose(pose);
-                points.push_back(pose_airlib.position);
-
-                // Send pose command to server
-                {
-                    std::lock_guard<std::mutex> lock(object_mutex_);
-                    client_set_object_pose(object_name, pose_airlib);
-                }
-            }
-
-            // Plot object points
-            if (enable_world_plot_)
-            {
-                // Send plot command to server
-                {
-                    std::lock_guard<std::mutex> lock(object_mutex_);
-                    client_flush_plot();
-                    client_plot_points(points, { 1.0, 0.0, 0.0, 1.0 }, 7.5f, 0.0f, true);
-                }
+                client_set_camera_fov(camera_name, fov_cmd, vehicle_name);
             }
         }
         catch (rpc::rpc_error& e) {
@@ -525,22 +493,47 @@ namespace airsim_wrapper
         {
             for (size_t i = 0; i < window_indices.size(); i++)
             {
-                const auto& window_index = window_indices[i];
-                if (window_index == -1)
+                if (window_indices[i] == -1)
                     continue;
-                const auto& vehicle_name = vehicle_names[i];
-                const auto& camera_name = camera_names[i];
-                const auto& x = crop_x[i];
-                const auto& y = crop_y[i];
-                const auto& w = crop_w[i];
-                const auto& h = crop_h[i];
 
                 // Send command to server
-                {
-                    std::lock_guard<std::mutex> lock(window_mutex_);
-                    client_set_window_image(window_index, vehicle_name, camera_name, x, y, w, h);
-                }
+                client_set_window_image(window_indices[i], vehicle_names[i], camera_names[i], crop_x[i], crop_y[i], crop_w[i], crop_h[i]);
             }
+        }
+        catch (rpc::rpc_error& e) {
+            std::string msg = e.get_error().as<std::string>();
+            RCLCPP_ERROR(nh_->get_logger(), "Exception raised by the API:\n%s", msg.c_str());
+            return; // Stop execution of this callback
+        }
+    }
+
+    void AirsimWrapper::update_target_cmd_group_cb(const airsim_interfaces::msg::UpdateTargetCmdGroup::SharedPtr update_target_cmd_group_msg)
+    {
+        // Extract message data
+        const auto& target_names = update_target_cmd_group_msg->target_names;
+        const auto& positions = update_target_cmd_group_msg->positions;
+        try
+        {
+            // Send command to server
+            client_update_targets(target_names, get_airlib_points(positions));
+        }
+        catch (rpc::rpc_error& e) {
+            std::string msg = e.get_error().as<std::string>();
+            RCLCPP_ERROR(nh_->get_logger(), "Exception raised by the API:\n%s", msg.c_str());
+            return; // Stop execution of this callback
+        }
+    }
+
+    void AirsimWrapper::update_cluster_cmd_group_cb(const airsim_interfaces::msg::UpdateClusterCmdGroup::SharedPtr update_cluster_cmd_group_msg)
+    {
+        // Extract message data
+        const auto& cluster_names = update_cluster_cmd_group_msg->cluster_names;
+        const auto& centers = update_cluster_cmd_group_msg->centers;
+        const auto& radii = update_cluster_cmd_group_msg->radii;
+        try
+        {
+            // Send command to server
+            client_update_clusters(cluster_names, get_airlib_points(centers), radii);
         }
         catch (rpc::rpc_error& e) {
             std::string msg = e.get_error().as<std::string>();
@@ -562,15 +555,12 @@ namespace airsim_wrapper
         try
         {
             // Send command to server
+            client_pause(true);
+            client_reset();
+            // We need to re-arm the vehicles after resetting
+            if (enable_api_control_)
             {
-                std::lock_guard<std::mutex> lock(control_mutex_);
-                client_pause(true);
-                client_reset();
-                // We need to re-arm the vehicles after resetting
-                if (enable_api_control_)
-                {
-                    client_enable_control();
-                }
+                client_enable_control();
             }
 
             // Update running state
@@ -595,10 +585,7 @@ namespace airsim_wrapper
         try
         {
             // Send command to server
-            {
-                std::lock_guard<std::mutex> lock(control_mutex_);
-                client_pause(false);
-            }
+            client_pause(false);
 
             // Update running state
             is_running_.store(true);
@@ -622,10 +609,7 @@ namespace airsim_wrapper
         try
         {
             // Send command to server
-            {
-                std::lock_guard<std::mutex> lock(control_mutex_);
-                client_pause(true);
-            }
+            client_pause(true);
 
             // Update running state
             is_running_.store(false);
@@ -648,12 +632,9 @@ namespace airsim_wrapper
         try
         {
             // Send command to server
+            for (const auto& vehicle_name : request->vehicle_names)
             {
-                std::lock_guard<std::mutex> lock(control_mutex_);
-                for (const auto& vehicle_name : request->vehicle_names)
-                {
-                    client_takeoff(20, vehicle_name);
-                }
+                client_takeoff(20, vehicle_name);
             }
         }
         catch (rpc::rpc_error& e) {
@@ -674,12 +655,9 @@ namespace airsim_wrapper
         try
         {
             // Send command to server
+            for (const auto& vehicle_name : request->vehicle_names)
             {
-                std::lock_guard<std::mutex> lock(control_mutex_);
-                for (const auto& vehicle_name : request->vehicle_names)
-                {
-                    client_land(60, vehicle_name);
-                }
+                client_land(60, vehicle_name);
             }
         }
         catch (rpc::rpc_error& e) {
@@ -700,12 +678,9 @@ namespace airsim_wrapper
         try
         {
             // Send command to server
+            for (const auto& vehicle_name : request->vehicle_names)
             {
-                std::lock_guard<std::mutex> lock(control_mutex_);
-                for (const auto& vehicle_name : request->vehicle_names)
-                {
-                    client_hover(vehicle_name);
-                }
+                client_hover(vehicle_name);
             }
         }
         catch (rpc::rpc_error& e) {
@@ -719,36 +694,20 @@ namespace airsim_wrapper
         return true;
     }
 
-    bool AirsimWrapper::spawn_object_group_cb(const std::shared_ptr<airsim_interfaces::srv::SpawnObjectGroup::Request> request, const std::shared_ptr<airsim_interfaces::srv::SpawnObjectGroup::Response> response)
+    bool AirsimWrapper::add_target_group_cb(const std::shared_ptr<airsim_interfaces::srv::AddTargetGroup::Request> request, const std::shared_ptr<airsim_interfaces::srv::AddTargetGroup::Response> response)
     {
-        RCLCPP_INFO(nh_->get_logger(), "Spawning group of objects");
+        RCLCPP_INFO(nh_->get_logger(), "Adding group of targets");
 
         // Extract request data
-        const auto& object_names = request->object_names;
-        const auto& blueprints = request->blueprints;
-        const auto& poses = request->poses;
-        const auto& scales = request->scales;
+        const auto& target_names = request->target_names;
+        const auto& target_types = request->target_types;
+        const auto& positions = request->positions;
+        const auto& highlight = request->highlight;
+        const auto& highlight_color_rgba = request->highlight_color_rgba;
         try
         {
-            for (size_t i = 0; i < object_names.size(); i++)
-            {
-                const auto& object_name = object_names[i];
-                const auto& blueprint = blueprints[i];
-                const auto& pose = poses[i];
-                const auto& scale = scales[i];
-
-                // Convert pose to airlib Pose
-                msr::airlib::Pose pose_airlib = get_airlib_pose(pose);
-
-                // Convert scale to airlib Vector3r
-                msr::airlib::Vector3r scale_airlib = msr::airlib::Vector3r{ scale, scale, scale };
-
-                // Send command to server
-                {
-                    std::lock_guard<std::mutex> lock(object_mutex_);
-                    //client_spawn_object(object_name, blueprint, pose_airlib, scale_airlib, true);
-                }
-            }
+            // Send command to server
+            client_add_targets(target_names, target_types, get_airlib_points(positions), highlight, get_airlib_colors(highlight_color_rgba));
         }
         catch (rpc::rpc_error& e) {
             std::string msg = e.get_error().as<std::string>();
@@ -761,24 +720,20 @@ namespace airsim_wrapper
         return true;
     }
 
-    bool AirsimWrapper::despawn_object_group_cb(const std::shared_ptr<airsim_interfaces::srv::DespawnObjectGroup::Request> request, const std::shared_ptr<airsim_interfaces::srv::DespawnObjectGroup::Response> response)
+    bool AirsimWrapper::add_cluster_group_cb(const std::shared_ptr<airsim_interfaces::srv::AddClusterGroup::Request> request, const std::shared_ptr<airsim_interfaces::srv::AddClusterGroup::Response> response)
     {
-        RCLCPP_INFO(nh_->get_logger(), "Despawning group of objects");
+        RCLCPP_INFO(nh_->get_logger(), "Adding group of clusters");
 
         // Extract request data
-        const auto& object_names = request->object_names;
+        const auto& cluster_names = request->cluster_names;
+        const auto& centers = request->centers;
+        const auto& radii = request->radii;
+        const auto& highlight = request->highlight;
+        const auto& highlight_color_rgba = request->highlight_color_rgba;
         try
         {
-            for (size_t i = 0; i < object_names.size(); i++)
-            {
-                const auto& object_name = object_names[i];
-
-                // Send command to server
-                {
-                    std::lock_guard<std::mutex> lock(object_mutex_);
-                    //client_destroy_object(object_name);
-                }
-            }
+            // Send command to server
+            client_add_clusters(cluster_names, get_airlib_points(centers), radii, highlight, get_airlib_colors(highlight_color_rgba));
         }
         catch (rpc::rpc_error& e) {
             std::string msg = e.get_error().as<std::string>();
@@ -802,11 +757,8 @@ namespace airsim_wrapper
             // Retrieve simulation state
             bool is_paused;
             rclcpp::Time curr_time;
-            {
-                std::lock_guard<std::mutex> lock(state_mutex_);
-                is_paused = client_get_paused();
-                curr_time = get_sim_clock_time();
-            }
+            is_paused = client_get_paused();
+            curr_time = get_sim_clock_time();
 
             // Update simulation state if not paused
             if (!is_paused)
@@ -816,10 +768,7 @@ namespace airsim_wrapper
                 {
                     // Retrieve multirotor state from server
                     msr::airlib::MultirotorState multirotor_state;
-                    {
-                        std::lock_guard<std::mutex> lock(state_mutex_);
-                        multirotor_state = client_get_multirotor_state(vehicle_name);
-                    }
+                    multirotor_state = client_get_multirotor_state(vehicle_name);
 
                     // Update vehicle odom and tf
                     vehicle_ros->curr_odom.header.stamp = curr_time;
@@ -829,24 +778,17 @@ namespace airsim_wrapper
                     convert_tf_msg_to_ros(vehicle_ros->odom_tf_msg);
 
                     // Iterate over cameras
-                    for (size_t i = 0; i < vehicle_ros->cameras.size(); i++)
+                    for (auto& [camera_name, camera_ros] : vehicle_ros->camera_map)
                     {
-                        auto& camera_ros = vehicle_ros->cameras[i];
-
                         // Retrieve camera info from server
                         msr::airlib::CameraInfo camera_info_data;
-                        {
-                            std::lock_guard<std::mutex> lock(state_mutex_);
-                            camera_info_data = client_get_camera_info(vehicle_name, camera_ros->camera_name);
-                        }
+                        camera_info_data = client_get_camera_info(vehicle_name, camera_name);
 
                         // Update camera info and tf
                         camera_ros->camera_info.header.stamp = curr_time;
                         camera_ros->body_tf_msg.header.stamp = curr_time;
-                        update_camera_info(camera_ros.get(), camera_info_data.fov);
                         camera_ros->body_tf_msg.transform = get_transform_msg_from_airsim(camera_info_data.pose.position, camera_info_data.pose.orientation);
                         convert_tf_msg_to_ros(camera_ros->body_tf_msg);
-                        vehicle_ros->camera_info_array.infos[i] = camera_ros->camera_info;
                     }
                 }
             }
@@ -865,10 +807,7 @@ namespace airsim_wrapper
         try
         {
             // Retrieve timestamp from server
-            {
-                std::lock_guard<std::mutex> lock(state_mutex_);
-                ros_clock_.clock = client_get_timestamp();
-            }
+            ros_clock_.clock = client_get_timestamp();
 
             // Publish clock
             if (publish_clock_)
@@ -923,35 +862,16 @@ namespace airsim_wrapper
         twist.angular.z = -est_twist.angular.z();
     }
 
-    void AirsimWrapper::update_camera_info(CameraROS* camera_ros, float new_fov)
+    void AirsimWrapper::update_camera_info(CameraROS* camera_ros, const float& fov)
     {
-        // Get width and height (assuming constant)
-        const auto& width = camera_ros->camera_info.width;
-        const auto& height = camera_ros->camera_info.height;
-
-        // Calculate focal length based on FoV
-        float f_x = (width / 2.0f) / tan(math_common::deg2rad(new_fov / 2.0f));
+        // Calculate focal length based on FoV (rad)
+        float f_x = (camera_ros->camera_info.width / 2.0f) / tan(fov / 2.0f);
         float f_y = f_x; // Assuming square pixels
 
-        // Principal point at image center
-        float c_x = width / 2.0f;
-        float c_y = height / 2.0f;
-
-        // Set camera intrinsic matrix K (3x3)
-        // Assuming skew is 0
-        camera_ros->camera_info.k = {
-            f_x, 0.0, c_x,
-            0.0, f_y, c_y,
-            0.0, 0.0, 1.0
-        };
-
-        // Set projection matrix P (3x4)
-        // For an ideal camera, P = K * [R|t] where R=I, t=0
-        camera_ros->camera_info.p = {
-            f_x, 0.0, c_x, 0.0,
-            0.0, f_y, c_y, 0.0,
-            0.0, 0.0, 1.0, 0.0
-        };
+        // Update camera intrinsic matrix K
+        auto& k = camera_ros->camera_info.k;
+        k[0] = f_x; // fx
+        k[4] = f_y; // fy
     }
 
     // ════════════════════════════════════════════════════════════════════════════
@@ -962,21 +882,25 @@ namespace airsim_wrapper
     {
         for (auto& [vehicle_name, vehicle_ros] : vehicle_map_)
         {
-            // Odom and transforms
+            // Publish vehicle odom
             vehicle_ros->odom_pub->publish(vehicle_ros->curr_odom);
 
-            // Publish odom tf
+            // Publish vehicle odom tf
             tf_broadcaster_->sendTransform(vehicle_ros->odom_tf_msg);
 
-            // Camera info
-            vehicle_ros->camera_info_array_pub->publish(vehicle_ros->camera_info_array);
-
-            // Publish camera body tfs
-            for (size_t i = 0; i < vehicle_ros->cameras.size(); i++)
+            airsim_interfaces::msg::CameraInfoArray camera_info_array;
+            for (auto& [camera_name, camera_ros] : vehicle_ros->camera_map)
             {
-                auto& camera_ros = vehicle_ros->cameras[i];
+                // Publish camera body tf
                 tf_broadcaster_->sendTransform(camera_ros->body_tf_msg);
+
+                // Get camera info
+                camera_info_array.camera_names.push_back(camera_name);
+                camera_info_array.infos.push_back(camera_ros->camera_info);
             }
+
+            // Publish camera info array
+            vehicle_ros->camera_info_array_pub->publish(camera_info_array);
         }
     }
 
@@ -1002,6 +926,35 @@ namespace airsim_wrapper
     msr::airlib::CameraInfo AirsimWrapper::client_get_camera_info(const std::string& vehicle_name, const std::string& camera_name)
     {
         return airsim_client_state_->simGetCameraInfo(camera_name, vehicle_name);
+    }
+
+    msr::airlib::Vector2r AirsimWrapper::client_get_camera_fov(const std::string& vehicle_name, const std::string& camera_name)
+    {
+        const std::string& fov_string = airsim_client_state_->simGetCurrentFieldOfView(camera_name, vehicle_name);
+
+        // Extract horizontal and vertical FOV values from the string
+        float horizontal_fov = 0.0f;
+        float vertical_fov = 0.0f;
+
+        // Parse the FOV string
+        size_t h_pos = fov_string.find("Horizontal Field Of View: ");
+        size_t v_pos = fov_string.find("Vertical Field Of View: ");
+
+        if (h_pos != std::string::npos) {
+            size_t h_start = h_pos + 26; // Length of "Horizontal Field Of View: "
+            size_t h_end = fov_string.find(";", h_start);
+            if (h_end != std::string::npos) {
+                horizontal_fov = std::stof(fov_string.substr(h_start, h_end - h_start));
+            }
+        }
+
+        if (v_pos != std::string::npos) {
+            size_t v_start = v_pos + 24; // Length of "Vertical Field Of View: "
+            size_t v_end = fov_string.length();
+            vertical_fov = std::stof(fov_string.substr(v_start, v_end - v_start));
+        }
+
+        return msr::airlib::Vector2r(horizontal_fov, vertical_fov);
     }
 
     void AirsimWrapper::client_reset()
@@ -1064,23 +1017,7 @@ namespace airsim_wrapper
 
     void AirsimWrapper::client_set_camera_fov(const std::string& camera_name, const float& fov, const std::string& vehicle_name)
     {
-        airsim_client_control_->simSetCameraFov(camera_name, fov, vehicle_name);
-    }
-
-    void AirsimWrapper::client_set_object_pose(const std::string& object_name, const msr::airlib::Pose& pose)
-    {
-        airsim_client_object_->simSetObjectPose(object_name, pose);
-    }
-
-    void AirsimWrapper::client_flush_plot()
-    {
-        airsim_client_object_->simFlushPersistentMarkers();
-    }
-
-
-    void AirsimWrapper::client_plot_points(const std::vector<msr::airlib::Vector3r>& points, const std::vector<float>& color, const float& size, const float& duration, const bool& is_persistent)
-    {
-        airsim_client_object_->simPlotPoints(points, color, size, duration, is_persistent);
+        airsim_client_control_->simSetCameraFov(camera_name, math_common::rad2deg(fov), vehicle_name);
     }
 
     void AirsimWrapper::client_set_window_image(const int& window_index, const std::string& vehicle_name, const std::string& camera_name, const int& x, const int& y, const int& w, const int& h)
@@ -1088,14 +1025,34 @@ namespace airsim_wrapper
         airsim_client_window_->simSetWindowImage(window_index, vehicle_name, camera_name, msr::airlib::Vector2r(x, y), msr::airlib::Vector2r(w, h));
     }
 
-    void AirsimWrapper::client_spawn_object(const std::string& object_name, const std::string& blueprint, const msr::airlib::Pose& pose, const msr::airlib::Vector3r& scale, const bool& physics_enabled)
+    void AirsimWrapper::client_add_targets(const std::vector<std::string>& target_names, const std::vector<std::string>& target_types, const std::vector<msr::airlib::Vector3r>& positions, const bool& highlight, const std::vector<std::vector<float>>& highlight_color_rgba)
     {
-        airsim_client_object_->simSpawnObject(object_name, blueprint, pose, scale, physics_enabled);
+        airsim_client_tracking_->simAddTargets(target_names, target_types, positions, highlight, highlight_color_rgba);
     }
 
-    void AirsimWrapper::client_destroy_object(const std::string& object_name)
+    void AirsimWrapper::client_add_clusters(const std::vector<std::string>& cluster_names, const std::vector<msr::airlib::Vector3r>& centers, const std::vector<float>& radii, const bool& highlight, const std::vector<std::vector<float>>& highlight_color_rgba)
     {
-        airsim_client_object_->simDestroyObject(object_name);
+        airsim_client_tracking_->simAddClusters(cluster_names, centers, radii, highlight, highlight_color_rgba);
+    }
+
+    void AirsimWrapper::client_remove_targets(const std::vector<std::string>& target_names)
+    {
+        airsim_client_tracking_->simRemoveTargets(target_names);
+    }
+
+    void AirsimWrapper::client_remove_clusters(const std::vector<std::string>& cluster_names)
+    {
+        airsim_client_tracking_->simRemoveClusters(cluster_names);
+    }
+
+    void AirsimWrapper::client_update_targets(const std::vector<std::string>& target_names, const std::vector<msr::airlib::Vector3r>& positions)
+    {
+        airsim_client_tracking_->simUpdateTargets(target_names, positions);
+    }
+
+    void AirsimWrapper::client_update_clusters(const std::vector<std::string>& cluster_names, const std::vector<msr::airlib::Vector3r>& centers, const std::vector<float>& radii)
+    {
+        airsim_client_tracking_->simUpdateClusters(cluster_names, centers, radii);
     }
 
     // ════════════════════════════════════════════════════════════════════════════
@@ -1135,6 +1092,31 @@ namespace airsim_wrapper
     msr::airlib::Vector3r AirsimWrapper::get_airlib_point(const geometry_msgs::msg::Point& geometry_msgs_point) const
     {
         return msr::airlib::Vector3r(geometry_msgs_point.x, -geometry_msgs_point.y, -geometry_msgs_point.z);
+    }
+
+    std::vector<msr::airlib::Vector3r> AirsimWrapper::get_airlib_points(const std::vector<geometry_msgs::msg::Point>& geometry_msgs_points) const
+    {
+        std::vector<msr::airlib::Vector3r> airlib_points;
+        for (const auto& geometry_msgs_point : geometry_msgs_points)
+        {
+            airlib_points.push_back(get_airlib_point(geometry_msgs_point));
+        }
+        return airlib_points;
+    }
+
+    std::vector<float> AirsimWrapper::get_airlib_color(const std_msgs::msg::ColorRGBA& std_msgs_color) const
+    {
+        return std::vector<float>{std_msgs_color.r, std_msgs_color.g, std_msgs_color.b, std_msgs_color.a};
+    }
+
+    std::vector<std::vector<float>> AirsimWrapper::get_airlib_colors(const std::vector<std_msgs::msg::ColorRGBA>& std_msgs_colors) const
+    {
+        std::vector<std::vector<float>> airlib_colors;
+        for (const auto& std_msgs_color : std_msgs_colors)
+        {
+            airlib_colors.push_back(get_airlib_color(std_msgs_color));
+        }
+        return airlib_colors;
     }
 
     geometry_msgs::msg::Transform AirsimWrapper::get_transform_msg_from_airsim(const msr::airlib::Vector3r& position, const msr::airlib::AirSimSettings::Rotation& rotation)

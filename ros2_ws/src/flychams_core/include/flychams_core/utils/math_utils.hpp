@@ -45,6 +45,15 @@ namespace flychams::core
             return yawAngle * pitchAngle * rollAngle;
         }
 
+        static Matrix4r poseToMatrix(const Pose& pose)
+        {
+            Matrix4r T;
+            T.block<3, 3>(0, 0) = pose.orientation.toRotationMatrix();
+            T.block<3, 1>(0, 3) = pose.position;
+            T(3, 3) = 1.0f;
+            return T;
+        }
+
         static float degToRad(float degrees)
         {
             return degrees * M_PIf / 180.0f;

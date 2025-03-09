@@ -25,12 +25,13 @@ namespace flychams::core
         takeoff_group_client_ = node_->create_client<TakeoffGroup>("/airsim/group_of_robots/takeoff");
         land_group_client_ = node_->create_client<LandGroup>("/airsim/group_of_robots/land");
         hover_group_client_ = node_->create_client<HoverGroup>("/airsim/group_of_robots/hover");
-        // Object commands
-        spawn_object_group_client_ = node_->create_client<SpawnObjectGroup>("/airsim/group_of_objects/spawn");
-        despawn_object_group_client_ = node_->create_client<DespawnObjectGroup>("/airsim/group_of_objects/despawn");
-        object_pose_cmd_group_pub_ = node_->create_publisher<ObjectPoseCmdGroup>("/airsim/group_of_objects/pose_cmd", 10);
         // Window commands
         window_image_cmd_group_pub_ = node_->create_publisher<WindowImageCmdGroup>("/airsim/group_of_windows/image_cmd", 10);
+        // Tracking commands
+        add_target_group_client_ = node_->create_client<AddTargetGroup>("/airsim/group_of_targets/add");
+        add_cluster_group_client_ = node_->create_client<AddClusterGroup>("/airsim/group_of_clusters/add");
+        update_target_cmd_group_pub_ = node_->create_publisher<UpdateTargetCmdGroupMsg>("/airsim/group_of_targets/update_cmd", 10);
+        update_cluster_cmd_group_pub_ = node_->create_publisher<UpdateClusterCmdGroupMsg>("/airsim/group_of_clusters/update_cmd", 10);
     }
 
     AirsimTools::~AirsimTools()
@@ -49,14 +50,15 @@ namespace flychams::core
         takeoff_group_client_.reset();
         land_group_client_.reset();
         hover_group_client_.reset();
-        spawn_object_group_client_.reset();
-        despawn_object_group_client_.reset();
+        add_target_group_client_.reset();
+        add_cluster_group_client_.reset();
         // Destroy publishers
         vel_cmd_pub_map_.clear();
         gimbal_angle_cmd_pub_map_.clear();
         camera_fov_cmd_pub_map_.clear();
-        object_pose_cmd_group_pub_.reset();
         window_image_cmd_group_pub_.reset();
+        update_target_cmd_group_pub_.reset();
+        update_cluster_cmd_group_pub_.reset();
         // Destroy node
         node_.reset();
     }
@@ -241,63 +243,6 @@ namespace flychams::core
     }
 
     // ════════════════════════════════════════════════════════════════════════════
-    // OBJECT CONTROL: Service-based control methods
-    // ════════════════════════════════════════════════════════════════════════════
-
-    bool AirsimTools::spawnObjectGroup(const IDs& object_ids, const std::vector<PoseMsg>& poses, const std::vector<float>& scales, const std::vector<TargetType>& object_types)
-    {
-        // Create request
-        auto request = std::make_shared<SpawnObjectGroup::Request>();
-        request->object_names = object_ids;
-        request->poses = poses;
-        request->scales = scales;
-
-        for (size_t i = 0; i < object_ids.size(); ++i)
-        {
-            // Set object blueprint based on object type
-            switch (object_types[i])
-            {
-            case TargetType::Human:
-                request->blueprints.push_back("CubeBP");
-                break;
-            default:
-                RCLCPP_ERROR(node_->get_logger(), "Unknown object type: %d", static_cast<int>(object_types[i]));
-                rclcpp::shutdown();
-                return false;
-            }
-        }
-
-        // Send request and wait for response
-        return RosUtils::sendRequestSync<SpawnObjectGroup>(node_, spawn_object_group_client_, request, 100000);
-    }
-
-    bool AirsimTools::despawnObjectGroup(const IDs& object_ids)
-    {
-        // Create request
-        auto request = std::make_shared<DespawnObjectGroup::Request>();
-        request->object_names = object_ids;
-
-        // Send request and wait for response
-        return RosUtils::sendRequestSync<DespawnObjectGroup>(node_, despawn_object_group_client_, request, 1000);
-    }
-
-    // ════════════════════════════════════════════════════════════════════════════
-    // OBJECT CONTROL: Publisher-based control methods
-    // ════════════════════════════════════════════════════════════════════════════
-
-    void AirsimTools::setObjectPoseGroup(const IDs& object_ids, const std::vector<PoseMsg>& poses, const std::string& frame_id)
-    {
-        // Create message
-        ObjectPoseCmdGroup msg;
-        msg.header = RosUtils::createHeader(node_, frame_id);
-        msg.object_names = object_ids;
-        msg.poses = poses;
-
-        // Publish message
-        object_pose_cmd_group_pub_->publish(msg);
-    }
-
-    // ════════════════════════════════════════════════════════════════════════════
     // WINDOW CONTROL: Service-based control methods
     // ════════════════════════════════════════════════════════════════════════════
 
@@ -315,6 +260,82 @@ namespace flychams::core
 
         // Publish message
         window_image_cmd_group_pub_->publish(msg);
+    }
+
+    // ════════════════════════════════════════════════════════════════════════════
+    // TRACKING CONTROL: Service-based control methods
+    // ════════════════════════════════════════════════════════════════════════════
+
+    bool AirsimTools::addTargetGroup(const IDs& target_ids, const std::vector<TargetType>& target_types, const std::vector<PointMsg>& positions, const bool& highlight, const std::vector<ColorMsg>& highlight_colors)
+    {
+        // Create request
+        auto request = std::make_shared<AddTargetGroup::Request>();
+        request->target_names = target_ids;
+        request->positions = positions;
+        request->highlight = highlight;
+        request->highlight_color_rgba = highlight_colors;
+
+        for (size_t i = 0; i < target_ids.size(); ++i)
+        {
+            // Set target type based on target type
+            switch (target_types[i])
+            {
+            case TargetType::Cube:
+                request->target_types.push_back("Cube");
+                break;
+            case TargetType::Human:
+                request->target_types.push_back("Human");
+                break;
+            default:
+                RCLCPP_ERROR(node_->get_logger(), "Unknown target type: %d", static_cast<int>(target_types[i]));
+                request->target_types.push_back("Cube");
+                break;
+            }
+        }
+
+        // Send request and wait for response
+        return RosUtils::sendRequestSync<AddTargetGroup>(node_, add_target_group_client_, request, 100000);
+    }
+
+    bool AirsimTools::addClusterGroup(const IDs& cluster_ids, const std::vector<PointMsg>& centers, const std::vector<float>& radii, const bool& highlight, const std::vector<ColorMsg>& highlight_colors)
+    {
+        // Create request
+        auto request = std::make_shared<AddClusterGroup::Request>();
+        request->cluster_names = cluster_ids;
+        request->centers = centers;
+        request->radii = radii;
+        request->highlight = highlight;
+        request->highlight_color_rgba = highlight_colors;
+
+        // Send request and wait for response
+        return RosUtils::sendRequestSync<AddClusterGroup>(node_, add_cluster_group_client_, request, 100000);
+    }
+
+    // ════════════════════════════════════════════════════════════════════════════
+    // OBJECT CONTROL: Publisher-based control methods
+    // ════════════════════════════════════════════════════════════════════════════
+
+    void AirsimTools::updateTargetGroup(const IDs& target_ids, const std::vector<PointMsg>& positions)
+    {
+        // Create message
+        UpdateTargetCmdGroup msg;
+        msg.target_names = target_ids;
+        msg.positions = positions;
+
+        // Publish message
+        update_target_cmd_group_pub_->publish(msg);
+    }
+
+    void AirsimTools::updateClusterGroup(const IDs& cluster_ids, const std::vector<PointMsg>& centers, const std::vector<float>& radii)
+    {
+        // Create message
+        UpdateClusterCmdGroup msg;
+        msg.cluster_names = cluster_ids;
+        msg.centers = centers;
+        msg.radii = radii;
+
+        // Publish message
+        update_cluster_cmd_group_pub_->publish(msg);
     }
 
 } // namespace flychams::core

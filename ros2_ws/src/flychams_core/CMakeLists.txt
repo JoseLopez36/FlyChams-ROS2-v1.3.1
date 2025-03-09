@@ -18,6 +18,7 @@ find_package(Eigen3 REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
+find_package(OpenCV REQUIRED)
 find_package(airsim_interfaces REQUIRED)
 find_package(flychams_interfaces REQUIRED)
 
@@ -44,6 +45,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
   $<INSTALL_INTERFACE:include>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/external/json/single_include>
   $<INSTALL_INTERFACE:include>
+  ${OpenCV_INCLUDE_DIRS}
 )
 
 target_link_libraries(${PROJECT_NAME}
@@ -51,6 +53,7 @@ target_link_libraries(${PROJECT_NAME}
     tf2::tf2
     tf2_ros::tf2_ros
     tf2_geometry_msgs::tf2_geometry_msgs
+    ${OpenCV_LIBS}
     OpenXLSX::OpenXLSX
 )
 
@@ -65,6 +68,7 @@ ament_target_dependencies(${PROJECT_NAME}
   tf2
   tf2_ros
   tf2_geometry_msgs
+  OpenCV
   airsim_interfaces
   flychams_interfaces
 )
@@ -117,6 +121,7 @@ ament_export_dependencies(
   tf2
   tf2_ros
   tf2_geometry_msgs
+  OpenCV
   airsim_interfaces
   flychams_interfaces
 )

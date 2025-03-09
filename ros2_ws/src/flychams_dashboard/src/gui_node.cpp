@@ -1,5 +1,8 @@
 #include "rclcpp/rclcpp.hpp"
 
+// Standard includes
+#include <mutex>
+
 // Dashboard includes
 #include "flychams_dashboard/gui/gui_controller.hpp"
 
@@ -34,32 +37,83 @@ public: // Constructor/Destructor
 
     void onInit() override
     {
-        // Initialize GUI controller
-        gui_controller_ = std::make_shared<GuiController>(node_, config_tools_, ext_tools_, topic_tools_, tf_tools_);
+        // Initialize selected agent
+        selected_agent_id_ = "NONE";
+
+        // Set update timer
+        float update_rate = RosUtils::getParameterOr<float>(node_, "gui.gui_update_rate", 10.0f);
+        update_timer_ = RosUtils::createTimerByRate(node_, update_rate,
+            std::bind(&GuiNode::onUpdate, this));
     }
 
     void onShutdown() override
     {
-        // Destroy GUI controller
-        gui_controller_.reset();
+        std::lock_guard<std::mutex> lock(mutex_);
+        // Destroy GUI controllers
+        gui_controllers_.clear();
+    }
+
+private: // Update methods
+    void onUpdate()
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        if (selected_agent_id_ != "NONE")
+        {
+            // Update GUI controller
+            auto controller = gui_controllers_[selected_agent_id_];
+            controller->updateTracking();
+        }
     }
 
 private: // Agent management
     void onAddAgent(const ID& agent_id) override
     {
-        // Add agent to GUI controller
-        gui_controller_->addAgent(agent_id);
+        std::lock_guard<std::mutex> lock(mutex_);
+        // Create and add GUI controller
+        auto controller = std::make_shared<GuiController>(agent_id, node_, config_tools_, ext_tools_, topic_tools_, tf_tools_);
+        gui_controllers_.insert({ agent_id, controller });
+        // Select agent if no agent is selected
+        if (selected_agent_id_ == "NONE")
+        {
+            selected_agent_id_ = agent_id;
+            onAgentSwitched();
+        }
     }
 
     void onRemoveAgent(const ID& agent_id) override
     {
+        std::lock_guard<std::mutex> lock(mutex_);
         // Remove agent from GUI controller
-        gui_controller_->removeAgent(agent_id);
+        gui_controllers_.erase(agent_id);
+        // Select new agent if it is the one being removed
+        if (selected_agent_id_ == agent_id)
+        {
+            // Get first agent
+            auto it = gui_controllers_.begin();
+            selected_agent_id_ = it->first;
+            onAgentSwitched();
+        }
+    }
+
+    void onAgentSwitched()
+    {
+        // Update tracking windows
+        if (selected_agent_id_ != "NONE")
+        {
+            auto controller = gui_controllers_[selected_agent_id_];
+            controller->updateAgent();
+        }
     }
 
 private: // Components
-    // GUI controller
-    GuiController::SharedPtr gui_controller_;
+    // Selected agent to display
+    ID selected_agent_id_;
+    // GUI controller per agent
+    std::unordered_map<ID, GuiController::SharedPtr> gui_controllers_;
+    // Mutex for GUI controllers
+    std::mutex mutex_;
+    // Timer
+    TimerPtr update_timer_;
 };
 
 int main(int argc, char** argv)

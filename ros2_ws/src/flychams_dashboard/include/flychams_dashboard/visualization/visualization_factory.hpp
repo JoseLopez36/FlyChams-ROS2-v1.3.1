@@ -47,6 +47,7 @@ namespace flychams::dashboard
     private: // Parameters
         float metrics_update_rate_;
         float markers_update_rate_;
+
     private: // Data
         // Element metrics
         std::unordered_map<core::ID, core::AgentMetrics> curr_agent_metrics_;
@@ -65,8 +66,6 @@ namespace flychams::dashboard
         std::unordered_set<core::ID> agent_ids_;
         std::unordered_set<core::ID> target_ids_;
         std::unordered_set<core::ID> cluster_ids_;
-        // Metrics, markers, and IDs mutex
-        std::mutex mutex_;
         // Time data
         core::Time prev_time_;
 
@@ -86,9 +85,11 @@ namespace flychams::dashboard
         void clusterInfoCallback(const core::ID& cluster_id, const core::ClusterInfoMsg::SharedPtr msg);
         // Update
         void updateMetrics();
-        void updateMarkers();
+        void updateRvizMarkers();
 
     private:
+        // Subscriber callback group
+        core::CallbackGroupPtr callback_group_;
         // Subscribers
         std::unordered_map<std::string, core::SubscriberPtr<core::OdometryMsg>> agent_odom_subs_;
         std::unordered_map<std::string, core::SubscriberPtr<core::AgentGoalMsg>> agent_goal_subs_;
@@ -104,7 +105,7 @@ namespace flychams::dashboard
         std::unordered_map<std::string, core::PublisherPtr<core::MarkerArrayMsg>> cluster_markers_pubs_;
         // Timers
         core::TimerPtr metrics_timer_;
-        core::TimerPtr markers_timer_;
+        core::TimerPtr rviz_markers_timer_;
     };
 
 } // namespace flychams::dashboard

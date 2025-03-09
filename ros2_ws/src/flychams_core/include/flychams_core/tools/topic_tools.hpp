@@ -244,48 +244,48 @@ namespace flychams::core
         }
 
         // Subscribers
-        SubscriberPtr<RegistrationMsg> createAgentRegistrationSubscriber(const std::function<void(const RegistrationMsg::SharedPtr)>& callback)
+        SubscriberPtr<RegistrationMsg> createAgentRegistrationSubscriber(const std::function<void(const RegistrationMsg::SharedPtr)>& callback, const rclcpp::SubscriptionOptions& options = rclcpp::SubscriptionOptions())
         {
             rclcpp::QoS qos = rclcpp::QoS(rclcpp::KeepLast(1)).reliable().transient_local();
-            return node_->create_subscription<RegistrationMsg>(getAgentRegistrationTopic(), qos, callback);
+            return node_->create_subscription<RegistrationMsg>(getAgentRegistrationTopic(), qos, callback, options);
         }
-        SubscriberPtr<OdometryMsg> createAgentOdomSubscriber(const ID& agent_id, const std::function<void(const OdometryMsg::SharedPtr)>& callback)
+        SubscriberPtr<OdometryMsg> createAgentOdomSubscriber(const ID& agent_id, const std::function<void(const OdometryMsg::SharedPtr)>& callback, const rclcpp::SubscriptionOptions& options = rclcpp::SubscriptionOptions())
         {
-            return node_->create_subscription<OdometryMsg>(getAgentOdomTopic(agent_id), 10, callback);
+            return node_->create_subscription<OdometryMsg>(getAgentOdomTopic(agent_id), 10, callback, options);
         }
-        SubscriberPtr<CameraInfoArrayMsg> createAgentCameraInfoArraySubscriber(const ID& agent_id, const std::function<void(const CameraInfoArrayMsg::SharedPtr)>& callback)
+        SubscriberPtr<CameraInfoArrayMsg> createAgentCameraInfoArraySubscriber(const ID& agent_id, const std::function<void(const CameraInfoArrayMsg::SharedPtr)>& callback, const rclcpp::SubscriptionOptions& options = rclcpp::SubscriptionOptions())
         {
-            return node_->create_subscription<CameraInfoArrayMsg>(getAgentCameraInfoArrayTopic(agent_id), 10, callback);
+            return node_->create_subscription<CameraInfoArrayMsg>(getAgentCameraInfoArrayTopic(agent_id), 10, callback, options);
         }
-        SubscriberPtr<AgentGoalMsg> createAgentGoalSubscriber(const ID& agent_id, const std::function<void(const AgentGoalMsg::SharedPtr)>& callback)
+        SubscriberPtr<AgentGoalMsg> createAgentGoalSubscriber(const ID& agent_id, const std::function<void(const AgentGoalMsg::SharedPtr)>& callback, const rclcpp::SubscriptionOptions& options = rclcpp::SubscriptionOptions())
         {
-            return node_->create_subscription<AgentGoalMsg>(getAgentGoalTopic(agent_id), 10, callback);
+            return node_->create_subscription<AgentGoalMsg>(getAgentGoalTopic(agent_id), 10, callback, options);
         }
-        SubscriberPtr<AgentInfoMsg> createAgentInfoSubscriber(const ID& agent_id, const std::function<void(const AgentInfoMsg::SharedPtr)>& callback)
+        SubscriberPtr<AgentInfoMsg> createAgentInfoSubscriber(const ID& agent_id, const std::function<void(const AgentInfoMsg::SharedPtr)>& callback, const rclcpp::SubscriptionOptions& options = rclcpp::SubscriptionOptions())
         {
-            return node_->create_subscription<AgentInfoMsg>(getAgentInfoTopic(agent_id), 10, callback);
+            return node_->create_subscription<AgentInfoMsg>(getAgentInfoTopic(agent_id), 10, callback, options);
         }
-        SubscriberPtr<TrackingGoalMsg> createTrackingGoalSubscriber(const ID& agent_id, const std::function<void(const TrackingGoalMsg::SharedPtr)>& callback)
+        SubscriberPtr<TrackingGoalMsg> createTrackingGoalSubscriber(const ID& agent_id, const std::function<void(const TrackingGoalMsg::SharedPtr)>& callback, const rclcpp::SubscriptionOptions& options = rclcpp::SubscriptionOptions())
         {
-            return node_->create_subscription<TrackingGoalMsg>(getTrackingGoalTopic(agent_id), 10, callback);
+            return node_->create_subscription<TrackingGoalMsg>(getTrackingGoalTopic(agent_id), 10, callback, options);
         }
-        SubscriberPtr<RegistrationMsg> createTargetRegistrationSubscriber(const std::function<void(const RegistrationMsg::SharedPtr)>& callback)
-        {
-            rclcpp::QoS qos = rclcpp::QoS(rclcpp::KeepLast(1)).reliable().transient_local();
-            return node_->create_subscription<RegistrationMsg>(getTargetRegistrationTopic(), qos, callback);
-        }
-        SubscriberPtr<TargetInfoMsg> createTargetInfoSubscriber(const ID& target_id, const std::function<void(const TargetInfoMsg::SharedPtr)>& callback)
-        {
-            return node_->create_subscription<TargetInfoMsg>(getTargetInfoTopic(target_id), 10, callback);
-        }
-        SubscriberPtr<RegistrationMsg> createClusterRegistrationSubscriber(const std::function<void(const RegistrationMsg::SharedPtr)>& callback)
+        SubscriberPtr<RegistrationMsg> createTargetRegistrationSubscriber(const std::function<void(const RegistrationMsg::SharedPtr)>& callback, const rclcpp::SubscriptionOptions& options = rclcpp::SubscriptionOptions())
         {
             rclcpp::QoS qos = rclcpp::QoS(rclcpp::KeepLast(1)).reliable().transient_local();
-            return node_->create_subscription<RegistrationMsg>(getClusterRegistrationTopic(), qos, callback);
+            return node_->create_subscription<RegistrationMsg>(getTargetRegistrationTopic(), qos, callback, options);
         }
-        SubscriberPtr<ClusterInfoMsg> createClusterInfoSubscriber(const ID& cluster_id, const std::function<void(const ClusterInfoMsg::SharedPtr)>& callback)
+        SubscriberPtr<TargetInfoMsg> createTargetInfoSubscriber(const ID& target_id, const std::function<void(const TargetInfoMsg::SharedPtr)>& callback, const rclcpp::SubscriptionOptions& options = rclcpp::SubscriptionOptions())
         {
-            return node_->create_subscription<ClusterInfoMsg>(getClusterInfoTopic(cluster_id), 10, callback);
+            return node_->create_subscription<TargetInfoMsg>(getTargetInfoTopic(target_id), 10, callback, options);
+        }
+        SubscriberPtr<RegistrationMsg> createClusterRegistrationSubscriber(const std::function<void(const RegistrationMsg::SharedPtr)>& callback, const rclcpp::SubscriptionOptions& options = rclcpp::SubscriptionOptions())
+        {
+            rclcpp::QoS qos = rclcpp::QoS(rclcpp::KeepLast(1)).reliable().transient_local();
+            return node_->create_subscription<RegistrationMsg>(getClusterRegistrationTopic(), qos, callback, options);
+        }
+        SubscriberPtr<ClusterInfoMsg> createClusterInfoSubscriber(const ID& cluster_id, const std::function<void(const ClusterInfoMsg::SharedPtr)>& callback, const rclcpp::SubscriptionOptions& options = rclcpp::SubscriptionOptions())
+        {
+            return node_->create_subscription<ClusterInfoMsg>(getClusterInfoTopic(cluster_id), 10, callback, options);
         }
     };
 
