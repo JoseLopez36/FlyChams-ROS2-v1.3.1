@@ -70,9 +70,9 @@
                     "X": 0.0,
                     "Y": -0.0,
                     "Z": 0.15000000596046448,
-                    "Roll": 90.0,
+                    "Roll": 0.0,
                     "Pitch": -90.0,
-                    "Yaw": -0.0
+                    "Yaw": -90.0
                 },
                 "AGENTCAM_AGENT05": {
                     "CaptureSettings": [

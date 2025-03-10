@@ -27,6 +27,8 @@ namespace flychams::core
         hover_group_client_ = node_->create_client<HoverGroup>("/airsim/group_of_robots/hover");
         // Window commands
         window_image_cmd_group_pub_ = node_->create_publisher<WindowImageCmdGroup>("/airsim/group_of_windows/image_cmd", 10);
+        window_rectangle_cmd_pub_ = node_->create_publisher<WindowRectangleCmd>("/airsim/group_of_windows/rectangle_cmd", 10);
+        window_string_cmd_pub_ = node_->create_publisher<WindowStringCmd>("/airsim/group_of_windows/string_cmd", 10);
         // Tracking commands
         add_target_group_client_ = node_->create_client<AddTargetGroup>("/airsim/group_of_targets/add");
         add_cluster_group_client_ = node_->create_client<AddClusterGroup>("/airsim/group_of_clusters/add");
@@ -57,6 +59,8 @@ namespace flychams::core
         gimbal_angle_cmd_pub_map_.clear();
         camera_fov_cmd_pub_map_.clear();
         window_image_cmd_group_pub_.reset();
+        window_rectangle_cmd_pub_.reset();
+        window_string_cmd_pub_.reset();
         update_target_cmd_group_pub_.reset();
         update_cluster_cmd_group_pub_.reset();
         // Destroy node
@@ -253,13 +257,48 @@ namespace flychams::core
         msg.window_indices = getWindowIndices(window_ids);
         msg.vehicle_names = vehicle_ids;
         msg.camera_names = camera_ids;
-        msg.crop_x = crop_x;
-        msg.crop_y = crop_y;
-        msg.crop_w = crop_w;
-        msg.crop_h = crop_h;
+        for (size_t i = 0; i < window_ids.size(); i++)
+        {
+            PointMsg corner;
+            corner.x = crop_x[i];
+            corner.y = crop_y[i];
+            msg.corners.push_back(corner);
+            PointMsg size;
+            size.x = crop_w[i];
+            size.y = crop_h[i];
+            msg.sizes.push_back(size);
+        }
 
         // Publish message
         window_image_cmd_group_pub_->publish(msg);
+    }
+
+    void AirsimTools::setWindowRectangles(const ID& window_id, const std::vector<PointMsg>& corners, const std::vector<PointMsg>& sizes, const ColorMsg& color, const float& thickness)
+    {
+        // Create message
+        WindowRectangleCmd msg;
+        msg.window_index = getWindowIndex(window_id);
+        msg.corners = corners;
+        msg.sizes = sizes;
+        msg.color = color;
+        msg.thickness = thickness;
+
+        // Publish message
+        window_rectangle_cmd_pub_->publish(msg);
+    }
+
+    void AirsimTools::setWindowStrings(const ID& window_id, const std::vector<std::string>& strings, const std::vector<PointMsg>& positions, const ColorMsg& color, const float& scale)
+    {
+        // Create message
+        WindowStringCmd msg;
+        msg.window_index = getWindowIndex(window_id);
+        msg.strings = strings;
+        msg.positions = positions;
+        msg.color = color;
+        msg.scale = scale;
+
+        // Publish message
+        window_string_cmd_pub_->publish(msg);
     }
 
     // ════════════════════════════════════════════════════════════════════════════

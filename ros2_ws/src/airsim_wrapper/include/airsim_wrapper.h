@@ -71,6 +71,8 @@ STRICT_MODE_ON
 
 // Window commands
 #include <airsim_interfaces/msg/window_image_cmd_group.hpp>
+#include <airsim_interfaces/msg/window_rectangle_cmd.hpp>
+#include <airsim_interfaces/msg/window_string_cmd.hpp>
 
 // Tracking commands
 #include <airsim_interfaces/srv/add_target_group.hpp>
@@ -182,6 +184,8 @@ namespace airsim_wrapper
         void gimbal_angle_cmd_cb(const std::string& vehicle_name, const airsim_interfaces::msg::GimbalAngleCmd::SharedPtr gimbal_angle_cmd_msg);
         void camera_fov_cmd_cb(const std::string& vehicle_name, const airsim_interfaces::msg::CameraFovCmd::SharedPtr camera_fov_cmd_msg);
         void window_image_cmd_group_cb(const airsim_interfaces::msg::WindowImageCmdGroup::SharedPtr window_image_cmd_group_msg);
+        void window_rectangle_cmd_cb(const airsim_interfaces::msg::WindowRectangleCmd::SharedPtr window_rectangle_cmd_msg);
+        void window_string_cmd_cb(const airsim_interfaces::msg::WindowStringCmd::SharedPtr window_string_cmd_msg);
         void update_target_cmd_group_cb(const airsim_interfaces::msg::UpdateTargetCmdGroup::SharedPtr update_target_cmd_group_msg);
         void update_cluster_cmd_group_cb(const airsim_interfaces::msg::UpdateClusterCmdGroup::SharedPtr update_cluster_cmd_group_msg);
 
@@ -210,9 +214,7 @@ namespace airsim_wrapper
     // PRIVATE: Settings and Configuration
     private:
         void create_ros_comms_from_settings_json();
-        void convert_tf_msg_to_enu(geometry_msgs::msg::TransformStamped& tf_msg);
         void convert_tf_msg_to_ros(geometry_msgs::msg::TransformStamped& tf_msg);
-        void convert_pose_msg_to_enu(geometry_msgs::msg::Pose& pose_msg);
         void convert_pose_msg_to_ros(geometry_msgs::msg::Pose& pose_msg);
         void initialize_vehicle_odom(VehicleROS* vehicle_ros, const VehicleSetting& vehicle_setting);
         void initialize_vehicle_tf(VehicleROS* vehicle_ros, const VehicleSetting& vehicle_setting);
@@ -246,7 +248,9 @@ namespace airsim_wrapper
         void client_set_camera_fov(const std::string& camera_name, const float& fov, const std::string& vehicle_name);
 
         // Window methods
-        void client_set_window_image(const int& window_index, const std::string& vehicle_name, const std::string& camera_name, const int& x, const int& y, const int& w, const int& h);
+        void client_set_window_images(const std::vector<int>& window_indices, const std::vector<std::string>& vehicle_names, const std::vector<std::string>& camera_names, const std::vector<msr::airlib::Vector2r>& corners, const std::vector<msr::airlib::Vector2r>& sizes);
+        void client_set_window_rectangle(const int& window_index, const std::vector<msr::airlib::Vector2r>& corners, const std::vector<msr::airlib::Vector2r>& sizes, const std::vector<float>& color, const float& thickness);
+        void client_set_window_strings(const int& window_index, const std::vector<std::string>& strings, const std::vector<msr::airlib::Vector2r>& positions, const std::vector<float>& color, const float& scale);
 
         // Tracking methods
         void client_add_targets(const std::vector<std::string>& target_names, const std::vector<std::string>& target_types, const std::vector<msr::airlib::Vector3r>& positions, const bool& highlight, const std::vector<std::vector<float>>& highlight_color_rgba);
@@ -267,7 +271,9 @@ namespace airsim_wrapper
         msr::airlib::Pose get_airlib_pose(const float& x, const float& y, const float& z, const msr::airlib::Quaternionr& airlib_quat) const;
         msr::airlib::Pose get_airlib_pose(const geometry_msgs::msg::Pose& geometry_msgs_pose) const;
         msr::airlib::Vector3r get_airlib_point(const geometry_msgs::msg::Point& geometry_msgs_point) const;
+        msr::airlib::Vector2r get_airlib_point_2d(const geometry_msgs::msg::Point& geometry_msgs_point) const;
         std::vector<msr::airlib::Vector3r> get_airlib_points(const std::vector<geometry_msgs::msg::Point>& geometry_msgs_points) const;
+        std::vector<msr::airlib::Vector2r> get_airlib_points_2d(const std::vector<geometry_msgs::msg::Point>& geometry_msgs_points) const;
         std::vector<float> get_airlib_color(const std_msgs::msg::ColorRGBA& std_msgs_color) const;
         std::vector<std::vector<float>> get_airlib_colors(const std::vector<std_msgs::msg::ColorRGBA>& std_msgs_colors) const;
         geometry_msgs::msg::Transform get_transform_msg_from_airsim(const msr::airlib::Vector3r& position, const msr::airlib::AirSimSettings::Rotation& rotation);
@@ -296,6 +302,8 @@ namespace airsim_wrapper
 
         // Window group subscribers
         rclcpp::Subscription<airsim_interfaces::msg::WindowImageCmdGroup>::SharedPtr window_image_cmd_group_sub_;
+        rclcpp::Subscription<airsim_interfaces::msg::WindowRectangleCmd>::SharedPtr window_rectangle_cmd_sub_;
+        rclcpp::Subscription<airsim_interfaces::msg::WindowStringCmd>::SharedPtr window_string_cmd_sub_;
 
         // Tracking group services
         rclcpp::Service<airsim_interfaces::srv::AddTargetGroup>::SharedPtr add_target_group_srvr_;

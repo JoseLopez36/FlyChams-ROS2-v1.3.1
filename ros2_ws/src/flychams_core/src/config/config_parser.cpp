@@ -385,9 +385,9 @@ namespace flychams::core
 					auto initial_orientation_vec = parseStringToVector<float>(initial_orientation_str, 3, ',');
 					if (initial_orientation_vec.size() >= 3)
 					{
-						agent->initial_orientation(0) = MathUtils::degToRad(initial_orientation_vec[0]);
-						agent->initial_orientation(1) = MathUtils::degToRad(initial_orientation_vec[1]);
-						agent->initial_orientation(2) = MathUtils::degToRad(initial_orientation_vec[2]);
+						agent->initial_orientation(0) = MathUtils::degToRad(initial_orientation_vec[2]);
+						agent->initial_orientation(1) = MathUtils::degToRad(initial_orientation_vec[0]);
+						agent->initial_orientation(2) = MathUtils::degToRad(initial_orientation_vec[1]);
 					}
 
 					agent->safety_radius = getCellValueOrDefault<float>(row.findCell(9), 4.0f);
@@ -499,18 +499,18 @@ namespace flychams::core
 					auto mount_orientation_vec = parseStringToVector<float>(mount_orientation_str, 3, ',');
 					if (mount_orientation_vec.size() >= 3)
 					{
-						head->mount_orientation(0) = MathUtils::degToRad(mount_orientation_vec[0]);
-						head->mount_orientation(1) = MathUtils::degToRad(mount_orientation_vec[1]);
-						head->mount_orientation(2) = MathUtils::degToRad(mount_orientation_vec[2]);
+						head->mount_orientation(0) = MathUtils::degToRad(mount_orientation_vec[2]);
+						head->mount_orientation(1) = MathUtils::degToRad(mount_orientation_vec[0]);
+						head->mount_orientation(2) = MathUtils::degToRad(mount_orientation_vec[1]);
 					}
 
 					auto initial_orientation_str = getCellValueOrDefault<std::string>(row.findCell(9), "(Pitch=0.0, Yaw=0.0, Roll=0.0)");
 					auto initial_orientation_vec = parseStringToVector<float>(initial_orientation_str, 3, ',');
 					if (initial_orientation_vec.size() >= 3)
 					{
-						head->initial_orientation(0) = MathUtils::degToRad(initial_orientation_vec[0]);
-						head->initial_orientation(1) = MathUtils::degToRad(initial_orientation_vec[1]);
-						head->initial_orientation(2) = MathUtils::degToRad(initial_orientation_vec[2]);
+						head->initial_orientation(0) = MathUtils::degToRad(initial_orientation_vec[2]);
+						head->initial_orientation(1) = MathUtils::degToRad(initial_orientation_vec[0]);
+						head->initial_orientation(2) = MathUtils::degToRad(initial_orientation_vec[1]);
 					}
 
 					head->initial_focal = getCellValueOrDefault<float>(row.findCell(10), 10.0f) / 1000.0f;

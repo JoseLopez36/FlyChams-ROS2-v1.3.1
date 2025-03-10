@@ -215,12 +215,13 @@ namespace flychams::core
             params.k_ref(1, 2) = params.height / 2.0f;
 
             // Print camera parameters for debugging
-            // RCLCPP_INFO(node_->get_logger(), "Camera parameters for agent %s, head %s:", agent_id.c_str(), head_id.c_str());
-            // RCLCPP_INFO(node_->get_logger(), "  ID: %s", params.id.c_str());
-            // RCLCPP_INFO(node_->get_logger(), "  Focal lengths: min=%.3f, max=%.3f, ref=%.3f [m]", params.f_min, params.f_max, params.f_ref);
-            // RCLCPP_INFO(node_->get_logger(), "  Resolution: %d x %d [pix]", params.width, params.height);
-            // RCLCPP_INFO(node_->get_logger(), "  Sensor dimensions: %.6f x %.6f [m]", params.sensor_width, params.sensor_height);
-            // RCLCPP_INFO(node_->get_logger(), "  Regularized pixel size: %.6f [m/pix]", params.rho);
+            // RCLCPP_ERROR(node_->get_logger(), "Camera parameters for agent %s, head %s:", agent_id.c_str(), head_id.c_str());
+            // RCLCPP_ERROR(node_->get_logger(), "  ID: %s", params.id.c_str());
+            // RCLCPP_ERROR(node_->get_logger(), "  Focal lengths: min=%.3f, max=%.3f, ref=%.3f [m]", params.f_min, params.f_max, params.f_ref);
+            // RCLCPP_ERROR(node_->get_logger(), "  Resolution: %d x %d [pix]", params.width, params.height);
+            // RCLCPP_ERROR(node_->get_logger(), "  Sensor dimensions: %.6f x %.6f [m]", params.sensor_width, params.sensor_height);
+            // RCLCPP_ERROR(node_->get_logger(), "  Regularized pixel size: %.6f [m/pix]", params.rho);
+            // RCLCPP_ERROR(node_->get_logger(), "  Intrinsic matrix K: fx=%f fy=%f cx=%f cy=%f", params.k_ref(0, 0), params.k_ref(1, 1), params.k_ref(0, 2), params.k_ref(1, 2));
 
             return params;
         }

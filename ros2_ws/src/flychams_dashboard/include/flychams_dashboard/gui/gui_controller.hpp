@@ -69,6 +69,16 @@ namespace flychams::dashboard
         std::vector<int> crop_y_;
         std::vector<int> crop_w_;
         std::vector<int> crop_h_;
+        // Rectangle vectors (for drawing on central window)
+        std::vector<core::PointMsg> rectangle_corners_;
+        std::vector<core::PointMsg> rectangle_sizes_;
+        core::ColorMsg rectangle_color_;
+        float rectangle_thickness_;
+        // String vectors (for drawing on central window)
+        std::vector<std::string> strings_;
+        std::vector<core::PointMsg> string_positions_;
+        core::ColorMsg string_color_;
+        float string_scale_;
 
     private: // Safe callbacks
         void trackingCallback(const core::TrackingGoalMsg::SharedPtr msg);

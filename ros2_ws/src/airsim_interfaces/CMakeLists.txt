@@ -32,6 +32,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/GimbalAngleCmd.msg"
   # Window services and messages
   "msg/WindowImageCmdGroup.msg"
+  "msg/WindowRectangleCmd.msg"
+  "msg/WindowStringCmd.msg"
   # Tracking services and messages
   "srv/AddTargetGroup.srv"
   "srv/AddClusterGroup.srv"

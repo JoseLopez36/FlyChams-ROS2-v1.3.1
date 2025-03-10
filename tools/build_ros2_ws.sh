@@ -22,7 +22,7 @@ if [ $# -eq 0 ]; then
     echo ""
     echo ""
     echo ""
-    colcon build --cmake-args -DCMAKE_BUILD_TYPE=Release || {
+    colcon build --parallel-workers 3 --cmake-args -DCMAKE_BUILD_TYPE=Release || {
         echo ""
         echo "============================================================================================"
         echo "❌ Build error."
@@ -42,7 +42,7 @@ else
     echo ""
     echo ""
     echo ""
-    colcon build --packages-select "$@" --cmake-args -DCMAKE_BUILD_TYPE=Release || {
+    colcon build --packages-select "$@" --parallel-workers 3 --cmake-args -DCMAKE_BUILD_TYPE=Release || {
         echo ""
         echo "============================================================================================"
         echo "❌ Build error for packages: $@"

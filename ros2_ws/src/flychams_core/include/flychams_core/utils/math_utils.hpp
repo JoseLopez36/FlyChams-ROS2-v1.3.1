@@ -47,10 +47,9 @@ namespace flychams::core
 
         static Matrix4r poseToMatrix(const Pose& pose)
         {
-            Matrix4r T;
+            Matrix4r T = Matrix4r::Identity();
             T.block<3, 3>(0, 0) = pose.orientation.toRotationMatrix();
             T.block<3, 1>(0, 3) = pose.position;
-            T(3, 3) = 1.0f;
             return T;
         }
 

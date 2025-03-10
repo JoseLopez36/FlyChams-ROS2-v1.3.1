@@ -75,6 +75,38 @@ namespace flychams::dashboard
             crop_h_[i] = 0;
         }
 
+        // Initialize drawing data
+        // Rectangle data
+        // Cyan color
+        rectangle_color_.r = 0.0f;
+        rectangle_color_.g = 1.0f;
+        rectangle_color_.b = 1.0f;
+        rectangle_color_.a = 0.05f;
+        rectangle_thickness_ = 30.0f;
+        for (size_t i = 0; i < tracking_window_ids_.size(); i++)
+        {
+            PointMsg infinite_point;
+            infinite_point.x = HUGE_VALF;
+            infinite_point.y = HUGE_VALF;
+            rectangle_corners_.push_back(infinite_point);
+            rectangle_sizes_.push_back(infinite_point);
+        }
+        // String data
+        // Cyan color
+        string_color_.r = 0.0f;
+        string_color_.g = 1.0f;
+        string_color_.b = 1.0f;
+        string_color_.a = 0.05f;
+        string_scale_ = 12.5f;
+        for (size_t i = 0; i < tracking_window_ids_.size(); i++)
+        {
+            PointMsg infinite_point;
+            infinite_point.x = HUGE_VALF;
+            infinite_point.y = HUGE_VALF;
+            strings_.push_back("TW" + std::to_string(i));
+            string_positions_.push_back(infinite_point);
+        }
+
         // Subscribe to tracking goal
         tracking_sub_ = topic_tools_->createTrackingGoalSubscriber(agent_id_,
             std::bind(&GuiController::trackingCallback, this, std::placeholders::_1));
@@ -151,6 +183,14 @@ namespace flychams::dashboard
                 crop_y_[i] = crop.y;
                 crop_w_[i] = crop.w;
                 crop_h_[i] = crop.h;
+                // Update rectangle corners and sizes
+                rectangle_corners_[j].x = crop.x;
+                rectangle_corners_[j].y = crop.y;
+                rectangle_sizes_[j].x = crop.w;
+                rectangle_sizes_[j].y = crop.h;
+                // Update string positions
+                string_positions_[j].x = crop.x;
+                string_positions_[j].y = crop.y - 200.0f;
             }
             break;
 
@@ -170,6 +210,12 @@ namespace flychams::dashboard
 
         // Set tracking view windows
         ext_tools_->setWindowImageGroup(window_ids_, vehicle_ids_, camera_ids_, crop_x_, crop_y_, crop_w_, crop_h_);
+
+        // Draw rectangles on central window
+        ext_tools_->setWindowRectangles(central_window_id_, rectangle_corners_, rectangle_sizes_, rectangle_color_, rectangle_thickness_);
+
+        // Draw strings on central window
+        ext_tools_->setWindowStrings(central_window_id_, strings_, string_positions_, string_color_, string_scale_);
     }
 
 } // namespace flychams::dashboard

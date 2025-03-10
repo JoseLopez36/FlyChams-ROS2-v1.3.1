@@ -218,6 +218,12 @@ namespace flychams::coordination
         // Project points on central camera
         Matrix2Xr tab_p = CameraUtils::projectPoints(tab_P, wTc, camera_params.k_ref);
 
+        // Flip the X coordinates to handle the mirroring issue. TODO: Check if this is correct
+        for (int i = 0; i < tab_p.cols(); i++)
+        {
+            tab_p(0, i) = camera_params.width - tab_p(0, i);
+        }
+
         // Update tracking goal
         for (int i = 0; i < tracking_params_.n; i++)
         {

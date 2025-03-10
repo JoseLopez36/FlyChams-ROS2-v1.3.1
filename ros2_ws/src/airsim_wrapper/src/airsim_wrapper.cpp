@@ -304,6 +304,10 @@ namespace airsim_wrapper
         // Create group of windows subscribers
         window_image_cmd_group_sub_ = nh_->create_subscription<airsim_interfaces::msg::WindowImageCmdGroup>(
             "group_of_windows/image_cmd", 10, std::bind(&AirsimWrapper::window_image_cmd_group_cb, this, _1), window_sub_options);
+        window_rectangle_cmd_sub_ = nh_->create_subscription<airsim_interfaces::msg::WindowRectangleCmd>(
+            "group_of_windows/rectangle_cmd", 10, std::bind(&AirsimWrapper::window_rectangle_cmd_cb, this, _1), window_sub_options);
+        window_string_cmd_sub_ = nh_->create_subscription<airsim_interfaces::msg::WindowStringCmd>(
+            "group_of_windows/string_cmd", 10, std::bind(&AirsimWrapper::window_string_cmd_cb, this, _1), window_sub_options);
         // Create tracking services
         add_target_group_srvr_ = nh_->create_service<airsim_interfaces::srv::AddTargetGroup>("group_of_targets/add", std::bind(&AirsimWrapper::add_target_group_cb, this, _1, _2));
         add_cluster_group_srvr_ = nh_->create_service<airsim_interfaces::srv::AddClusterGroup>("group_of_clusters/add", std::bind(&AirsimWrapper::add_cluster_group_cb, this, _1, _2));
@@ -491,20 +495,52 @@ namespace airsim_wrapper
         const auto& window_indices = window_image_cmd_group_msg->window_indices;
         const auto& vehicle_names = window_image_cmd_group_msg->vehicle_names;
         const auto& camera_names = window_image_cmd_group_msg->camera_names;
-        const auto& crop_x = window_image_cmd_group_msg->crop_x;
-        const auto& crop_y = window_image_cmd_group_msg->crop_y;
-        const auto& crop_w = window_image_cmd_group_msg->crop_w;
-        const auto& crop_h = window_image_cmd_group_msg->crop_h;
+        const auto& corners = window_image_cmd_group_msg->corners;
+        const auto& sizes = window_image_cmd_group_msg->sizes;
         try
         {
-            for (size_t i = 0; i < window_indices.size(); i++)
-            {
-                if (window_indices[i] == -1)
-                    continue;
+            // Send command to server
+            client_set_window_images(window_indices, vehicle_names, camera_names, get_airlib_points_2d(corners), get_airlib_points_2d(sizes));
+        }
+        catch (rpc::rpc_error& e) {
+            std::string msg = e.get_error().as<std::string>();
+            RCLCPP_ERROR(nh_->get_logger(), "Exception raised by the API:\n%s", msg.c_str());
+            return; // Stop execution of this callback
+        }
+    }
 
-                // Send command to server
-                client_set_window_image(window_indices[i], vehicle_names[i], camera_names[i], crop_x[i], crop_y[i], crop_w[i], crop_h[i]);
-            }
+    void AirsimWrapper::window_rectangle_cmd_cb(const airsim_interfaces::msg::WindowRectangleCmd::SharedPtr window_rectangle_cmd_msg)
+    {
+        // Extract request data
+        const auto& window_index = window_rectangle_cmd_msg->window_index;
+        const auto& corners = window_rectangle_cmd_msg->corners;
+        const auto& sizes = window_rectangle_cmd_msg->sizes;
+        const auto& color = window_rectangle_cmd_msg->color;
+        const auto& thickness = window_rectangle_cmd_msg->thickness;
+        try
+        {
+            // Send command to server
+            client_set_window_rectangle(window_index, get_airlib_points_2d(corners), get_airlib_points_2d(sizes), get_airlib_color(color), thickness);
+        }
+        catch (rpc::rpc_error& e) {
+            std::string msg = e.get_error().as<std::string>();
+            RCLCPP_ERROR(nh_->get_logger(), "Exception raised by the API:\n%s", msg.c_str());
+            return; // Stop execution of this callback
+        }
+    }
+
+    void AirsimWrapper::window_string_cmd_cb(const airsim_interfaces::msg::WindowStringCmd::SharedPtr window_string_cmd_msg)
+    {
+        // Extract request data
+        const auto& window_index = window_string_cmd_msg->window_index;
+        const auto& strings = window_string_cmd_msg->strings;
+        const auto& positions = window_string_cmd_msg->positions;
+        const auto& scale = window_string_cmd_msg->scale;
+        const auto& color = window_string_cmd_msg->color;
+        try
+        {
+            // Send command to server
+            client_set_window_strings(window_index, strings, get_airlib_points_2d(positions), get_airlib_color(color), scale);
         }
         catch (rpc::rpc_error& e) {
             std::string msg = e.get_error().as<std::string>();
@@ -1026,9 +1062,19 @@ namespace airsim_wrapper
         airsim_client_control_->simSetCameraFov(camera_name, math_common::rad2deg(fov), vehicle_name);
     }
 
-    void AirsimWrapper::client_set_window_image(const int& window_index, const std::string& vehicle_name, const std::string& camera_name, const int& x, const int& y, const int& w, const int& h)
+    void AirsimWrapper::client_set_window_images(const std::vector<int>& window_indices, const std::vector<std::string>& vehicle_names, const std::vector<std::string>& camera_names, const std::vector<msr::airlib::Vector2r>& corners, const std::vector<msr::airlib::Vector2r>& sizes)
     {
-        airsim_client_window_->simSetWindowImage(window_index, vehicle_name, camera_name, msr::airlib::Vector2r(x, y), msr::airlib::Vector2r(w, h));
+        airsim_client_window_->simSetWindowImages(window_indices, vehicle_names, camera_names, corners, sizes);
+    }
+
+    void AirsimWrapper::client_set_window_rectangle(const int& window_index, const std::vector<msr::airlib::Vector2r>& corners, const std::vector<msr::airlib::Vector2r>& sizes, const std::vector<float>& color, const float& thickness)
+    {
+        airsim_client_window_->simDrawRectangles(window_index, corners, sizes, color, thickness);
+    }
+
+    void AirsimWrapper::client_set_window_strings(const int& window_index, const std::vector<std::string>& strings, const std::vector<msr::airlib::Vector2r>& positions, const std::vector<float>& color, const float& scale)
+    {
+        airsim_client_window_->simDrawStrings(window_index, strings, positions, color, scale);
     }
 
     void AirsimWrapper::client_add_targets(const std::vector<std::string>& target_names, const std::vector<std::string>& target_types, const std::vector<msr::airlib::Vector3r>& positions, const bool& highlight, const std::vector<std::vector<float>>& highlight_color_rgba)
@@ -1100,12 +1146,27 @@ namespace airsim_wrapper
         return msr::airlib::Vector3r(geometry_msgs_point.x, -geometry_msgs_point.y, -geometry_msgs_point.z);
     }
 
+    msr::airlib::Vector2r AirsimWrapper::get_airlib_point_2d(const geometry_msgs::msg::Point& geometry_msgs_point) const
+    {
+        return msr::airlib::Vector2r(geometry_msgs_point.x, geometry_msgs_point.y);
+    }
+
     std::vector<msr::airlib::Vector3r> AirsimWrapper::get_airlib_points(const std::vector<geometry_msgs::msg::Point>& geometry_msgs_points) const
     {
-        std::vector<msr::airlib::Vector3r> airlib_points;
-        for (const auto& geometry_msgs_point : geometry_msgs_points)
+        std::vector<msr::airlib::Vector3r> airlib_points(geometry_msgs_points.size());
+        for (size_t i = 0; i < geometry_msgs_points.size(); i++)
         {
-            airlib_points.push_back(get_airlib_point(geometry_msgs_point));
+            airlib_points[i] = get_airlib_point(geometry_msgs_points[i]);
+        }
+        return airlib_points;
+    }
+
+    std::vector<msr::airlib::Vector2r> AirsimWrapper::get_airlib_points_2d(const std::vector<geometry_msgs::msg::Point>& geometry_msgs_points) const
+    {
+        std::vector<msr::airlib::Vector2r> airlib_points(geometry_msgs_points.size());
+        for (size_t i = 0; i < geometry_msgs_points.size(); i++)
+        {
+            airlib_points[i] = get_airlib_point_2d(geometry_msgs_points[i]);
         }
         return airlib_points;
     }
@@ -1229,36 +1290,12 @@ namespace airsim_wrapper
             camera_setting.rotation.roll = vehicle_setting.rotation.roll;
     }
 
-    void AirsimWrapper::convert_tf_msg_to_enu(geometry_msgs::msg::TransformStamped& tf_msg)
-    {
-        std::swap(tf_msg.transform.translation.x, tf_msg.transform.translation.y);
-        std::swap(tf_msg.transform.rotation.x, tf_msg.transform.rotation.y);
-        tf_msg.transform.translation.z = -tf_msg.transform.translation.z;
-        tf_msg.transform.rotation.z = -tf_msg.transform.rotation.z;
-    }
-
     void AirsimWrapper::convert_tf_msg_to_ros(geometry_msgs::msg::TransformStamped& tf_msg)
     {
         tf_msg.transform.translation.z = -tf_msg.transform.translation.z;
         tf_msg.transform.translation.y = -tf_msg.transform.translation.y;
         tf_msg.transform.rotation.z = -tf_msg.transform.rotation.z;
         tf_msg.transform.rotation.y = -tf_msg.transform.rotation.y;
-    }
-
-    void AirsimWrapper::convert_pose_msg_to_enu(geometry_msgs::msg::Pose& pose_msg)
-    {
-        std::swap(pose_msg.position.x, pose_msg.position.y);
-        std::swap(pose_msg.orientation.x, pose_msg.orientation.y);
-        pose_msg.position.z = -pose_msg.position.z;
-        pose_msg.orientation.z = -pose_msg.orientation.z;
-    }
-
-    void AirsimWrapper::convert_pose_msg_to_ros(geometry_msgs::msg::Pose& pose_msg)
-    {
-        pose_msg.position.z = -pose_msg.position.z;
-        pose_msg.position.y = -pose_msg.position.y;
-        pose_msg.orientation.z = -pose_msg.orientation.z;
-        pose_msg.orientation.y = -pose_msg.orientation.y;
     }
 
     geometry_msgs::msg::Transform AirsimWrapper::get_camera_optical_tf() const
