@@ -750,6 +750,9 @@ namespace airsim_wrapper
         {
             // Send command to server
             client_add_targets(target_names, target_types, get_airlib_points(positions), highlight, get_airlib_colors(highlight_color_rgba));
+
+            // Delay for 1 second
+            std::this_thread::sleep_for(std::chrono::seconds(1));
         }
         catch (rpc::rpc_error& e) {
             std::string msg = e.get_error().as<std::string>();
@@ -776,6 +779,9 @@ namespace airsim_wrapper
         {
             // Send command to server
             client_add_clusters(cluster_names, get_airlib_points(centers), radii, highlight, get_airlib_colors(highlight_color_rgba));
+
+            // Delay for 1 second
+            std::this_thread::sleep_for(std::chrono::seconds(1));
         }
         catch (rpc::rpc_error& e) {
             std::string msg = e.get_error().as<std::string>();

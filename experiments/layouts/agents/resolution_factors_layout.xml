@@ -4,16 +4,25 @@
   <Tab containers="1" tab_name="tab1">
    <Container>
     <DockSplitter count="1" sizes="1" orientation="-">
-     <DockArea name="...">
-      <plot flip_x="false" style="Lines" flip_y="false" mode="TimeSeries">
-       <range bottom="0.633213" top="1.008946" left="204.728073" right="209.630039"/>
-       <limitY/>
-       <curve name="/flychams/AGENT05/tracking_goal/resolution_factors[0]" color="#1f77b4"/>
-       <curve name="/flychams/AGENT05/tracking_goal/resolution_factors[1]" color="#d62728"/>
-       <curve name="/flychams/AGENT05/tracking_goal/resolution_factors[2]" color="#1ac938"/>
-       <curve name="/flychams/AGENT05/tracking_goal/resolution_factors[3]" color="#ff7f0e"/>
-      </plot>
-     </DockArea>
+     <DockSplitter count="2" sizes="0.5;0.5" orientation="|">
+      <DockArea name="...">
+       <plot flip_x="false" style="Lines" flip_y="false" mode="TimeSeries">
+        <range bottom="0.374432" top="0.938630" left="22.303054" right="38.409484"/>
+        <limitY/>
+        <curve name="/flychams/AGENT05/tracking_goal/resolution_factors[0]" color="#1f77b4"/>
+        <curve name="/flychams/AGENT05/tracking_goal/resolution_factors[1]" color="#d62728"/>
+        <curve name="/flychams/AGENT05/tracking_goal/resolution_factors[2]" color="#1ac938"/>
+        <curve name="/flychams/AGENT05/tracking_goal/resolution_factors[3]" color="#ff7f0e"/>
+       </plot>
+      </DockArea>
+      <DockArea name="...">
+       <plot flip_x="false" style="Lines" flip_y="false" mode="TimeSeries">
+        <range bottom="34.900000" top="35.100000" left="22.303054" right="38.409484"/>
+        <limitY/>
+        <curve name="/flychams/AGENT05/goal/position/z" color="#f14cc1"/>
+       </plot>
+      </DockArea>
+     </DockSplitter>
     </DockSplitter>
    </Container>
   </Tab>
@@ -42,7 +51,7 @@
    <max_array_size value="100"/>
    <boolean_strings_to_number value="true"/>
    <remove_suffix_from_strings value="true"/>
-   <selected_topics value="/flychams/AGENT05/tracking_goal"/>
+   <selected_topics value="/flychams/AGENT05/tracking_goal;/flychams/AGENT05/goal"/>
   </plugin>
   <plugin ID="UDP Server"/>
   <plugin ID="WebSocket Server"/>

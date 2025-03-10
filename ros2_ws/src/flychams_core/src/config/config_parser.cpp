@@ -948,6 +948,7 @@ namespace flychams::core
 
 			cameras[head_id] = {
 				{"CaptureSettings", {{{"ImageType", 0}, {"Width", width}, {"Height", height}, {"FOV_Degrees", fov}}}},
+				{"Gimbal", {{"Stabilization", 1}, {"Pitch", MathUtils::radToDeg(-ori.y())}, {"Roll", MathUtils::radToDeg(ori.x())}, {"Yaw", MathUtils::radToDeg(-ori.z())}}},
 				{"X", pos.x()},
 				{"Y", -pos.y()},
 				{"Z", -pos.z()},

@@ -211,8 +211,7 @@ namespace flychams::control
 			else
 			{
 				// Goal is not set, wait 250 ms and try again
-				std::this_thread::sleep_for(250ms);
-				RCLCPP_INFO(node_->get_logger(), "Agent controller: Goal is not set, wait 250 ms and try again");
+				RCLCPP_INFO(node_->get_logger(), "Agent controller: Goal is not set");
 			}
 		}
 		break;
