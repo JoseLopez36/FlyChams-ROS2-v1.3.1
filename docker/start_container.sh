@@ -12,6 +12,7 @@ else
     --net=host \
     --env DISPLAY=$DISPLAY \
     -v ${FLYCHAMS_ROS2_PATH}:/home/testuser/FlyChams-ROS2 \
+    -v ${FLYCHAMS_COSYS_AIRSIM_PATH}:/home/testuser/FlyChams-Cosys-AirSim \
     --name ${CONTAINER_NAME} \
     flychams-ros2:latest \
     bash

@@ -38,7 +38,6 @@ public: // Constructor/Destructor
     void onInit() override
     {
         // Cycle through all target groups in the config
-        std::vector<float> target_scales;
         std::vector<TargetType> target_types;
         std::vector<ColorMsg> highlight_colors;
         for (const auto& [id, config_ptr] : config_tools_->getGroups())
@@ -71,19 +70,19 @@ public: // Constructor/Destructor
                 target_controllers_.push_back(target_controller);
                 target_ids_.push_back(target_id);
                 target_positions_.push_back(target_controller->getPosition());
-                target_scales.push_back(1.0f);
                 target_types.push_back(TargetType::Human);
+                // Red color
                 ColorMsg color;
                 color.r = 1.0f;
                 color.g = 0.0f;
                 color.b = 0.0f;
-                color.a = 1.0f;
+                color.a = 0.2f;
                 highlight_colors.push_back(color);
             }
         }
 
         // Add targets to simulation
-        ext_tools_->addTargetGroup(target_ids_, target_types, target_positions_, false, highlight_colors);
+        ext_tools_->addTargetGroup(target_ids_, target_types, target_positions_, config_tools_->getSimulation()->draw_world_markers, highlight_colors);
 
         // Set target update timer
         prev_time_ = RosUtils::getTimeNow(node_);

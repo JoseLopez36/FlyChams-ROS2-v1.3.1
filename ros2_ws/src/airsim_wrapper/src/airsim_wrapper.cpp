@@ -100,7 +100,7 @@ namespace airsim_wrapper
             for (const auto& [vehicle_name, _] : vehicle_map_)
             {
                 RCLCPP_INFO(nh_->get_logger(), "Taking off vehicle %s...", vehicle_name.c_str());
-                client_takeoff(3.0f, vehicle_name, true);
+                client_takeoff(3.0f, vehicle_name, false);
             }
             client_pause(true);
         }
@@ -152,28 +152,34 @@ namespace airsim_wrapper
 
     void AirsimWrapper::initialize_airsim()
     {
-        try
-        {
-            // Create airsim client for vehicle state
-            airsim_client_state_ = std::unique_ptr<msr::airlib::MultirotorRpcLibClient>(new msr::airlib::MultirotorRpcLibClient(host_ip_, host_port_));
+        // Create airsim clients
+        airsim_client_state_ = std::unique_ptr<msr::airlib::MultirotorRpcLibClient>(new msr::airlib::MultirotorRpcLibClient(host_ip_, host_port_));
+        airsim_client_control_ = std::unique_ptr<msr::airlib::MultirotorRpcLibClient>(new msr::airlib::MultirotorRpcLibClient(host_ip_, host_port_));
+        airsim_client_window_ = std::unique_ptr<msr::airlib::RpcLibClientBase>(new msr::airlib::RpcLibClientBase(host_ip_, host_port_));
+        airsim_client_tracking_ = std::unique_ptr<msr::airlib::RpcLibClientBase>(new msr::airlib::RpcLibClientBase(host_ip_, host_port_));
+
+        // Connect to AirSim in parallel
+        std::vector<std::future<void>> futures;
+        futures.push_back(std::async(std::launch::async, [this]() {
             airsim_client_state_->confirmConnection();
+            }));
 
-            // Create airsim client for simulation control
-            airsim_client_control_ = std::unique_ptr<msr::airlib::MultirotorRpcLibClient>(new msr::airlib::MultirotorRpcLibClient(host_ip_, host_port_));
+        futures.push_back(std::async(std::launch::async, [this]() {
             airsim_client_control_->confirmConnection();
+            }));
 
-            // Create airsim client for window control
-            airsim_client_window_ = std::unique_ptr<msr::airlib::RpcLibClientBase>(new msr::airlib::RpcLibClientBase(host_ip_, host_port_));
+        futures.push_back(std::async(std::launch::async, [this]() {
             airsim_client_window_->confirmConnection();
+            }));
 
-            // Create airsim client for tracking control
-            airsim_client_tracking_ = std::unique_ptr<msr::airlib::RpcLibClientBase>(new msr::airlib::RpcLibClientBase(host_ip_, host_port_));
+        futures.push_back(std::async(std::launch::async, [this]() {
             airsim_client_tracking_->confirmConnection();
-        }
-        catch (rpc::rpc_error& e) {
-            std::string msg = e.get_error().as<std::string>();
-            RCLCPP_ERROR(nh_->get_logger(), "Exception raised by the API, something went wrong.\n%s", msg.c_str());
-            rclcpp::shutdown();
+            }));
+
+        // Wait for all clients to connect
+        for (auto& future : futures)
+        {
+            future.get();
         }
     }
 
