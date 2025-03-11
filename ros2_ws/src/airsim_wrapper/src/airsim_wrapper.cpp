@@ -102,6 +102,12 @@ namespace airsim_wrapper
                 RCLCPP_INFO(nh_->get_logger(), "Taking off vehicle %s...", vehicle_name.c_str());
                 client_takeoff(3.0f, vehicle_name, false);
             }
+
+            // Remove all targets and clusters from previous runs
+            client_remove_all_targets();
+            client_remove_all_clusters();
+
+            // Pause simulation again
             client_pause(true);
         }
         catch (rpc::rpc_error& e) {
@@ -136,12 +142,6 @@ namespace airsim_wrapper
 
     void AirsimWrapper::shutdown()
     {
-        // Remove all targets and clusters
-        client_remove_all_targets();
-        client_remove_all_clusters();
-        // Reset simulation
-        client_pause(true);
-        client_reset();
         is_running_.store(false);
         // Destroy timers
         airsim_state_update_timer_.reset();
