@@ -823,11 +823,10 @@ namespace flychams::core
 	{
 		settings["SettingsVersion"] = 2.0;
 		settings["SimMode"] = "Multirotor";
-		settings["ClockType"] = (config_ptr->simulation->autopilot == Autopilot::PX4) ? "SteppableClock" : "";
+		settings["ClockType"] = "SteppableClock";
 		settings["ClockSpeed"] = config_ptr->simulation->clock_speed;
 		settings["ViewMode"] = "NoDisplay";
-		settings["RecordUIVisible"] = false;
-		settings["LogMessagesVisible"] = false;
+		settings["LogMessagesVisible"] = true;
 		settings["ApiServerPort"] = 41451;
 
 		/*
@@ -867,33 +866,27 @@ namespace flychams::core
 		nlohmann::ordered_json vehicles;
 
 		bool first_time = true;
-		int tcp_offset = 0;
+		int instance = 0;
 		for (const auto& [agent_id, agent_ptr] : config_ptr->agents)
 		{
 			// Parameters
-			std::string vehicle_type = (config_ptr->simulation->autopilot == Autopilot::PX4) ? "PX4Multirotor" : "SimpleFlight";
-			std::string vehicle_model = (agent_ptr->drone->drone_type == DroneType::Hexacopter) ? "Hexacopter" : "Quadcopter";
-			std::string pawn_path = (agent_ptr->drone->drone_type == DroneType::Hexacopter) ? "DefaultHexacopter" : "DefaultQuadrotor";
-			bool auto_create = (config_ptr->simulation->autopilot == Autopilot::PX4) ? false : true;
-			bool use_serial = (config_ptr->simulation->autopilot == Autopilot::PX4) ? false : true;
-			bool lock_step = (config_ptr->simulation->autopilot == Autopilot::PX4) ? true : false;
-			bool use_tcp = (config_ptr->simulation->autopilot == Autopilot::PX4) ? true : false;
+			std::string vehicle_model = (agent_ptr->drone->drone_type == DroneType::Quadcopter) ? "Quadcopter" : "Hexacopter";
+			std::string pawn_path = (agent_ptr->drone->drone_type == DroneType::Quadcopter) ? "DefaultQuadrotor" : "DefaultHexacopter";
 			Vector3r ini_pos = agent_ptr->initial_position;
 			Vector3r ini_ori = agent_ptr->initial_orientation;
 
 			vehicles[agent_id] = {
-				{"VehicleType", vehicle_type},
+				{"VehicleType", "PX4Multirotor"},
 				//{"PawnPath", pawn_path},
 				{"Model", vehicle_model},
-				{"AutoCreate", auto_create},
-				{"DefaultVehicleState", "Armed"},
-				{"EnableCollisions", true},
-				{"UseSerial", use_serial},
-				{"LockStep", lock_step},
-				{"UseTcp", use_tcp},
-				{"TcpPort", 4560 + tcp_offset},
-				{"ControlPortLocal", 14540 + tcp_offset},
-				{"ControlPortRemote", 14580 + tcp_offset},
+				{"UseSerial", false},
+				{"LockStep", true},
+				{"UseTcp", true},
+				{"TcpPort", 4560 + instance},
+				{"ControlIp", "remote"},
+				{"ControlPortLocal", 14540 + instance},
+				{"ControlPortRemote", 14580 + instance},
+				{"LocalHostIp", "172.17.0.1"},
 				{"Sensors", {{"Barometer", {{"SensorType", 1}, {"Enabled", true}, {"PressureFactorSigma", 0.0001825}}}}},
 				{"Parameters", {{"NAV_RCL_ACT", 0}, {"NAV_DLL_ACT", 0}, {"COM_OBL_ACT", 1}, {"LPE_LAT", config_ptr->map->origin_geopoint.latitude}, {"LPE_LON", config_ptr->map->origin_geopoint.longitude}}},
 				{"X", ini_pos.x()},
@@ -913,8 +906,8 @@ namespace flychams::core
 				first_time = false;
 			}
 
-			// Update TCP port offset
-			tcp_offset++;
+			// Update instance offset
+			instance++;
 		}
 
 		settings["Vehicles"] = vehicles;

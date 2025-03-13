@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# Get number of threads
+N_THREADS=$(nproc)
+if [ -n "$PARALLEL" ]; then
+    N_THREADS=$PARALLEL
+fi
+
 # Verify directory
 WORKSPACE_DIR=$FLYCHAMS_ROS2_PATH/ros2_ws
 if [ ! -d "$WORKSPACE_DIR" ]; then
@@ -16,13 +22,13 @@ if [ $# -eq 0 ]; then
     echo ""
     echo "============================================================================================"
     echo "============================================================================================"
-    echo "🚀 STARTING FULL WORKSPACE BUILD"
+    echo "🚀 STARTING FULL WORKSPACE BUILD (using $N_THREADS threads)"
     echo "============================================================================================"
     echo "============================================================================================"
     echo ""
     echo ""
     echo ""
-    colcon build --parallel-workers 3 --cmake-args -DCMAKE_BUILD_TYPE=Release || {
+    colcon build --parallel-workers $N_THREADS --cmake-args -DCMAKE_BUILD_TYPE=Release || {
         echo ""
         echo "============================================================================================"
         echo "❌ Build error."
@@ -36,13 +42,13 @@ else
     echo ""
     echo "============================================================================================"
     echo "============================================================================================"
-    echo "🚀 BUILDING SPECIFIED PACKAGES: $@"
+    echo "🚀 BUILDING SPECIFIED PACKAGES: $@ (using $N_THREADS threads)"
     echo "============================================================================================"
     echo "============================================================================================"
     echo ""
     echo ""
     echo ""
-    colcon build --packages-select "$@" --parallel-workers 3 --cmake-args -DCMAKE_BUILD_TYPE=Release || {
+    colcon build --parallel-workers $N_THREADS --packages-select "$@" --cmake-args -DCMAKE_BUILD_TYPE=Release || {
         echo ""
         echo "============================================================================================"
         echo "❌ Build error for packages: $@"

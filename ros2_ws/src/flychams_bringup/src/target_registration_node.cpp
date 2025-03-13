@@ -86,7 +86,7 @@ public: // Constructor/Destructor
 
         // Set target update timer
         prev_time_ = RosUtils::getTimeNow(node_);
-        const auto& update_rate = RosUtils::getParameter<float>(node_, "target_registration.target_update_rate");
+        const auto& update_rate = RosUtils::getParameter<float>(node_, "target_update_rate");
         update_timer_ = RosUtils::createTimerByRate(node_, update_rate,
             std::bind(&TargetRegistrationNode::onUpdate, this));
     }

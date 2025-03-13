@@ -1,5 +1,9 @@
 #include "rclcpp/rclcpp.hpp"
 
+// Standard includes
+#include <iostream>
+#include <cstdlib>
+
 // Core includes
 #include "flychams_core/base/registrator_node.hpp"
 
@@ -35,6 +39,21 @@ public: // Constructor/Destructor
         // Cycle through all agents in the config and register them
         for (const auto& [id, _] : config_tools_->getAgents())
         {
+            // MAVROS parameters
+            std::string control_ip = "172.17.0.2";
+            std::string udp_port = "14030";
+            std::string remote_port = "14280";
+
+            // Create MAVROS instance with namespace set to the agent ID
+            // Format: ros2 launch mavros px4.launch fcu_url:=udp://:14030@172.17.0.2:14280 namespace:=/AGENT_ID
+            std::string cmd = "ros2 launch mavros px4.launch fcu_url:=udp://:" + udp_port + "@" + control_ip + ":" + remote_port + " namespace:=/" + id;
+            int ret = std::system(cmd.c_str());
+            if (ret != 0) {
+                RCLCPP_ERROR(this->get_logger(), "Failed to launch MAVROS instance for agent %s", id.c_str());
+                rclcpp::shutdown();
+                return;
+            }
+
             // Register agent
             registerAgent(id);
         }

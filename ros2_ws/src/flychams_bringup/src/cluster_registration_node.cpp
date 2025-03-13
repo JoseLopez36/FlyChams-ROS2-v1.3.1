@@ -84,7 +84,7 @@ public: // Constructor/Destructor
         ext_tools_->addClusterGroup(cluster_ids_, cluster_centers_, cluster_radii_, config_tools_->getSimulation()->draw_world_markers, highlight_colors);
 
         // Set cluster update timer
-        const auto& update_rate = RosUtils::getParameter<float>(node_, "cluster_registration.cluster_update_rate");
+        const auto& update_rate = RosUtils::getParameter<float>(node_, "cluster_update_rate");
         update_timer_ = RosUtils::createTimerByRate(node_, update_rate,
             std::bind(&ClusterRegistrationNode::onUpdate, this),
             callback_group);

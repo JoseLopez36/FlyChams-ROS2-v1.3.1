@@ -1,9 +1,0 @@
-/flychams/**:
-  ros__parameters:
-    target_registration:
-      # Update rate (Hz)
-      target_update_rate: 20.0
-
-    cluster_registration:
-      # Update rate (Hz)
-      cluster_update_rate: 20.0

@@ -4,39 +4,14 @@ using namespace std::placeholders;
 
 namespace airsim_wrapper
 {
-    constexpr char AirsimWrapper::CAM_YML_NAME[];
-    constexpr char AirsimWrapper::WIDTH_YML_NAME[];
-    constexpr char AirsimWrapper::HEIGHT_YML_NAME[];
-    constexpr char AirsimWrapper::K_YML_NAME[];
-    constexpr char AirsimWrapper::D_YML_NAME[];
-    constexpr char AirsimWrapper::R_YML_NAME[];
-    constexpr char AirsimWrapper::P_YML_NAME[];
-    constexpr char AirsimWrapper::DMODEL_YML_NAME[];
-
-    const std::unordered_map<int, std::string> AirsimWrapper::image_type_int_to_string_map_ = {
-        { 0, "Scene" },
-        { 1, "DepthPlanar" },
-        { 2, "DepthPerspective" },
-        { 3, "DepthVis" },
-        { 4, "DisparityNormalized" },
-        { 5, "Segmentation" },
-        { 6, "SurfaceNormals" },
-        { 7, "Infrared" },
-        { 8, "OpticalFlow" },
-        { 9, "OpticalFlowVis" },
-        { 10, "Annotation" }
-
-    };
-
     // ════════════════════════════════════════════════════════════════════════════
     // CONSTRUCTOR/DESTRUCTOR
     // ════════════════════════════════════════════════════════════════════════════
 
-    AirsimWrapper::AirsimWrapper(const std::shared_ptr<rclcpp::Node> nh, const std::string& host_ip, uint16_t host_port, bool enable_api_control, bool enable_world_plot)
+    AirsimWrapper::AirsimWrapper(const std::shared_ptr<rclcpp::Node> nh, const std::string& host_ip, uint16_t host_port, bool enable_world_plot)
         : airsim_settings_parser_(host_ip, host_port)
         , host_ip_(host_ip)
         , host_port_(host_port)
-        , enable_api_control_(enable_api_control)
         , enable_world_plot_(enable_world_plot)
         , airsim_client_state_(nullptr)
         , airsim_client_control_(nullptr)
@@ -44,7 +19,6 @@ namespace airsim_wrapper
         , airsim_client_tracking_(nullptr)
 
         , nh_(nh)
-        , publish_clock_(false)
         , is_connected_(false)
         , is_running_(false)
     {
@@ -56,14 +30,11 @@ namespace airsim_wrapper
             return;
         }
 
-        // Get clock speed
-        clock_speed_ = AirSimSettings::singleton().clock_speed;
-
         // Create TF broadcaster and static TF broadcaster
         tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(nh_);
         static_tf_pub_ = std::make_shared<tf2_ros::StaticTransformBroadcaster>(nh_);
 
-        // Initialize AirSim clients
+        // Initialize AirSim clients0
         RCLCPP_INFO(nh_->get_logger(), "Initializing AirSim clients...");
         initialize_airsim();
 

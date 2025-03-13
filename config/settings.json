@@ -1,11 +1,10 @@
 {
     "SettingsVersion": 2.0,
     "SimMode": "Multirotor",
-    "ClockType": "",
-    "ClockSpeed": 0.5,
+    "ClockType": "SteppableClock",
+    "ClockSpeed": 0.10000000149011612,
     "ViewMode": "NoDisplay",
-    "RecordUIVisible": false,
-    "LogMessagesVisible": false,
+    "LogMessagesVisible": true,
     "ApiServerPort": 41451,
     "OriginGeopoint": {
         "Latitude": 47.63999938964844,
@@ -26,17 +25,16 @@
     },
     "Vehicles": {
         "AGENT05": {
-            "VehicleType": "SimpleFlight",
+            "VehicleType": "PX4Multirotor",
             "Model": "Quadcopter",
-            "AutoCreate": true,
-            "DefaultVehicleState": "Armed",
-            "EnableCollisions": true,
-            "UseSerial": true,
-            "LockStep": false,
-            "UseTcp": false,
+            "UseSerial": false,
+            "LockStep": true,
+            "UseTcp": true,
             "TcpPort": 4560,
+            "ControlIp": "remote",
             "ControlPortLocal": 14540,
             "ControlPortRemote": 14580,
+            "LocalHostIp": "172.17.0.1",
             "Sensors": {
                 "Barometer": {
                     "SensorType": 1,
@@ -62,8 +60,8 @@
                     "CaptureSettings": [
                         {
                             "ImageType": 0,
-                            "Width": 8192,
-                            "Height": 4608,
+                            "Width": 2560,
+                            "Height": 1440,
                             "FOV_Degrees": 146.283203125
                         }
                     ],

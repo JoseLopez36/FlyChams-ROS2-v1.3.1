@@ -16,8 +16,8 @@ else
 fi
 
 # Launch FlyChams with AirSim
-echo "Launching FlyingChameleons with AirSim"
-ros2 launch flychams_bringup flychams_airsim.launch.py &
+echo "Running FlyingChameleons simulation..."
+ros2 launch flychams_bringup flychams_run.launch.py &
 FLYCHAMS_PID=$!
 
 # Launch bag record conditionally
@@ -33,12 +33,12 @@ trap "echo 'Shutting down processes...'; kill $FLYCHAMS_PID $BAG_RECORD_PID 2>/d
 
 # Print helpful information
 echo ""
-echo "FlyChams with AirSim is running in the background (PID: $FLYCHAMS_PID)"
+echo "FlyingChameleons simulation is running in the background (PID: $FLYCHAMS_PID)"
 if [ "$RECORD" = "true" ]; then
   echo "Bag recording is running in the background (PID: $BAG_RECORD_PID)"
 fi
-echo "You can now enter ROS2 commands in this terminal."
-echo "Press Ctrl+C to exit and terminate all processes."
+echo "You can now enter ROS2 commands in this terminal"
+echo "Press Ctrl+C to exit and terminate all running processes"
 echo ""
 
 # Keep the script running but allow user input

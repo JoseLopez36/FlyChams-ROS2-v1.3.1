@@ -102,12 +102,11 @@ namespace airsim_wrapper
         using VehicleSetting = msr::airlib::AirSimSettings::VehicleSetting;
         using CameraSetting = msr::airlib::AirSimSettings::CameraSetting;
         using CaptureSetting = msr::airlib::AirSimSettings::CaptureSetting;
-        using ImageType = msr::airlib::ImageCaptureBase::ImageType;
 
     // ════════════════════════════════════════════════════════════════
     // PUBLIC: Constructors/Destructors
     public:
-        AirsimWrapper(const std::shared_ptr<rclcpp::Node> nh, const std::string& host_ip, uint16_t host_port, bool enable_api_control, bool enable_world_plot);
+        AirsimWrapper(const std::shared_ptr<rclcpp::Node> nh, const std::string& host_ip, uint16_t host_port, bool enable_world_plot);
         ~AirsimWrapper();
         void shutdown();
 
@@ -329,7 +328,6 @@ namespace airsim_wrapper
         double update_airsim_state_every_n_sec_;
         double update_sim_clock_every_n_sec_;
         double update_airsim_status_every_n_sec_;
-        float clock_speed_;
 
         // Vehicle data
         std::unordered_map<std::string, std::unique_ptr<VehicleROS>> vehicle_map_;

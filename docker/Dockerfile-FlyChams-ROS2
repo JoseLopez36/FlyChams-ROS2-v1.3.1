@@ -16,6 +16,12 @@ RUN     apt-get update && \
         rm -rf /var/lib/apt/lists/* && \
         apt-get clean
 
+# Install GeographicLib datasets for mavros
+RUN     wget https://raw.githubusercontent.com/mavlink/mavros/ros2/mavros/scripts/install_geographiclib_datasets.sh && \
+        chmod +x install_geographiclib_datasets.sh && \
+        ./install_geographiclib_datasets.sh && \
+        rm install_geographiclib_datasets.sh
+
 # Additional installation
 RUN     apt-get update && \
         apt-get install -y \
