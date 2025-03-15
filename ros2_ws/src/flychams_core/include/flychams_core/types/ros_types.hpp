@@ -39,9 +39,10 @@
 #include <tf2/utils.h>
 
 // Custom message types
+#include "flychams_interfaces/msg/element.hpp"
 #include "flychams_interfaces/msg/registration.hpp"
-#include "flychams_interfaces/msg/agent_goal.hpp"
-#include "flychams_interfaces/msg/agent_info.hpp"
+#include "flychams_interfaces/msg/position_goal.hpp"
+#include "flychams_interfaces/msg/tracking_info.hpp"
 #include "flychams_interfaces/msg/tracking_goal.hpp"
 #include "flychams_interfaces/msg/target_info.hpp"
 #include "flychams_interfaces/msg/cluster_info.hpp"
@@ -134,11 +135,13 @@ namespace flychams::core
     // CUSTOM MESSAGE TYPES: FlyChams-specific message types
     // ════════════════════════════════════════════════════════════════
 
+    // Element
+    using ElementMsg = flychams_interfaces::msg::Element;
     // Registration messages
     using RegistrationMsg = flychams_interfaces::msg::Registration;
     // Agent messages
-    using AgentGoalMsg = flychams_interfaces::msg::AgentGoal;
-    using AgentInfoMsg = flychams_interfaces::msg::AgentInfo;
+    using PositionGoalMsg = flychams_interfaces::msg::PositionGoal;
+    using TrackingInfoMsg = flychams_interfaces::msg::TrackingInfo;
     using TrackingGoalMsg = flychams_interfaces::msg::TrackingGoal;
     // Target messages
     using TargetInfoMsg = flychams_interfaces::msg::TargetInfo;

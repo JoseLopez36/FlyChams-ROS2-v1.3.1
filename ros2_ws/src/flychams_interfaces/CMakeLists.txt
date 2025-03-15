@@ -15,11 +15,12 @@ find_package(geometry_msgs REQUIRED)
 # Generate interfaces
 rosidl_generate_interfaces(${PROJECT_NAME}
   # Registration messages
+  "msg/Element.msg"
   "msg/Registration.msg"
 
   # Agent messages
-  "msg/AgentGoal.msg"
-  "msg/AgentInfo.msg"
+  "msg/PositionGoal.msg"
+  "msg/TrackingInfo.msg"
   "msg/TrackingGoal.msg"
 
   # Target messages

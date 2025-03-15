@@ -1,1 +1,1 @@
-string[] element_ids     # Identifiers of the elements in the registration
+Element[] elements       # Elements in the registration

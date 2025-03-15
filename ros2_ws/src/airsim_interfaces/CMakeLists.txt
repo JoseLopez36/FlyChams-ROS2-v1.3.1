@@ -21,6 +21,13 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/Run.srv"
   "srv/Pause.srv"
   # Vehicle services and messages
+  "srv/Takeoff.srv"
+  "srv/Land.srv"
+  "srv/Hover.srv"
+  "srv/EnableControl.srv"
+  "srv/ArmDisarm.srv"
+  "msg/VelCmd.msg"
+  "msg/PosCmd.msg"
   "msg/CameraFovCmd.msg"
   "msg/GimbalAngleCmd.msg"
   # Window services and messages

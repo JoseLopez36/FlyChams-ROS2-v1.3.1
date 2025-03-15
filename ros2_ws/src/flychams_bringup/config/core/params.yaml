@@ -1,9 +1,5 @@
 /flychams/**:
   ros__parameters:
-    # Target position update rate (Hz)
-    target_update_rate: 20.0
-    # Cluster position update rate (Hz)
-    cluster_update_rate: 20.0
     # Tracking parameters
     tracking:
       num_tracking_windows: 4 # For MultiWindowTracking mode

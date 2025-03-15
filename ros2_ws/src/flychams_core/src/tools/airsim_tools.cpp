@@ -19,6 +19,12 @@ namespace flychams::core
         reset_client_ = node_->create_client<Reset>("/airsim/reset");
         run_client_ = node_->create_client<Run>("/airsim/run");
         pause_client_ = node_->create_client<Pause>("/airsim/pause");
+        // Vehicle commands
+        enable_control_client_ = node_->create_client<EnableControl>("/airsim/vehicles/cmd/enable_control");
+        arm_disarm_client_ = node_->create_client<ArmDisarm>("/airsim/vehicles/cmd/arm_disarm");
+        takeoff_client_ = node_->create_client<Takeoff>("/airsim/vehicles/cmd/takeoff");
+        land_client_ = node_->create_client<Land>("/airsim/vehicles/cmd/land");
+        hover_client_ = node_->create_client<Hover>("/airsim/vehicles/cmd/hover");
         // Window commands
         window_image_cmd_group_pub_ = node_->create_publisher<WindowImageCmdGroup>("/airsim/group_of_windows/image_cmd", 10);
         window_rectangle_cmd_pub_ = node_->create_publisher<WindowRectangleCmd>("/airsim/group_of_windows/rectangle_cmd", 10);
@@ -41,9 +47,16 @@ namespace flychams::core
         reset_client_.reset();
         run_client_.reset();
         pause_client_.reset();
+        enable_control_client_.reset();
+        arm_disarm_client_.reset();
+        takeoff_client_.reset();
+        land_client_.reset();
+        hover_client_.reset();
         add_target_group_client_.reset();
         add_cluster_group_client_.reset();
-        // Destroy publisher
+        // Destroy publishers
+        vel_cmd_pub_map_.clear();
+        pos_cmd_pub_map_.clear();
         gimbal_angle_cmd_pub_map_.clear();
         camera_fov_cmd_pub_map_.clear();
         window_image_cmd_group_pub_.reset();
@@ -62,19 +75,23 @@ namespace flychams::core
     void AirsimTools::addVehicle(const ID& vehicle_id)
     {
         // Create publishers
-        gimbal_angle_cmd_pub_map_[vehicle_id] = node_->create_publisher<GimbalAngleCmd>("/airsim/" + vehicle_id + "/gimbal_angle_cmd", 10);
-        camera_fov_cmd_pub_map_[vehicle_id] = node_->create_publisher<CameraFovCmd>("/airsim/" + vehicle_id + "/camera_fov_cmd", 10);
+        vel_cmd_pub_map_[vehicle_id] = node_->create_publisher<VelCmd>("/airsim/" + vehicle_id + "/local/cmd/velocity", 10);
+        pos_cmd_pub_map_[vehicle_id] = node_->create_publisher<PosCmd>("/airsim/" + vehicle_id + "/global/cmd/position", 10);
+        gimbal_angle_cmd_pub_map_[vehicle_id] = node_->create_publisher<GimbalAngleCmd>("/airsim/" + vehicle_id + "/gimbals/cmd/orientation", 10);
+        camera_fov_cmd_pub_map_[vehicle_id] = node_->create_publisher<CameraFovCmd>("/airsim/" + vehicle_id + "/cameras/cmd/fov", 10);
     }
 
     void AirsimTools::removeVehicle(const ID& vehicle_id)
     {
         // Destroy publishers
+        vel_cmd_pub_map_.erase(vehicle_id);
+        pos_cmd_pub_map_.erase(vehicle_id);
         gimbal_angle_cmd_pub_map_.erase(vehicle_id);
         camera_fov_cmd_pub_map_.erase(vehicle_id);
     }
 
     // ════════════════════════════════════════════════════════════════════════════
-    // GLOBAL CONTROL
+    // GLOBAL CONTROL: Service-based control methods
     // ════════════════════════════════════════════════════════════════════════════
 
     bool AirsimTools::resetSimulation()
@@ -105,14 +122,96 @@ namespace flychams::core
     }
 
     // ════════════════════════════════════════════════════════════════════════════
-    // VEHICLE CONTROL
+    // VEHICLE CONTROL: Service-based control methods
     // ════════════════════════════════════════════════════════════════════════════
 
-    void AirsimTools::setGimbalAngles(const ID& vehicle_id, const IDs& camera_ids, const std::vector<QuaternionMsg>& target_quats, const std::string& frame_id)
+    bool AirsimTools::enableControl(const ID& vehicle_id, const bool& enable)
+    {
+        // Create request
+        auto request = std::make_shared<EnableControl::Request>();
+        request->vehicle_name = vehicle_id;
+        request->enable = enable;
+
+        // Send request and wait for response
+        return RosUtils::sendRequestSync<EnableControl>(node_, enable_control_client_, request, 1000);
+    }
+
+    bool AirsimTools::armDisarm(const ID& vehicle_id, const bool& arm)
+    {
+        // Create request
+        auto request = std::make_shared<ArmDisarm::Request>();
+        request->vehicle_name = vehicle_id;
+        request->arm = arm;
+
+        // Send request and wait for response
+        return RosUtils::sendRequestSync<ArmDisarm>(node_, arm_disarm_client_, request, 1000);
+    }
+
+    bool AirsimTools::takeoff(const ID& vehicle_id)
+    {
+        // Create request
+        auto request = std::make_shared<Takeoff::Request>();
+        request->vehicle_name = vehicle_id;
+
+        // Send request and wait for response
+        return RosUtils::sendRequestSync<Takeoff>(node_, takeoff_client_, request, 1000);
+    }
+
+    bool AirsimTools::land(const ID& vehicle_id)
+    {
+        // Create request
+        auto request = std::make_shared<Land::Request>();
+        request->vehicle_name = vehicle_id;
+
+        // Send request and wait for response
+        return RosUtils::sendRequestSync<Land>(node_, land_client_, request, 1000);
+    }
+
+    bool AirsimTools::hover(const ID& vehicle_id)
+    {
+        // Create request
+        auto request = std::make_shared<Hover::Request>();
+        request->vehicle_name = vehicle_id;
+
+        // Send request and wait for response
+        return RosUtils::sendRequestSync<Hover>(node_, hover_client_, request, 1000);
+    }
+
+    // ════════════════════════════════════════════════════════════════════════════
+    // VEHICLE CONTROL: Publisher-based control methods
+    // ════════════════════════════════════════════════════════════════════════════
+
+    void AirsimTools::setVelocity(const ID& vehicle_id, const float& vel_cmd_x, const float& vel_cmd_y, const float& vel_cmd_z, const float& vel_cmd_dt)
+    {
+        // Create message
+        VelCmd msg;
+        msg.vel_cmd_x = vel_cmd_x;
+        msg.vel_cmd_y = vel_cmd_y;
+        msg.vel_cmd_z = vel_cmd_z;
+        msg.vel_cmd_dt = vel_cmd_dt;
+
+        // Publish message
+        vel_cmd_pub_map_[vehicle_id]->publish(msg);
+    }
+
+    void AirsimTools::setPosition(const ID& vehicle_id, const float& pos_cmd_x, const float& pos_cmd_y, const float& pos_cmd_z, const float& pos_cmd_vel, const float& pos_cmd_timeout)
+    {
+        // Create message
+        PosCmd msg;
+        msg.pos_cmd_x = pos_cmd_x;
+        msg.pos_cmd_y = pos_cmd_y;
+        msg.pos_cmd_z = pos_cmd_z;
+        msg.pos_cmd_vel = pos_cmd_vel;
+        msg.pos_cmd_timeout = pos_cmd_timeout;
+
+        // Publish message
+        pos_cmd_pub_map_[vehicle_id]->publish(msg);
+    }
+
+    void AirsimTools::setGimbalOrientations(const ID& vehicle_id, const IDs& camera_ids, const std::vector<QuaternionMsg>& target_quats)
     {
         // Create message
         GimbalAngleCmd msg;
-        msg.header = RosUtils::createHeader(node_, frame_id);
         msg.camera_names = camera_ids;
         msg.orientations = target_quats;
 
@@ -120,11 +219,10 @@ namespace flychams::core
         gimbal_angle_cmd_pub_map_[vehicle_id]->publish(msg);
     }
 
-    void AirsimTools::setCameraFovs(const ID& vehicle_id, const IDs& camera_ids, const std::vector<float>& target_fovs, const std::string& frame_id)
+    void AirsimTools::setCameraFovs(const ID& vehicle_id, const IDs& camera_ids, const std::vector<float>& target_fovs)
     {
         // Create message
         CameraFovCmd msg;
-        msg.header = RosUtils::createHeader(node_, frame_id);
         msg.camera_names = camera_ids;
         msg.fovs = target_fovs;
 
@@ -133,7 +231,7 @@ namespace flychams::core
     }
 
     // ════════════════════════════════════════════════════════════════════════════
-    // WINDOW CONTROL
+    // WINDOW CONTROL: Service-based control methods
     // ════════════════════════════════════════════════════════════════════════════
 
     void AirsimTools::setWindowImageGroup(const IDs& window_ids, const IDs& vehicle_ids, const IDs& camera_ids, const std::vector<int>& crop_x, const std::vector<int>& crop_y, const std::vector<int>& crop_w, const std::vector<int>& crop_h)
@@ -188,7 +286,7 @@ namespace flychams::core
     }
 
     // ════════════════════════════════════════════════════════════════════════════
-    // TRACKING CONTROL
+    // TRACKING CONTROL: Service-based control methods
     // ════════════════════════════════════════════════════════════════════════════
 
     bool AirsimTools::addTargetGroup(const IDs& target_ids, const std::vector<TargetType>& target_types, const std::vector<PointMsg>& positions, const bool& highlight, const std::vector<ColorMsg>& highlight_colors)
@@ -237,7 +335,7 @@ namespace flychams::core
     }
 
     // ════════════════════════════════════════════════════════════════════════════
-    // OBJECT CONTROL
+    // OBJECT CONTROL: Publisher-based control methods
     // ════════════════════════════════════════════════════════════════════════════
 
     void AirsimTools::updateTargetGroup(const IDs& target_ids, const std::vector<PointMsg>& positions)

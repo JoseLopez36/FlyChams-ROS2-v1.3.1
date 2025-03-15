@@ -1,8 +1,9 @@
 /flychams/**:
   ros__parameters:
-    global_frame: "world"
+    global_frames:
+      world: "world"
     agent_frames:
-      agent_local: "AGENTID/map"
-      agent_body: "AGENTID/base_link"
-      camera_body: "AGENTID/HEADID/base_link"
+      agent_local: "AGENTID/local"
+      agent_body: "AGENTID/body"
+      camera_body: "AGENTID/HEADID/body"
       camera_optical: "AGENTID/HEADID/optical"

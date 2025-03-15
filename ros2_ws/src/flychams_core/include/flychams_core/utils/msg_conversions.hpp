@@ -70,7 +70,7 @@ namespace flychams::core
             };
         }
 
-        static std::pair<Matrix3Xr, RowVectorXr> fromMsg(const AgentInfoMsg& info)
+        static std::pair<Matrix3Xr, RowVectorXr> fromMsg(const TrackingInfoMsg& info)
         {
             // Get the number of clusters
             size_t n_clusters = info.centers.size();
@@ -132,7 +132,7 @@ namespace flychams::core
             toMsg(twist.angular, ros_twist.angular);
         }
 
-        static void toMsg(const Vector3r& position, AgentGoalMsg& ros_goal)
+        static void toMsg(const Vector3r& position, PositionGoalMsg& ros_goal)
         {
             toMsg(position, ros_goal.position);
             ros_goal.yaw = 0.0f;

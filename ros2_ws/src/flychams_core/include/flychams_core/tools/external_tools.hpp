@@ -39,8 +39,15 @@ namespace flychams::core
         virtual bool pauseSimulation() = 0;
 
     public: // Vehicle control methods (override)
-        virtual void setGimbalAngles(const ID& vehicle_id, const IDs& camera_ids, const std::vector<QuaternionMsg>& target_quats, const std::string& frame_id) = 0;
-        virtual void setCameraFovs(const ID& vehicle_id, const IDs& camera_ids, const std::vector<float>& target_fovs, const std::string& frame_id) = 0;
+        virtual bool enableControl(const ID& vehicle_id, const bool& enable) = 0;
+        virtual bool armDisarm(const ID& vehicle_id, const bool& arm) = 0;
+        virtual bool takeoff(const ID& vehicle_id) = 0;
+        virtual bool land(const ID& vehicle_id) = 0;
+        virtual bool hover(const ID& vehicle_id) = 0;
+        virtual void setVelocity(const ID& vehicle_id, const float& vel_cmd_x, const float& vel_cmd_y, const float& vel_cmd_z, const float& vel_cmd_dt) = 0;
+        virtual void setPosition(const ID& vehicle_id, const float& pos_cmd_x, const float& pos_cmd_y, const float& pos_cmd_z, const float& pos_cmd_vel, const float& pos_cmd_timeout) = 0;
+        virtual void setGimbalOrientations(const ID& vehicle_id, const IDs& camera_ids, const std::vector<QuaternionMsg>& target_quats) = 0;
+        virtual void setCameraFovs(const ID& vehicle_id, const IDs& camera_ids, const std::vector<float>& target_fovs) = 0;
 
     public: // Window control methods (override)
         virtual void setWindowImageGroup(const IDs& window_ids, const IDs& vehicle_ids, const IDs& camera_ids, const std::vector<int>& crop_x, const std::vector<int>& crop_y, const std::vector<int>& crop_w, const std::vector<int>& crop_h) = 0;

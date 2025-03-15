@@ -25,15 +25,15 @@ namespace flychams::core
         // Global topics
         struct GlobalTopics
         {
+            std::string registration;
             std::string metrics;
         };
         // Agent topics
         struct AgentTopics
         {
-            std::string registration;
-            std::string odom_pattern;
-            std::string goal_pattern;
-            std::string info_pattern;
+            std::string global_odom_pattern;
+            std::string position_goal_pattern;
+            std::string tracking_info_pattern;
             std::string tracking_goal_pattern;
             std::string metrics_pattern;
             std::string markers_pattern;
@@ -41,7 +41,6 @@ namespace flychams::core
         // Target topics
         struct TargetTopics
         {
-            std::string registration;
             std::string info_pattern;
             std::string metrics_pattern;
             std::string markers_pattern;
@@ -49,7 +48,6 @@ namespace flychams::core
         // Cluster topics
         struct ClusterTopics
         {
-            std::string registration;
             std::string info_pattern;
             std::string metrics_pattern;
             std::string markers_pattern;
@@ -70,25 +68,23 @@ namespace flychams::core
             : node_(node)
         {
             // Get global topics
+            global_topics_.registration = RosUtils::getParameter<std::string>(node_, "global_topics.registration");
             global_topics_.metrics = RosUtils::getParameter<std::string>(node_, "global_topics.metrics");
 
             // Get agent topics
-            agent_topics_.registration = RosUtils::getParameter<std::string>(node_, "agent_topics.registration");
-            agent_topics_.odom_pattern = RosUtils::getParameter<std::string>(node_, "agent_topics.odom");
-            agent_topics_.goal_pattern = RosUtils::getParameter<std::string>(node_, "agent_topics.goal");
-            agent_topics_.info_pattern = RosUtils::getParameter<std::string>(node_, "agent_topics.info");
+            agent_topics_.global_odom_pattern = RosUtils::getParameter<std::string>(node_, "agent_topics.global_odom");
+            agent_topics_.position_goal_pattern = RosUtils::getParameter<std::string>(node_, "agent_topics.position_goal");
+            agent_topics_.tracking_info_pattern = RosUtils::getParameter<std::string>(node_, "agent_topics.tracking_info");
             agent_topics_.tracking_goal_pattern = RosUtils::getParameter<std::string>(node_, "agent_topics.tracking_goal");
             agent_topics_.metrics_pattern = RosUtils::getParameter<std::string>(node_, "agent_topics.metrics");
             agent_topics_.markers_pattern = RosUtils::getParameter<std::string>(node_, "agent_topics.markers");
 
             // Get target topics
-            target_topics_.registration = RosUtils::getParameter<std::string>(node_, "target_topics.registration");
             target_topics_.info_pattern = RosUtils::getParameter<std::string>(node_, "target_topics.info");
             target_topics_.metrics_pattern = RosUtils::getParameter<std::string>(node_, "target_topics.metrics");
             target_topics_.markers_pattern = RosUtils::getParameter<std::string>(node_, "target_topics.markers");
 
             // Get cluster topics
-            cluster_topics_.registration = RosUtils::getParameter<std::string>(node_, "cluster_topics.registration");
             cluster_topics_.info_pattern = RosUtils::getParameter<std::string>(node_, "cluster_topics.info");
             cluster_topics_.metrics_pattern = RosUtils::getParameter<std::string>(node_, "cluster_topics.metrics");
             cluster_topics_.markers_pattern = RosUtils::getParameter<std::string>(node_, "cluster_topics.markers");
@@ -106,27 +102,29 @@ namespace flychams::core
         }
 
     public: // Topic getters
+        // Global topics
+        std::string getRegistrationTopic()
+        {
+            return global_topics_.registration;
+        }
         std::string getGlobalMetricsTopic()
         {
             return global_topics_.metrics;
         }
-        std::string getAgentRegistrationTopic()
-        {
-            return agent_topics_.registration;
-        }
+        // Agent topics
         std::string getAgentOdomTopic(const ID& agent_id)
         {
-            return RosUtils::replacePlaceholder(agent_topics_.odom_pattern, "AGENTID", agent_id);
+            return RosUtils::replacePlaceholder(agent_topics_.global_odom_pattern, "AGENTID", agent_id);
         }
-        std::string getAgentGoalTopic(const ID& agent_id)
+        std::string getAgentPositionGoalTopic(const ID& agent_id)
         {
-            return RosUtils::replacePlaceholder(agent_topics_.goal_pattern, "AGENTID", agent_id);
+            return RosUtils::replacePlaceholder(agent_topics_.position_goal_pattern, "AGENTID", agent_id);
         }
-        std::string getAgentInfoTopic(const ID& agent_id)
+        std::string getAgentTrackingInfoTopic(const ID& agent_id)
         {
-            return RosUtils::replacePlaceholder(agent_topics_.info_pattern, "AGENTID", agent_id);
+            return RosUtils::replacePlaceholder(agent_topics_.tracking_info_pattern, "AGENTID", agent_id);
         }
-        std::string getTrackingGoalTopic(const ID& agent_id)
+        std::string getAgentTrackingGoalTopic(const ID& agent_id)
         {
             return RosUtils::replacePlaceholder(agent_topics_.tracking_goal_pattern, "AGENTID", agent_id);
         }
@@ -138,10 +136,7 @@ namespace flychams::core
         {
             return RosUtils::replacePlaceholder(agent_topics_.markers_pattern, "AGENTID", agent_id);
         }
-        std::string getTargetRegistrationTopic()
-        {
-            return target_topics_.registration;
-        }
+        // Target topics
         std::string getTargetInfoTopic(const ID& target_id)
         {
             return RosUtils::replacePlaceholder(target_topics_.info_pattern, "TARGETID", target_id);
@@ -154,10 +149,7 @@ namespace flychams::core
         {
             return RosUtils::replacePlaceholder(target_topics_.markers_pattern, "TARGETID", target_id);
         }
-        std::string getClusterRegistrationTopic()
-        {
-            return cluster_topics_.registration;
-        }
+        // Cluster topics
         std::string getClusterInfoTopic(const ID& cluster_id)
         {
             return RosUtils::replacePlaceholder(cluster_topics_.info_pattern, "CLUSTERID", cluster_id);
@@ -173,26 +165,28 @@ namespace flychams::core
 
     public: // Topic creation utilities
         // Publishers
+        // Global publishers
+        PublisherPtr<RegistrationMsg> createRegistrationPublisher()
+        {
+            rclcpp::QoS qos = rclcpp::QoS(rclcpp::KeepLast(1)).reliable().transient_local();
+            return node_->create_publisher<RegistrationMsg>(getRegistrationTopic(), qos);
+        }
         PublisherPtr<GlobalMetricsMsg> createGlobalMetricsPublisher()
         {
             return node_->create_publisher<GlobalMetricsMsg>(getGlobalMetricsTopic(), 10);
         }
-        PublisherPtr<RegistrationMsg> createAgentRegistrationPublisher()
+        // Agent publishers
+        PublisherPtr<PositionGoalMsg> createAgentPositionGoalPublisher(const ID& agent_id)
         {
-            rclcpp::QoS qos = rclcpp::QoS(rclcpp::KeepLast(1)).reliable().transient_local();
-            return node_->create_publisher<RegistrationMsg>(getAgentRegistrationTopic(), qos);
+            return node_->create_publisher<PositionGoalMsg>(getAgentPositionGoalTopic(agent_id), 10);
         }
-        PublisherPtr<AgentGoalMsg> createAgentGoalPublisher(const ID& agent_id)
+        PublisherPtr<TrackingInfoMsg> createAgentTrackingInfoPublisher(const ID& agent_id)
         {
-            return node_->create_publisher<AgentGoalMsg>(getAgentGoalTopic(agent_id), 10);
+            return node_->create_publisher<TrackingInfoMsg>(getAgentTrackingInfoTopic(agent_id), 10);
         }
-        PublisherPtr<AgentInfoMsg> createAgentInfoPublisher(const ID& agent_id)
+        PublisherPtr<TrackingGoalMsg> createAgentTrackingGoalPublisher(const ID& agent_id)
         {
-            return node_->create_publisher<AgentInfoMsg>(getAgentInfoTopic(agent_id), 10);
-        }
-        PublisherPtr<TrackingGoalMsg> createTrackingGoalPublisher(const ID& agent_id)
-        {
-            return node_->create_publisher<TrackingGoalMsg>(getTrackingGoalTopic(agent_id), 10);
+            return node_->create_publisher<TrackingGoalMsg>(getAgentTrackingGoalTopic(agent_id), 10);
         }
         PublisherPtr<AgentMetricsMsg> createAgentMetricsPublisher(const ID& agent_id)
         {
@@ -202,11 +196,7 @@ namespace flychams::core
         {
             return node_->create_publisher<MarkerArrayMsg>(getAgentMarkersTopic(agent_id), 10);
         }
-        PublisherPtr<RegistrationMsg> createTargetRegistrationPublisher()
-        {
-            rclcpp::QoS qos = rclcpp::QoS(rclcpp::KeepLast(1)).reliable().transient_local();
-            return node_->create_publisher<RegistrationMsg>(getTargetRegistrationTopic(), qos);
-        }
+        // Target publishers
         PublisherPtr<TargetInfoMsg> createTargetInfoPublisher(const ID& target_id)
         {
             return node_->create_publisher<TargetInfoMsg>(getTargetInfoTopic(target_id), 10);
@@ -219,11 +209,7 @@ namespace flychams::core
         {
             return node_->create_publisher<MarkerArrayMsg>(getTargetMarkersTopic(target_id), 10);
         }
-        PublisherPtr<RegistrationMsg> createClusterRegistrationPublisher()
-        {
-            rclcpp::QoS qos = rclcpp::QoS(rclcpp::KeepLast(1)).reliable().transient_local();
-            return node_->create_publisher<RegistrationMsg>(getClusterRegistrationTopic(), qos);
-        }
+        // Cluster publishers
         PublisherPtr<ClusterInfoMsg> createClusterInfoPublisher(const ID& cluster_id)
         {
             return node_->create_publisher<ClusterInfoMsg>(getClusterInfoTopic(cluster_id), 10);
@@ -238,41 +224,35 @@ namespace flychams::core
         }
 
         // Subscribers
-        SubscriberPtr<RegistrationMsg> createAgentRegistrationSubscriber(const std::function<void(const RegistrationMsg::SharedPtr)>& callback, const rclcpp::SubscriptionOptions& options = rclcpp::SubscriptionOptions())
+        // Global subscribers
+        SubscriberPtr<RegistrationMsg> createRegistrationSubscriber(const std::function<void(const RegistrationMsg::SharedPtr)>& callback, const rclcpp::SubscriptionOptions& options = rclcpp::SubscriptionOptions())
         {
             rclcpp::QoS qos = rclcpp::QoS(rclcpp::KeepLast(1)).reliable().transient_local();
-            return node_->create_subscription<RegistrationMsg>(getAgentRegistrationTopic(), qos, callback, options);
+            return node_->create_subscription<RegistrationMsg>(getRegistrationTopic(), qos, callback, options);
         }
+        // Agent subscribers
         SubscriberPtr<OdometryMsg> createAgentOdomSubscriber(const ID& agent_id, const std::function<void(const OdometryMsg::SharedPtr)>& callback, const rclcpp::SubscriptionOptions& options = rclcpp::SubscriptionOptions())
         {
             return node_->create_subscription<OdometryMsg>(getAgentOdomTopic(agent_id), 10, callback, options);
         }
-        SubscriberPtr<AgentGoalMsg> createAgentGoalSubscriber(const ID& agent_id, const std::function<void(const AgentGoalMsg::SharedPtr)>& callback, const rclcpp::SubscriptionOptions& options = rclcpp::SubscriptionOptions())
+        SubscriberPtr<PositionGoalMsg> createAgentPositionGoalSubscriber(const ID& agent_id, const std::function<void(const PositionGoalMsg::SharedPtr)>& callback, const rclcpp::SubscriptionOptions& options = rclcpp::SubscriptionOptions())
         {
-            return node_->create_subscription<AgentGoalMsg>(getAgentGoalTopic(agent_id), 10, callback, options);
+            return node_->create_subscription<PositionGoalMsg>(getAgentPositionGoalTopic(agent_id), 10, callback, options);
         }
-        SubscriberPtr<AgentInfoMsg> createAgentInfoSubscriber(const ID& agent_id, const std::function<void(const AgentInfoMsg::SharedPtr)>& callback, const rclcpp::SubscriptionOptions& options = rclcpp::SubscriptionOptions())
+        SubscriberPtr<TrackingInfoMsg> createAgentTrackingInfoSubscriber(const ID& agent_id, const std::function<void(const TrackingInfoMsg::SharedPtr)>& callback, const rclcpp::SubscriptionOptions& options = rclcpp::SubscriptionOptions())
         {
-            return node_->create_subscription<AgentInfoMsg>(getAgentInfoTopic(agent_id), 10, callback, options);
+            return node_->create_subscription<TrackingInfoMsg>(getAgentTrackingInfoTopic(agent_id), 10, callback, options);
         }
-        SubscriberPtr<TrackingGoalMsg> createTrackingGoalSubscriber(const ID& agent_id, const std::function<void(const TrackingGoalMsg::SharedPtr)>& callback, const rclcpp::SubscriptionOptions& options = rclcpp::SubscriptionOptions())
+        SubscriberPtr<TrackingGoalMsg> createAgentTrackingGoalSubscriber(const ID& agent_id, const std::function<void(const TrackingGoalMsg::SharedPtr)>& callback, const rclcpp::SubscriptionOptions& options = rclcpp::SubscriptionOptions())
         {
-            return node_->create_subscription<TrackingGoalMsg>(getTrackingGoalTopic(agent_id), 10, callback, options);
+            return node_->create_subscription<TrackingGoalMsg>(getAgentTrackingGoalTopic(agent_id), 10, callback, options);
         }
-        SubscriberPtr<RegistrationMsg> createTargetRegistrationSubscriber(const std::function<void(const RegistrationMsg::SharedPtr)>& callback, const rclcpp::SubscriptionOptions& options = rclcpp::SubscriptionOptions())
-        {
-            rclcpp::QoS qos = rclcpp::QoS(rclcpp::KeepLast(1)).reliable().transient_local();
-            return node_->create_subscription<RegistrationMsg>(getTargetRegistrationTopic(), qos, callback, options);
-        }
+        // Target subscribers
         SubscriberPtr<TargetInfoMsg> createTargetInfoSubscriber(const ID& target_id, const std::function<void(const TargetInfoMsg::SharedPtr)>& callback, const rclcpp::SubscriptionOptions& options = rclcpp::SubscriptionOptions())
         {
             return node_->create_subscription<TargetInfoMsg>(getTargetInfoTopic(target_id), 10, callback, options);
         }
-        SubscriberPtr<RegistrationMsg> createClusterRegistrationSubscriber(const std::function<void(const RegistrationMsg::SharedPtr)>& callback, const rclcpp::SubscriptionOptions& options = rclcpp::SubscriptionOptions())
-        {
-            rclcpp::QoS qos = rclcpp::QoS(rclcpp::KeepLast(1)).reliable().transient_local();
-            return node_->create_subscription<RegistrationMsg>(getClusterRegistrationTopic(), qos, callback, options);
-        }
+        // Cluster subscribers
         SubscriberPtr<ClusterInfoMsg> createClusterInfoSubscriber(const ID& cluster_id, const std::function<void(const ClusterInfoMsg::SharedPtr)>& callback, const rclcpp::SubscriptionOptions& options = rclcpp::SubscriptionOptions())
         {
             return node_->create_subscription<ClusterInfoMsg>(getClusterInfoTopic(cluster_id), 10, callback, options);

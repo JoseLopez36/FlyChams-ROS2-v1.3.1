@@ -1,22 +1,20 @@
 /flychams/**:
   ros__parameters:
     global_topics:
-      metrics: "/flychams/global_metrics"
+      registration: "global/registration"
+      metrics: "global/metrics"
     agent_topics:
-      registration: "/flychams/agent_registration"
-      odom: "/airsim/AGENTID/odom"
-      goal: "/flychams/AGENTID/goal"
-      info: "/flychams/AGENTID/info"
-      tracking_goal: "/flychams/AGENTID/tracking_goal"
-      metrics: "/flychams/AGENTID/metrics"
-      markers: "/flychams/AGENTID/markers"
+      global_odom: "/airsim/AGENTID/global/state/odom"
+      position_goal: "agents/AGENTID/position/goal"
+      tracking_info: "agents/AGENTID/tracking/info"
+      tracking_goal: "agents/AGENTID/tracking/goal"
+      metrics: "agents/AGENTID/visual/metrics"
+      markers: "agents/AGENTID/visual/markers"
     target_topics:
-      registration: "/flychams/target_registration"
-      info: "/flychams/TARGETID/info"
-      metrics: "/flychams/TARGETID/metrics"
-      markers: "/flychams/TARGETID/markers"
+      info: "targets/TARGETID/info"
+      metrics: "targets/TARGETID/visual/metrics"
+      markers: "targets/TARGETID/visual/markers"
     cluster_topics:
-      registration: "/flychams/cluster_registration"
-      info: "/flychams/CLUSTERID/info"
-      metrics: "/flychams/CLUSTERID/metrics"
-      markers: "/flychams/CLUSTERID/markers"
+      info: "clusters/CLUSTERID/info"
+      metrics: "clusters/CLUSTERID/visual/metrics"
+      markers: "clusters/CLUSTERID/visual/markers"

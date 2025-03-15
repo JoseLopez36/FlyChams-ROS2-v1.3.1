@@ -13,6 +13,13 @@
 #include <airsim_interfaces/srv/run.hpp>
 #include <airsim_interfaces/srv/pause.hpp>
 // Vehicle commands
+#include <airsim_interfaces/srv/enable_control.hpp>
+#include <airsim_interfaces/srv/arm_disarm.hpp>
+#include <airsim_interfaces/srv/takeoff.hpp>
+#include <airsim_interfaces/srv/land.hpp>
+#include <airsim_interfaces/srv/hover.hpp>
+#include <airsim_interfaces/msg/vel_cmd.hpp>
+#include <airsim_interfaces/msg/pos_cmd.hpp>
 #include <airsim_interfaces/msg/gimbal_angle_cmd.hpp>
 #include <airsim_interfaces/msg/camera_fov_cmd.hpp>
 // Window commands
@@ -57,6 +64,13 @@ namespace flychams::core
         using ResetSrv = airsim_interfaces::srv::Reset;
         using RunSrv = airsim_interfaces::srv::Run;
         using PauseSrv = airsim_interfaces::srv::Pause;
+        using EnableControlSrv = airsim_interfaces::srv::EnableControl;
+        using ArmDisarmSrv = airsim_interfaces::srv::ArmDisarm;
+        using TakeoffSrv = airsim_interfaces::srv::Takeoff;
+        using LandSrv = airsim_interfaces::srv::Land;
+        using HoverSrv = airsim_interfaces::srv::Hover;
+        using VelCmdMsg = airsim_interfaces::msg::VelCmd;
+        using PosCmdMsg = airsim_interfaces::msg::PosCmd;
         using GimbalAngleCmdMsg = airsim_interfaces::msg::GimbalAngleCmd;
         using CameraFovCmdMsg = airsim_interfaces::msg::CameraFovCmd;
         using WindowImageCmdGroupMsg = airsim_interfaces::msg::WindowImageCmdGroup;
@@ -77,8 +91,15 @@ namespace flychams::core
         bool pauseSimulation() override;
 
     public: // Vehicle control methods
-        void setGimbalAngles(const ID& vehicle_id, const IDs& camera_ids, const std::vector<QuaternionMsg>& target_quats, const std::string& frame_id) override;
-        void setCameraFovs(const ID& vehicle_id, const IDs& camera_ids, const std::vector<float>& target_fovs, const std::string& frame_id) override;
+        bool enableControl(const ID& vehicle_id, const bool& enable) override;
+        bool armDisarm(const ID& vehicle_id, const bool& arm) override;
+        bool takeoff(const ID& vehicle_id) override;
+        bool land(const ID& vehicle_id) override;
+        bool hover(const ID& vehicle_id) override;
+        void setVelocity(const ID& vehicle_id, const float& vel_cmd_x, const float& vel_cmd_y, const float& vel_cmd_z, const float& vel_cmd_dt) override;
+        void setPosition(const ID& vehicle_id, const float& pos_cmd_x, const float& pos_cmd_y, const float& pos_cmd_z, const float& pos_cmd_vel, const float& pos_cmd_timeout) override;
+        void setGimbalOrientations(const ID& vehicle_id, const IDs& camera_ids, const std::vector<QuaternionMsg>& target_quats) override;
+        void setCameraFovs(const ID& vehicle_id, const IDs& camera_ids, const std::vector<float>& target_fovs) override;
 
     public: // Window control methods
         void setWindowImageGroup(const IDs& window_ids, const IDs& vehicle_ids, const IDs& camera_ids, const std::vector<int>& crop_x, const std::vector<int>& crop_y, const std::vector<int>& crop_w, const std::vector<int>& crop_h) override;
@@ -157,6 +178,13 @@ namespace flychams::core
         ClientPtr<PauseSrv> pause_client_;
 
         // Vehicle commands
+        ClientPtr<EnableControlSrv> enable_control_client_;
+        ClientPtr<ArmDisarmSrv> arm_disarm_client_;
+        ClientPtr<TakeoffSrv> takeoff_client_;
+        ClientPtr<LandSrv> land_client_;
+        ClientPtr<HoverSrv> hover_client_;
+        std::unordered_map<ID, PublisherPtr<VelCmdMsg>> vel_cmd_pub_map_;
+        std::unordered_map<ID, PublisherPtr<PosCmdMsg>> pos_cmd_pub_map_;
         std::unordered_map<ID, PublisherPtr<GimbalAngleCmdMsg>> gimbal_angle_cmd_pub_map_;
         std::unordered_map<ID, PublisherPtr<CameraFovCmdMsg>> camera_fov_cmd_pub_map_;
 

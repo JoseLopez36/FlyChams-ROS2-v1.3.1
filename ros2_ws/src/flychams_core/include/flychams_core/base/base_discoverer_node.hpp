@@ -1,7 +1,8 @@
 #pragma once
 
 // Standard includes
-#include <unordered_set>
+#include <mutex>
+#include <unordered_map>
 
 // Tools includes
 #include "flychams_core/tools/config_tools.hpp"
@@ -27,16 +28,16 @@ namespace flychams::core
      * @date 2025-02-28
      * ════════════════════════════════════════════════════════════════
      */
-    class DiscovererNode : public rclcpp::Node
+    class BaseDiscovererNode : public rclcpp::Node
     {
     public: // Constructor/Destructor
-        DiscovererNode(const std::string& node_name, const rclcpp::NodeOptions& options);
+        BaseDiscovererNode(const std::string& node_name, const rclcpp::NodeOptions& options);
         void init();
-        virtual ~DiscovererNode();
+        virtual ~BaseDiscovererNode();
         void shutdown();
 
     public: // Types
-        using SharedPtr = std::shared_ptr<DiscovererNode>;
+        using SharedPtr = std::shared_ptr<BaseDiscovererNode>;
 
     protected: // Overridable methods
         virtual void onInit() {};
@@ -48,30 +49,23 @@ namespace flychams::core
         virtual void onAddCluster(const ID& cluster_id) {};
         virtual void onRemoveCluster(const ID& cluster_id) {};
 
-    private: // Discovery callbacks
-        void onAgentDiscovery(const RegistrationMsg::SharedPtr msg);
-        void onTargetDiscovery(const RegistrationMsg::SharedPtr msg);
-        void onClusterDiscovery(const RegistrationMsg::SharedPtr msg);
+    private: // Discovery callback
+        void onDiscovery(const RegistrationMsg::SharedPtr msg);
 
     protected: // Components
         // Node
         NodePtr node_;
         const std::string node_name_;
-        // Executor
-        ExecutorPtr executor_;
         // Tools
         ConfigTools::SharedPtr config_tools_;
         ExternalTools::SharedPtr ext_tools_;
         TopicTools::SharedPtr topic_tools_;
         TfTools::SharedPtr tf_tools_;
-        // Existing elements
-        std::unordered_set<ID> discovered_agents_;
-        std::unordered_set<ID> discovered_targets_;
-        std::unordered_set<ID> discovered_clusters_;
-        // Discovery subscribers
-        SubscriberPtr<RegistrationMsg> agent_discovery_sub_;
-        SubscriberPtr<RegistrationMsg> target_discovery_sub_;
-        SubscriberPtr<RegistrationMsg> cluster_discovery_sub_;
+        // Discovered elements
+        std::unordered_map<ID, ElementType> elements_;
+        std::mutex elements_mutex_;
+        // Discovery subscriber
+        SubscriberPtr<RegistrationMsg> discovery_sub_;
     };
 
 } // namespace flychams::core

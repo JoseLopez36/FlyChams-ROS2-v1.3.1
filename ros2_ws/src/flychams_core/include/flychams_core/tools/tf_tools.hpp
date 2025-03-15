@@ -34,7 +34,7 @@ namespace flychams::core
 
     private: // Data
         // Frames
-        std::string global_frame_;
+        std::string world_frame_;
         AgentFrames agent_frames_;
 
         // ROS components
@@ -51,7 +51,7 @@ namespace flychams::core
             tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 
             // Get general frames
-            global_frame_ = RosUtils::getParameter<std::string>(node_, "global_frame");
+            world_frame_ = RosUtils::getParameter<std::string>(node_, "global_frames.world");
 
             // Get agent frames
             agent_frames_.agent_local_pattern_ = RosUtils::getParameter<std::string>(node_, "agent_frames.agent_local");
@@ -77,7 +77,7 @@ namespace flychams::core
     public: // Frame getters
         std::string getGlobalFrame()
         {
-            return global_frame_;
+            return world_frame_;
         }
 
         std::string getAgentLocalFrame(const std::string& agent_id)
@@ -90,16 +90,16 @@ namespace flychams::core
             return RosUtils::replacePlaceholder(agent_frames_.agent_body_pattern_, "AGENTID", agent_id);
         }
 
-        std::string getCameraBodyFrame(const std::string& agent_id, const std::string& head_id)
+        std::string getCameraBodyFrame(const std::string& agent_id, const std::string& camera_id)
         {
             std::string pattern = RosUtils::replacePlaceholder(agent_frames_.camera_body_pattern_, "AGENTID", agent_id);
-            return RosUtils::replacePlaceholder(pattern, "HEADID", head_id);
+            return RosUtils::replacePlaceholder(pattern, "HEADID", camera_id);
         }
 
-        std::string getCameraOpticalFrame(const std::string& agent_id, const std::string& head_id)
+        std::string getCameraOpticalFrame(const std::string& agent_id, const std::string& camera_id)
         {
             std::string pattern = RosUtils::replacePlaceholder(agent_frames_.camera_optical_pattern_, "AGENTID", agent_id);
-            return RosUtils::replacePlaceholder(pattern, "HEADID", head_id);
+            return RosUtils::replacePlaceholder(pattern, "HEADID", camera_id);
         }
 
     public: // Transformation utilities

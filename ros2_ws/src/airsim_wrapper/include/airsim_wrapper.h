@@ -22,7 +22,10 @@ STRICT_MODE_ON
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <geometry_msgs/msg/transform_stamped.hpp>
 #include <geometry_msgs/msg/twist.hpp>
+#include <nav_msgs/msg/odometry.hpp>
 #include <rosgraph_msgs/msg/clock.hpp>
+#include <sensor_msgs/msg/camera_info.hpp>
+#include <sensor_msgs/msg/nav_sat_fix.hpp>
 #include <std_msgs/msg/bool.hpp>
 
 // TF2 headers
@@ -34,6 +37,7 @@ STRICT_MODE_ON
 #include <tf2_ros/static_transform_broadcaster.h>
 #include <tf2_ros/transform_broadcaster.h>
 #include <tf2_ros/transform_listener.h>
+#include <tf2_ros/buffer.h>
 
 // AirSim headers
 #include "airsim_settings_parser.h"
@@ -51,6 +55,13 @@ STRICT_MODE_ON
 #include <airsim_interfaces/srv/pause.hpp>
 
 // Vehicle commands
+#include <airsim_interfaces/srv/takeoff.hpp>
+#include <airsim_interfaces/srv/land.hpp>
+#include <airsim_interfaces/srv/hover.hpp>
+#include <airsim_interfaces/srv/arm_disarm.hpp>
+#include <airsim_interfaces/srv/enable_control.hpp>
+#include <airsim_interfaces/msg/vel_cmd.hpp>
+#include <airsim_interfaces/msg/pos_cmd.hpp>
 #include <airsim_interfaces/msg/gimbal_angle_cmd.hpp>
 #include <airsim_interfaces/msg/camera_fov_cmd.hpp>
 
@@ -132,27 +143,41 @@ namespace airsim_wrapper
             virtual ~VehicleROS() = default;
             std::string vehicle_name;
 
+            // Vehicle data
+            nav_msgs::msg::Odometry global_odom;
+            nav_msgs::msg::Odometry local_odom;
             // Vehicle setting
             VehicleSetting vehicle_setting;
             // Camera data
             std::unordered_map<std::string, std::unique_ptr<CameraROS>> camera_map;
-            // Subscribers
+            // Publisher
+            rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr global_odom_pub;
+            rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr local_odom_pub;
+            // Subscriber
+            rclcpp::Subscription<airsim_interfaces::msg::VelCmd>::SharedPtr local_vel_cmd_sub;
+            rclcpp::Subscription<airsim_interfaces::msg::PosCmd>::SharedPtr local_pos_cmd_sub;
+            rclcpp::Subscription<airsim_interfaces::msg::PosCmd>::SharedPtr global_pos_cmd_sub;
             rclcpp::Subscription<airsim_interfaces::msg::GimbalAngleCmd>::SharedPtr gimbal_angle_cmd_sub;
             rclcpp::Subscription<airsim_interfaces::msg::CameraFovCmd>::SharedPtr camera_fov_cmd_sub;
             // Transforms
             geometry_msgs::msg::TransformStamped local_static_tf_msg;
+            geometry_msgs::msg::TransformStamped body_tf_msg;
             // Frame IDs
             std::string local_frame_id;
+            std::string body_frame_id;
         };
 
     // ════════════════════════════════════════════════════════════════
     // PRIVATE: ROS Callbacks
     private:
         /// Timer callbacks
-        void drone_state_timer_cb();
+        void state_timer_cb();
         void clock_timer_cb();
 
         /// Subscriber callbacks
+        void local_vel_cmd_cb(const std::string& vehicle_name, const airsim_interfaces::msg::VelCmd::SharedPtr vel_cmd_msg);
+        void local_pos_cmd_cb(const std::string& vehicle_name, const airsim_interfaces::msg::PosCmd::SharedPtr pos_cmd_msg);
+        void global_pos_cmd_cb(const std::string& vehicle_name, const airsim_interfaces::msg::PosCmd::SharedPtr pos_cmd_msg);
         void gimbal_angle_cmd_cb(const std::string& vehicle_name, const airsim_interfaces::msg::GimbalAngleCmd::SharedPtr gimbal_angle_cmd_msg);
         void camera_fov_cmd_cb(const std::string& vehicle_name, const airsim_interfaces::msg::CameraFovCmd::SharedPtr camera_fov_cmd_msg);
         void window_image_cmd_group_cb(const airsim_interfaces::msg::WindowImageCmdGroup::SharedPtr window_image_cmd_group_msg);
@@ -165,8 +190,18 @@ namespace airsim_wrapper
         bool reset_srv_cb(const std::shared_ptr<airsim_interfaces::srv::Reset::Request> request, const std::shared_ptr<airsim_interfaces::srv::Reset::Response> response);
         bool run_srv_cb(const std::shared_ptr<airsim_interfaces::srv::Run::Request> request, const std::shared_ptr<airsim_interfaces::srv::Run::Response> response);
         bool pause_srv_cb(const std::shared_ptr<airsim_interfaces::srv::Pause::Request> request, const std::shared_ptr<airsim_interfaces::srv::Pause::Response> response);
+        bool enable_control_srv_cb(const std::shared_ptr<airsim_interfaces::srv::EnableControl::Request> request, const std::shared_ptr<airsim_interfaces::srv::EnableControl::Response> response);
+        bool arm_disarm_srv_cb(const std::shared_ptr<airsim_interfaces::srv::ArmDisarm::Request> request, const std::shared_ptr<airsim_interfaces::srv::ArmDisarm::Response> response);
+        bool takeoff_srv_cb(const std::shared_ptr<airsim_interfaces::srv::Takeoff::Request> request, const std::shared_ptr<airsim_interfaces::srv::Takeoff::Response> response);
+        bool land_srv_cb(const std::shared_ptr<airsim_interfaces::srv::Land::Request> request, const std::shared_ptr<airsim_interfaces::srv::Land::Response> response);
+        bool hover_srv_cb(const std::shared_ptr<airsim_interfaces::srv::Hover::Request> request, const std::shared_ptr<airsim_interfaces::srv::Hover::Response> response);
         bool add_target_group_cb(const std::shared_ptr<airsim_interfaces::srv::AddTargetGroup::Request> request, const std::shared_ptr<airsim_interfaces::srv::AddTargetGroup::Response> response);
         bool add_cluster_group_cb(const std::shared_ptr<airsim_interfaces::srv::AddClusterGroup::Request> request, const std::shared_ptr<airsim_interfaces::srv::AddClusterGroup::Response> response);
+
+    // ════════════════════════════════════════════════════════════════
+    // PRIVATE: State Update
+    private:
+        void update_vehicle_odom(VehicleROS* vehicle_ros, const msr::airlib::Kinematics::State& kinematics_estimated);
 
     // ════════════════════════════════════════════════════════════════
     // PRIVATE: State Publish
@@ -177,6 +212,7 @@ namespace airsim_wrapper
     // PRIVATE: Settings and Configuration
     private:
         void create_ros_comms_from_settings_json();
+        void initialize_vehicle_odom(VehicleROS* vehicle_ros, const VehicleSetting& vehicle_setting);
         void initialize_vehicle_tf(VehicleROS* vehicle_ros, const VehicleSetting& vehicle_setting);
         void initialize_camera_tf(VehicleROS* vehicle_ros, CameraROS* camera_ros, const CameraSetting& camera_setting);
         void set_nans_to_zeros_in_pose(VehicleSetting& vehicle_setting) const;
@@ -189,18 +225,22 @@ namespace airsim_wrapper
         // State methods
         rclcpp::Time client_get_timestamp();
         bool client_get_paused();
+        msr::airlib::MultirotorState client_get_multirotor_state(const std::string& vehicle_name);
         msr::airlib::CameraInfo client_get_camera_info(const std::string& vehicle_name, const std::string& camera_name);
         msr::airlib::Vector2r client_get_camera_fov(const std::string& vehicle_name, const std::string& camera_name);
 
         // Global methods
         void client_reset();
         void client_pause(const bool& is_paused);
-        void client_enable_control();
 
         // Vehicle methods
+        void client_enable_control(const bool& enable, const std::string& vehicle_name);
+        void client_arm_disarm(const bool& arm, const std::string& vehicle_name);
         void client_takeoff(const float& timeout, const std::string& vehicle_name, const bool& wait = false);
         void client_land(const float& timeout, const std::string& vehicle_name, const bool& wait = false);
         void client_hover(const std::string& vehicle_name);
+        void client_move_by_velocity(const float& vx, const float& vy, const float& vz, const float& dt, const std::string& vehicle_name);
+        void client_move_by_position(const float& x, const float& y, const float& z, const float& vel, const float& timeout, const std::string& vehicle_name);
         void client_set_camera_pose(const std::string& camera_name, const msr::airlib::Pose& pose, const std::string& vehicle_name);
         void client_set_camera_fov(const std::string& camera_name, const float& fov, const std::string& vehicle_name);
 
@@ -222,7 +262,6 @@ namespace airsim_wrapper
     // ════════════════════════════════════════════════════════════════
     // PRIVATE: Utility Methods
     private:
-        rclcpp::Time get_airsim_timestamp();
         rclcpp::Time get_sim_clock_time();
         msr::airlib::Quaternionr get_airlib_quat(const geometry_msgs::msg::Quaternion& geometry_msgs_quat) const;
         msr::airlib::Quaternionr get_airlib_quat(const tf2::Quaternion& tf2_quat) const;
@@ -236,6 +275,11 @@ namespace airsim_wrapper
         std::vector<std::vector<float>> get_airlib_colors(const std::vector<std_msgs::msg::ColorRGBA>& std_msgs_colors) const;
         geometry_msgs::msg::Transform get_transform_msg_from_airsim(const msr::airlib::Vector3r& position, const msr::airlib::AirSimSettings::Rotation& rotation);
         geometry_msgs::msg::Transform get_transform_msg_from_airsim(const msr::airlib::Vector3r& position, const msr::airlib::Quaternionr& quaternion);
+        geometry_msgs::msg::Pose get_pose_msg_from_airsim(const msr::airlib::Vector3r& position, const msr::airlib::AirSimSettings::Rotation& rotation);
+        geometry_msgs::msg::Pose get_pose_msg_from_airsim(const msr::airlib::Vector3r& position, const msr::airlib::Quaternionr& quaternion);
+        geometry_msgs::msg::Point transform_position_to_local(const geometry_msgs::msg::Point& global_point, const std::string& local_frame) const;
+        geometry_msgs::msg::Pose transform_pose_to_global(const geometry_msgs::msg::Pose& local_pose, const std::string& local_frame) const;
+        geometry_msgs::msg::Twist transform_twist_to_global(const geometry_msgs::msg::Twist& local_twist, const std::string& local_frame) const;
 
     // ════════════════════════════════════════════════════════════════
     // PRIVATE: ROS Components
@@ -248,16 +292,23 @@ namespace airsim_wrapper
         rclcpp::Service<airsim_interfaces::srv::Run>::SharedPtr run_srvr_;
         rclcpp::Service<airsim_interfaces::srv::Pause>::SharedPtr pause_srvr_;
 
-        // Window group subscribers
+        // Vehicle services
+        rclcpp::Service<airsim_interfaces::srv::EnableControl>::SharedPtr enable_control_srvr_;
+        rclcpp::Service<airsim_interfaces::srv::ArmDisarm>::SharedPtr arm_disarm_srvr_;
+        rclcpp::Service<airsim_interfaces::srv::Takeoff>::SharedPtr takeoff_srvr_;
+        rclcpp::Service<airsim_interfaces::srv::Land>::SharedPtr land_srvr_;
+        rclcpp::Service<airsim_interfaces::srv::Hover>::SharedPtr hover_srvr_;
+
+        // Window subscribers
         rclcpp::Subscription<airsim_interfaces::msg::WindowImageCmdGroup>::SharedPtr window_image_cmd_group_sub_;
         rclcpp::Subscription<airsim_interfaces::msg::WindowRectangleCmd>::SharedPtr window_rectangle_cmd_sub_;
         rclcpp::Subscription<airsim_interfaces::msg::WindowStringCmd>::SharedPtr window_string_cmd_sub_;
 
-        // Tracking group services
+        // Tracking services
         rclcpp::Service<airsim_interfaces::srv::AddTargetGroup>::SharedPtr add_target_group_srvr_;
         rclcpp::Service<airsim_interfaces::srv::AddClusterGroup>::SharedPtr add_cluster_group_srvr_;
 
-        // Tracking group subscribers
+        // Tracking subscribers
         rclcpp::Subscription<airsim_interfaces::msg::UpdateTargetCmdGroup>::SharedPtr update_target_cmd_group_sub_;
         rclcpp::Subscription<airsim_interfaces::msg::UpdateClusterCmdGroup>::SharedPtr update_cluster_cmd_group_sub_;
 
@@ -289,16 +340,21 @@ namespace airsim_wrapper
         std::shared_ptr<rclcpp::CallbackGroup> cb_tracking_;
 
         // TF components
-        std::string global_frame_id_ = "world";
-        std::string local_frame_id_ = "local";
+        std::string world_frame_id_ = "world";
+        std::string vehicle_local_frame_id_ = "local";
+        std::string vehicle_body_frame_id_ = "body";
         std::string camera_body_frame_id_ = "body";
         std::string camera_optical_frame_id_ = "optical";
         std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
-        std::shared_ptr<tf2_ros::StaticTransformBroadcaster> static_tf_pub_;
+        std::shared_ptr<tf2_ros::StaticTransformBroadcaster> static_tf_broadcaster_;
+        std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
+        std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
 
         // Timers
         rclcpp::TimerBase::SharedPtr airsim_state_update_timer_;
         rclcpp::TimerBase::SharedPtr sim_clock_update_timer_;
+        rclcpp::TimerBase::SharedPtr airsim_status_update_timer_;
+        rclcpp::TimerBase::SharedPtr world_plot_update_timer_;
 
         // Message storage
         rosgraph_msgs::msg::Clock ros_clock_;

@@ -11,7 +11,7 @@ else
   exit 1
 fi
 
-# Launch Airsim settings node with parameters
-ros2 run flychams_bringup airsim_settings_node --ros-args \
+# Launch Airsim settings parser with parameters
+ros2 run flychams_bringup airsim_settings_parser --ros-args \
   -p config_source_file:="$FLYCHAMS_ROS2_PATH/config/Configuration.xlsx" \
   -p airsim_settings_destination_file:="$FLYCHAMS_ROS2_PATH/config/settings.json"

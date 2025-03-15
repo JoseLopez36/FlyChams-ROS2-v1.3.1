@@ -50,8 +50,13 @@ def generate_launch_description():
             output='screen',
             namespace='airsim',
             parameters=[{
-                'update_airsim_state_every_n_sec': 0.030,
+                'update_airsim_state_every_n_sec': 0.020,
                 'update_sim_clock_every_n_sec': 0.001,
+                'world_frame_id': 'world',
+                'vehicle_local_frame_id': 'local',
+                'vehicle_body_frame_id': 'body',
+                'camera_body_frame_id': 'body',
+                'camera_optical_frame_id': 'optical',
                 'enable_world_plot': False,
                 'host_ip': 'localhost',
                 'host_port': 41451
@@ -59,57 +64,20 @@ def generate_launch_description():
         )
     )
 
-    # ============= REGISTRATION NODES =============
-    # Conditionally add Agent Registration node
+    # ============= REGISTRATOR NODES =============
+    # Conditionally add Registrator node
     ld.append(
         Node(
             package='flychams_bringup',
-            executable='agent_registration_node',
-            name='agent_registration_node',
+            executable='registrator_node',
+            name='registrator_node',
             output='screen',
             namespace='flychams',
             parameters=[
                 system_path, 
                 topics_path, 
                 frames_path, 
-                params_path, 
-                {'use_sim_time': True}
-            ]
-        )
-    )
-
-    # Conditionally add Target Registration node
-    ld.append(
-        Node(
-            package='flychams_bringup',
-            executable='target_registration_node',
-            name='target_registration_node',
-            output='screen',
-            namespace='flychams',
-            parameters=[
-                system_path, 
-                topics_path, 
-                frames_path, 
-                params_path, 
-                {'use_sim_time': True}
-            ]
-        )
-    )
-
-    # Conditionally add Cluster Registration node
-    ld.append(
-        Node(
-            package='flychams_bringup',
-            executable='cluster_registration_node',
-            name='cluster_registration_node',
-            output='screen',
-            namespace='flychams',
-            parameters=[
-                system_path, 
-                topics_path, 
-                frames_path, 
-                params_path, 
-                {'use_sim_time': True}
+                params_path
             ]
         )
     )
