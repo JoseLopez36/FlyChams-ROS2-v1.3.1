@@ -1,4 +1,4 @@
-#include "flychams_control/head_control/head_controller.hpp"
+#include "flychams_control/agent_control/head_controller.hpp"
 
 using namespace std::chrono_literals;
 using namespace flychams::core;
@@ -13,7 +13,7 @@ namespace flychams::control
 	{
 		// Get parameters from parameter server
 		// Get update rates
-		float update_rate = RosUtils::getParameterOr<float>(node_, "head_control.control_update_rate", 200.0f);
+		float update_rate = RosUtils::getParameterOr<float>(node_, "head_control.control_update_rate", 20.0f);
 
 		// Get central camera parameters
 		central_head_id_ = config_tools_->getAgent(agent_id_)->central_head_id;
@@ -30,7 +30,7 @@ namespace flychams::control
 		has_goal_ = false;
 
 		// Subscribe to goal topic
-		goal_sub_ = topic_tools_->createTrackingGoalSubscriber(agent_id_,
+		goal_sub_ = topic_tools_->createAgentTrackingGoalSubscriber(agent_id_,
 			std::bind(&HeadController::goalCallback, this, std::placeholders::_1));
 
 		// Set update timer
@@ -68,8 +68,8 @@ namespace flychams::control
 		std::lock_guard<std::mutex> lock(mutex_);
 
 		// Command central head to move to configured angles and fov
-		ext_tools_->setGimbalAngles(agent_id_, { central_head_id_ }, { central_head_orientation_ }, tf_tools_->getWorldFrame());
-		ext_tools_->setCameraFovs(agent_id_, { central_head_id_ }, { central_head_fov_ }, tf_tools_->getWorldFrame());
+		ext_tools_->setGimbalOrientations(agent_id_, { central_head_id_ }, { central_head_orientation_ });
+		ext_tools_->setCameraFovs(agent_id_, { central_head_id_ }, { central_head_fov_ });
 
 		// Check if goal is set
 		if (!has_goal_)
@@ -81,8 +81,8 @@ namespace flychams::control
 		// Command tracking heads to move to given angles and fovs
 		if (goal_.head_ids.size() >= 1)
 		{
-			ext_tools_->setGimbalAngles(agent_id_, goal_.head_ids, goal_.orientations, tf_tools_->getWorldFrame());
-			ext_tools_->setCameraFovs(agent_id_, goal_.head_ids, goal_.fovs, tf_tools_->getWorldFrame());
+			ext_tools_->setGimbalOrientations(agent_id_, goal_.head_ids, goal_.orientations);
+			ext_tools_->setCameraFovs(agent_id_, goal_.head_ids, goal_.fovs);
 		}
 		else
 		{

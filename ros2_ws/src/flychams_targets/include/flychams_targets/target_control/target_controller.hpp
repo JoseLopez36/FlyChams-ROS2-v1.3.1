@@ -4,12 +4,12 @@
 #include <mutex>
 
 // Trajectory includes
-#include "flychams_bringup/target/target_trajectory.hpp"
+#include "flychams_targets/target_trajectory/trajectory_parser.hpp"
 
 // Base module include
 #include "flychams_core/base/base_module.hpp"
 
-namespace flychams::bringup
+namespace flychams::targets
 {
     /**
      * ════════════════════════════════════════════════════════════════
@@ -44,25 +44,27 @@ namespace flychams::bringup
         core::ID target_id_;
 
     private: // Data
-        // Trajectory
-        TargetTrajectory::SharedPtr trajectory_;
-        // Position
-        core::PointMsg position_;
+        // Trajectory data
+        std::vector<TrajectoryParser::Point> trajectory_;
+        int current_idx_;
+        int num_points_;
+        bool reverse_;
+        float time_elapsed_;
+        // Target info
+        core::TargetInfoMsg info_;
 
     public: // Public methods
-        // Initialize
-        void initializeTrajectory(const std::string& trajectory_path);
         // Update
-        void updateControl(const float& dt);
-        // Get position
+        void update(const float& dt);
         core::PointMsg getPosition() const;
 
     private: // Methods
-        TargetTrajectory::Point updatePosition(const float& dt);
+        void updateInfo(const float& dt, core::PointMsg& position);
+        void publishInfo(const core::TargetInfoMsg& info);
 
     private:
         // Publishers
         core::PublisherPtr<core::TargetInfoMsg> info_pub_;
     };
 
-} // namespace flychams::bringup
+} // namespace flychams::targets

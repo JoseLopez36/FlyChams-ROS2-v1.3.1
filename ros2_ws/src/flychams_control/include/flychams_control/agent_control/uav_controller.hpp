@@ -3,9 +3,6 @@
 // Standard includes
 #include <mutex>
 
-// PID controller include
-#include "flychams_control/agent_control/pid_controller.hpp"
-
 // Base module include
 #include "flychams_core/base/base_module.hpp"
 
@@ -40,28 +37,89 @@ namespace flychams::control
 
 	public: // Types
 		using SharedPtr = std::shared_ptr<UAVController>;
+		enum class State
+		{
+			IDLE,                // Initial state, UAV is inactive
+			INITIALIZING,        // UAV is being initialized
+			DISARMED,            // UAV is disarmed, safe state
+			ARMING,              // UAV is in the process of arming motors
+			ARMED,               // UAV is armed, ready for takeoff
+			TAKING_OFF,          // UAV is taking off
+			HOVERING,            // UAV is hovering in place
+			MOVING,              // UAV is moving to a goal
+			REACHED,             // UAV has reached the goal position
+			LANDING,             // UAV is landing
+			ERROR                // Error state, requires reset
+		};
+
+	public: // State control methods
+		// Get the current state
+		State getState() const { return state_; }
+		// State transition requests
+		bool requestArm();
+		bool requestTakeoff();
+		bool requestHover();
+		bool requestLand();
+		bool requestDisarm();
+		bool requestMove(const core::PointMsg& goal_pos);
+		// Reset the UAV controller to IDLE state
+		bool reset();
 
 	private: // Parameters
 		core::ID agent_id_;
+		float update_rate_;
+		float pos_timeout_;
+		float hover_altitude_;    // Altitude for hovering
+		float takeoff_altitude_;  // Target altitude for takeoff
+		float goal_reach_threshold_;
 
 	private: // Data
-		// Position message
+		// Current state
+		State state_{ State::IDLE };
+		// State transition timestamps
+		rclcpp::Time state_entry_time_;
+		// State transition timeouts
+		float arm_timeout_{ 5.0f };
+		float takeoff_timeout_{ 10.0f };
+		float landing_timeout_{ 10.0f };
+		// Current position message
+		core::PointMsg curr_pos_;
+		bool has_odom_;
+		// Goal position message
+		core::PointMsg goal_pos_;
 		bool has_goal_;
-		core::PoseStampedMsg local_position_msg_;
+		// Mutex
+		std::mutex mutex_;
 
 	private: // Methods
 		// Callbacks
-		void goalCallback(const core::AgentGoalMsg::SharedPtr msg);
+		void odomCallback(const core::OdometryMsg::SharedPtr msg);
+		void goalCallback(const core::PositionGoalMsg::SharedPtr msg);
+		// State management
+		void setState(const State& new_state);
+		bool isValidTransition(const State& from, const State& to) const;
+		void handleStateTransition();
+		// State handlers
+		void handleIdleState();
+		void handleInitializingState();
+		void handleDisarmedState();
+		void handleArmingState();
+		void handleArmedState();
+		void handleTakingOffState();
+		void handleHoveringState();
+		void handleMovingState();
+		void handleReachedState();
+		void handleLandingState();
+		void handleErrorState();
 		// Update control
 		void update();
 
 	private:
 		// Callback group
 		core::CallbackGroupPtr callback_group_;
-		// Subscriber
-		core::SubscriberPtr<core::AgentGoalMsg> goal_sub_;
-		// Publisher
-		core::PublisherPtr<core::PoseStampedMsg> local_position_pub_;
+		// Subscribers
+		core::SubscriberPtr<core::OdometryMsg> odom_sub_;
+		core::SubscriberPtr<core::PositionGoalMsg> goal_sub_;
 		// Timer
 		core::TimerPtr control_timer_;
 	};
