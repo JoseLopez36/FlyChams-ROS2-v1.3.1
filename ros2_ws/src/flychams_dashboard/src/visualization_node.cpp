@@ -4,7 +4,7 @@
 #include "flychams_dashboard/visualization/visualization_factory.hpp"
 
 // Core includes
-#include "flychams_core/base/discoverer_node.hpp"
+#include "flychams_core/base/base_discoverer_node.hpp"
 
 using namespace flychams::core;
 using namespace flychams::dashboard;
@@ -23,11 +23,11 @@ using namespace flychams::dashboard;
  * @date 2025-03-01
  * ════════════════════════════════════════════════════════════════
  */
-class VisualizationNode : public DiscovererNode
+class VisualizationNode : public BaseDiscovererNode
 {
 public: // Constructor/Destructor
     VisualizationNode(const std::string& node_name, const rclcpp::NodeOptions& options)
-        : DiscovererNode(node_name, options)
+        : BaseDiscovererNode(node_name, options)
     {
         // Nothing to do
     }

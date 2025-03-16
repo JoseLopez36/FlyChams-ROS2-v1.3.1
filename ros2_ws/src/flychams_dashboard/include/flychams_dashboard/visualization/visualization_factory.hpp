@@ -80,7 +80,7 @@ namespace flychams::dashboard
     private: // Methods
         // Callbacks
         void agentOdomCallback(const core::ID& agent_id, const core::OdometryMsg::SharedPtr msg);
-        void agentGoalCallback(const core::ID& agent_id, const core::AgentGoalMsg::SharedPtr msg);
+        void agentGoalCallback(const core::ID& agent_id, const core::PositionGoalMsg::SharedPtr msg);
         void targetInfoCallback(const core::ID& target_id, const core::TargetInfoMsg::SharedPtr msg);
         void clusterInfoCallback(const core::ID& cluster_id, const core::ClusterInfoMsg::SharedPtr msg);
         // Update
@@ -92,7 +92,7 @@ namespace flychams::dashboard
         core::CallbackGroupPtr callback_group_;
         // Subscribers
         std::unordered_map<std::string, core::SubscriberPtr<core::OdometryMsg>> agent_odom_subs_;
-        std::unordered_map<std::string, core::SubscriberPtr<core::AgentGoalMsg>> agent_goal_subs_;
+        std::unordered_map<std::string, core::SubscriberPtr<core::PositionGoalMsg>> agent_goal_subs_;
         std::unordered_map<std::string, core::SubscriberPtr<core::TargetInfoMsg>> target_info_subs_;
         std::unordered_map<std::string, core::SubscriberPtr<core::ClusterInfoMsg>> cluster_info_subs_;
         // Publishers

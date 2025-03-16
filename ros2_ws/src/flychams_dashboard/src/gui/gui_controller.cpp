@@ -108,7 +108,7 @@ namespace flychams::dashboard
         }
 
         // Subscribe to tracking goal
-        tracking_sub_ = topic_tools_->createTrackingGoalSubscriber(agent_id_,
+        tracking_sub_ = topic_tools_->createAgentTrackingGoalSubscriber(agent_id_,
             std::bind(&GuiController::trackingCallback, this, std::placeholders::_1));
     }
 

@@ -91,7 +91,7 @@ namespace flychams::dashboard
         // Transform to world frame
         const std::string& source_frame = msg->header.frame_id;
         const std::string& child_frame = msg->child_frame_id;
-        const std::string& target_frame = tf_tools_->getWorldFrame();
+        const std::string& target_frame = tf_tools_->getGlobalFrame();
         const PointMsg& curr_pos_msg = tf_tools_->transformPointMsg(msg->pose.pose.position, source_frame, target_frame);
         const Vector3Msg& curr_vel_msg = tf_tools_->transformVelocityMsg(msg->twist.twist.linear, child_frame, target_frame);
         // Update agent metrics under lock
@@ -103,7 +103,7 @@ namespace flychams::dashboard
         curr_agent_metrics_[agent_id].vel_z = curr_vel_msg.z;
     }
 
-    void VisualizationFactory::agentGoalCallback(const core::ID& agent_id, const core::AgentGoalMsg::SharedPtr msg)
+    void VisualizationFactory::agentGoalCallback(const core::ID& agent_id, const core::PositionGoalMsg::SharedPtr msg)
     {
         // Get target position
         curr_agent_metrics_[agent_id].goal_x = msg->position.x;
@@ -148,7 +148,7 @@ namespace flychams::dashboard
             // Publish agent metrics
             AgentMetricsMsg agent_metrics_msg;
             agent_metrics_msg.header.stamp = curr_time;
-            agent_metrics_msg.header.frame_id = tf_tools_->getWorldFrame();
+            agent_metrics_msg.header.frame_id = tf_tools_->getGlobalFrame();
             MsgConversions::toMsg(curr_agent_metrics_[agent_id], agent_metrics_msg);
             agent_metrics_pubs_[agent_id]->publish(agent_metrics_msg);
         }
@@ -161,7 +161,7 @@ namespace flychams::dashboard
             // Publish target metrics
             TargetMetricsMsg target_metrics_msg;
             target_metrics_msg.header.stamp = curr_time;
-            target_metrics_msg.header.frame_id = tf_tools_->getWorldFrame();
+            target_metrics_msg.header.frame_id = tf_tools_->getGlobalFrame();
             MsgConversions::toMsg(curr_target_metrics_[target_id], target_metrics_msg);
             target_metrics_pubs_[target_id]->publish(target_metrics_msg);
         }
@@ -174,7 +174,7 @@ namespace flychams::dashboard
             // Publish cluster metrics
             ClusterMetricsMsg cluster_metrics_msg;
             cluster_metrics_msg.header.stamp = curr_time;
-            cluster_metrics_msg.header.frame_id = tf_tools_->getWorldFrame();
+            cluster_metrics_msg.header.frame_id = tf_tools_->getGlobalFrame();
             MsgConversions::toMsg(curr_cluster_metrics_[cluster_id], cluster_metrics_msg);
             cluster_metrics_pubs_[cluster_id]->publish(cluster_metrics_msg);
         }
@@ -185,7 +185,7 @@ namespace flychams::dashboard
         // Publish global metrics
         GlobalMetricsMsg global_metrics_msg;
         global_metrics_msg.header.stamp = curr_time;
-        global_metrics_msg.header.frame_id = tf_tools_->getWorldFrame();
+        global_metrics_msg.header.frame_id = tf_tools_->getGlobalFrame();
         MsgConversions::toMsg(curr_global_metrics_, global_metrics_msg);
         global_metrics_pubs_->publish(global_metrics_msg);
     }
@@ -249,7 +249,7 @@ namespace flychams::dashboard
         curr_agent_metrics_.insert({ agent_id, MetricsFactory::createDefaultAgent() });
         prev_agent_metrics_.insert({ agent_id, MetricsFactory::createDefaultAgent() });
         // Add markers
-        agent_markers_.insert({ agent_id, MarkersFactory::createAgentMarkers(tf_tools_->getWorldFrame(), markers_update_rate_ * 1.1f) });
+        agent_markers_.insert({ agent_id, MarkersFactory::createAgentMarkers(tf_tools_->getGlobalFrame(), markers_update_rate_ * 1.1f) });
         // Add subscribers
         auto options = rclcpp::SubscriptionOptions();
         options.callback_group = callback_group_;
@@ -258,8 +258,8 @@ namespace flychams::dashboard
             {
                 this->agentOdomCallback(agent_id, msg);
             }, options) });
-        agent_goal_subs_.insert({ agent_id, topic_tools_->createAgentGoalSubscriber(agent_id,
-            [this, agent_id](const AgentGoalMsg::SharedPtr msg)
+        agent_goal_subs_.insert({ agent_id, topic_tools_->createAgentPositionGoalSubscriber(agent_id,
+            [this, agent_id](const PositionGoalMsg::SharedPtr msg)
             {
                 this->agentGoalCallback(agent_id, msg);
             }, options) });
@@ -294,7 +294,7 @@ namespace flychams::dashboard
         curr_target_metrics_.insert({ target_id, MetricsFactory::createDefaultTarget() });
         prev_target_metrics_.insert({ target_id, MetricsFactory::createDefaultTarget() });
         // Add markers
-        target_markers_.insert({ target_id, MarkersFactory::createTargetMarkers(tf_tools_->getWorldFrame(), markers_update_rate_ * 1.1f) });
+        target_markers_.insert({ target_id, MarkersFactory::createTargetMarkers(tf_tools_->getGlobalFrame(), markers_update_rate_ * 1.1f) });
         // Add subscriber
         auto options = rclcpp::SubscriptionOptions();
         options.callback_group = callback_group_;
@@ -332,7 +332,7 @@ namespace flychams::dashboard
         curr_cluster_metrics_.insert({ cluster_id, MetricsFactory::createDefaultCluster() });
         prev_cluster_metrics_.insert({ cluster_id, MetricsFactory::createDefaultCluster() });
         // Add markers
-        cluster_markers_.insert({ cluster_id, MarkersFactory::createClusterMarkers(tf_tools_->getWorldFrame(), markers_update_rate_ * 1.1f) });
+        cluster_markers_.insert({ cluster_id, MarkersFactory::createClusterMarkers(tf_tools_->getGlobalFrame(), markers_update_rate_ * 1.1f) });
         // Add subscriber
         auto options = rclcpp::SubscriptionOptions();
         options.callback_group = callback_group_;

@@ -46,7 +46,7 @@ namespace flychams::core
 
 					// Generate target ID
 					std::stringstream ss;
-					ss << group_id << "_TARGET" << std::setw(2) << std::setfill('0') << i;
+					ss << group_id << "TARGET" << std::setw(2) << std::setfill('0') << i;
 					const ID target_id = ss.str();
 
 					// Get trajectory path
