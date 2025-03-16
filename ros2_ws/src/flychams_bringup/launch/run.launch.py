@@ -26,24 +26,24 @@ def generate_launch_description():
     }
 
     # Define launch arguments for each node
-    launch_agent_control = LaunchConfiguration('launch_agent_control')
-    launch_clustering = LaunchConfiguration('launch_clustering')
-    launch_agent_positioning = LaunchConfiguration('launch_agent_positioning')
-    launch_agent_assignment = LaunchConfiguration('launch_agent_assignment')
-    launch_agent_tracking = LaunchConfiguration('launch_agent_tracking')
-    launch_gui = LaunchConfiguration('launch_gui')
-    launch_visualization = LaunchConfiguration('launch_visualization')
-    launch_target_control = LaunchConfiguration('launch_target_control')
+    launch_agent_control = LaunchConfiguration('ctrl')
+    launch_clustering = LaunchConfiguration('clus')
+    launch_agent_positioning = LaunchConfiguration('pos')
+    launch_agent_assignment = LaunchConfiguration('assign')
+    launch_agent_tracking = LaunchConfiguration('track')
+    launch_gui = LaunchConfiguration('gui')
+    launch_visualization = LaunchConfiguration('viz')
+    launch_target_control = LaunchConfiguration('tgt_ctrl')
 
     # Define log level arguments for each node
-    log_level_agent_control = LaunchConfiguration('log_level_agent_control')
-    log_level_clustering = LaunchConfiguration('log_level_clustering')
-    log_level_agent_positioning = LaunchConfiguration('log_level_agent_positioning')
-    log_level_agent_assignment = LaunchConfiguration('log_level_agent_assignment')
-    log_level_agent_tracking = LaunchConfiguration('log_level_agent_tracking')
-    log_level_gui = LaunchConfiguration('log_level_gui')
-    log_level_visualization = LaunchConfiguration('log_level_visualization')
-    log_level_target_control = LaunchConfiguration('log_level_target_control')
+    log_level_agent_control = LaunchConfiguration('log_ctrl')
+    log_level_clustering = LaunchConfiguration('log_clu')
+    log_level_agent_positioning = LaunchConfiguration('log_pos')
+    log_level_agent_assignment = LaunchConfiguration('log_assign')
+    log_level_agent_tracking = LaunchConfiguration('log_track')
+    log_level_gui = LaunchConfiguration('log_gui')
+    log_level_visualization = LaunchConfiguration('log_viz')
+    log_level_target_control = LaunchConfiguration('log_tgt_ctrl')
 
     # Get paths to config files
     # Core parameters
@@ -113,85 +113,87 @@ def generate_launch_description():
 
     # Declare launch arguments with default values
     ld.append(DeclareLaunchArgument(
-        'launch_agent_control',
+        'ctrl',
         default_value='False',
         description='Flag to enable/disable the Agent Control node'))
     
     ld.append(DeclareLaunchArgument(
-        'launch_clustering',
+        'clus',
         default_value='False',
         description='Flag to enable/disable the Clustering node'))
     
     ld.append(DeclareLaunchArgument(
-        'launch_agent_positioning',
+        'pos',
         default_value='False',
         description='Flag to enable/disable the Agent Positioning node'))
     
     ld.append(DeclareLaunchArgument(
-        'launch_agent_assignment',
+        'assign',
         default_value='False',
         description='Flag to enable/disable the Agent Assignment node'))
     
     ld.append(DeclareLaunchArgument(
-        'launch_agent_tracking',
+        'track',
         default_value='False',
         description='Flag to enable/disable the Agent Tracking node'))
     
     ld.append(DeclareLaunchArgument(
-        'launch_gui',
+        'gui',
         default_value='False',
         description='Flag to enable/disable the GUI node'))
     
     ld.append(DeclareLaunchArgument(
-        'launch_visualization',
+        'viz',
         default_value='False',
         description='Flag to enable/disable the Visualization node'))
     
     ld.append(DeclareLaunchArgument(
-        'launch_target_control',
+        'tgt_ctrl',
         default_value='False',
         description='Flag to enable/disable the Target Control node'))
     
     # Declare log level arguments with default values
     ld.append(DeclareLaunchArgument(
-        'log_level_agent_control',
+        'log_ctrl',
         default_value='error',
         description='Log level for the Agent Control node'))
     
     ld.append(DeclareLaunchArgument(
-        'log_level_clustering',
+        'log_clu',
         default_value='error',
         description='Log level for the Clustering node'))
     
     ld.append(DeclareLaunchArgument(
-        'log_level_agent_positioning',
+        'log_pos',
         default_value='error',
         description='Log level for the Agent Positioning node'))
     
     ld.append(DeclareLaunchArgument(
-        'log_level_agent_assignment',
+        'log_assign',
         default_value='error',
         description='Log level for the Agent Assignment node'))
     
     ld.append(DeclareLaunchArgument(
-        'log_level_agent_tracking',
+        'log_track',
         default_value='error',
         description='Log level for the Agent Tracking node'))
     
     ld.append(DeclareLaunchArgument(
-        'log_level_gui',
+        'log_gui',
         default_value='error',
         description='Log level for the GUI node'))
     
     ld.append(DeclareLaunchArgument(
-        'log_level_visualization',
+        'log_viz',
         default_value='error',
         description='Log level for the Visualization node'))
     
     ld.append(DeclareLaunchArgument(
-        'log_level_target_control',
+        'log_tgt_ctrl',
         default_value='error',
         description='Log level for the Target Control node'))
+
+    # Launch command example: ros2 launch flychams_bringup run.launch.py ctrl:=True clus:=True pos:=True assign:=True track:=True gui:=True viz:=True tgt_ctrl:=True log_ctrl:=info log_clu:=info log_pos:=info log_assign:=info log_track:=info log_gui:=info log_viz:=info log_tgt_ctrl:=info
 
     # ============= CONTROL NODES =============
     # Conditionally add Agent Controller node

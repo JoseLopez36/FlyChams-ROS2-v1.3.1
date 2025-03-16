@@ -58,7 +58,7 @@ namespace flychams::control
 		// Callbacks
 		void goalCallback(const core::TrackingGoalMsg::SharedPtr msg);
 		// Update
-		void updateControl();
+		void update();
 
 	private:
 		// Subscribers

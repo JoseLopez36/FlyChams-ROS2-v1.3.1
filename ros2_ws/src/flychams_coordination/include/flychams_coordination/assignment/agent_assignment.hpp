@@ -78,7 +78,7 @@ namespace flychams::coordination
         std::unordered_map<core::ID, core::SubscriberPtr<core::OdometryMsg>> agent_odom_subs_;
         std::unordered_map<core::ID, core::SubscriberPtr<core::ClusterInfoMsg>> cluster_info_subs_;
         // Publishers
-        std::unordered_map<core::ID, core::PublisherPtr<core::AgentInfoMsg>> agent_info_pubs_;
+        std::unordered_map<core::ID, core::PublisherPtr<core::TrackingInfoMsg>> agent_info_pubs_;
         // Timers
         core::TimerPtr assignment_timer_;
         core::TimerPtr publish_timer_;

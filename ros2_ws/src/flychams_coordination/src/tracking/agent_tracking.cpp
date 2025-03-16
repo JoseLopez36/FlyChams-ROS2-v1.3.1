@@ -33,7 +33,7 @@ namespace flychams::coordination
 
         // Prepare tracking goal message
         int n = tracking_params_.n;
-        goal_.header = RosUtils::createHeader(node_, tf_tools_->getWorldFrame());
+        goal_.header = RosUtils::createHeader(node_, tf_tools_->getGlobalFrame());
         switch (tracking_params_.mode)
         {
         case TrackingMode::MultiCameraTracking:
@@ -78,11 +78,11 @@ namespace flychams::coordination
         // Subscribe to odom and agent info topics
         odom_sub_ = topic_tools_->createAgentOdomSubscriber(agent_id_,
             std::bind(&AgentTracking::odomCallback, this, std::placeholders::_1));
-        info_sub_ = topic_tools_->createAgentInfoSubscriber(agent_id_,
+        info_sub_ = topic_tools_->createAgentTrackingInfoSubscriber(agent_id_,
             std::bind(&AgentTracking::infoCallback, this, std::placeholders::_1));
 
         // Publish to tracking goal topic   
-        goal_pub_ = topic_tools_->createTrackingGoalPublisher(agent_id_);
+        goal_pub_ = topic_tools_->createAgentTrackingGoalPublisher(agent_id_);
 
         // Set update timers
         tracking_timer_ = RosUtils::createTimerByRate(node_, update_rate,
@@ -110,7 +110,7 @@ namespace flychams::coordination
         // Transform to world frame
         const std::string& source_frame = msg->header.frame_id;
         const std::string& child_frame = msg->child_frame_id;
-        const std::string& target_frame = tf_tools_->getWorldFrame();
+        const std::string& target_frame = tf_tools_->getGlobalFrame();
         const PointMsg& curr_pos_msg = tf_tools_->transformPointMsg(msg->pose.pose.position, source_frame, target_frame);
         // Convert to Eigen
         std::lock_guard<std::mutex> lock(mutex_);
@@ -118,7 +118,7 @@ namespace flychams::coordination
         has_odom_ = true;
     }
 
-    void AgentTracking::infoCallback(const core::AgentInfoMsg::SharedPtr msg)
+    void AgentTracking::infoCallback(const core::TrackingInfoMsg::SharedPtr msg)
     {
         // Get cluster centers and radii
         std::lock_guard<std::mutex> lock(mutex_);
@@ -180,7 +180,7 @@ namespace flychams::coordination
             const auto& r = tab_r(i);
 
             // First, get the transform between world and optical frame
-            const TransformMsg& wTc = tf_tools_->getTransformBetweenFrames(tf_tools_->getWorldFrame(), tf_tools_->getHeadOpticalFrame(agent_id_, camera_params.id));
+            const TransformMsg& wTc = tf_tools_->getTransformBetweenFrames(tf_tools_->getGlobalFrame(), tf_tools_->getCameraOpticalFrame(agent_id_, camera_params.id));
             const Vector3r& wPc = MsgConversions::fromMsg(wTc.translation);
             const Matrix3r& wRc = MathUtils::quaternionToRotationMatrix(MsgConversions::fromMsg(wTc.rotation));
 
@@ -211,8 +211,8 @@ namespace flychams::coordination
         const auto& camera_params = tracking_params_.window_params[0].camera_params;
 
         // Get the transform between world and optical frame
-        const std::string& world_frame = tf_tools_->getWorldFrame();
-        const std::string& optical_frame = tf_tools_->getHeadOpticalFrame(agent_id_, central_head_id_);
+        const std::string& world_frame = tf_tools_->getGlobalFrame();
+        const std::string& optical_frame = tf_tools_->getCameraOpticalFrame(agent_id_, central_head_id_);
         const TransformMsg& world_to_optical = tf_tools_->getTransformBetweenFrames(world_frame, optical_frame);
         const Matrix4r& wTc = MsgConversions::fromMsg(world_to_optical);
         const Vector3r& wPc = wTc.block<3, 1>(0, 3);

@@ -35,12 +35,14 @@ namespace flychams::control
 
 		// Set update timer
 		control_timer_ = RosUtils::createTimerByRate(node_, update_rate,
-			std::bind(&HeadController::updateControl, this));
+			std::bind(&HeadController::update, this));
 	}
 
 	void HeadController::onShutdown()
 	{
+		// Lock mutex
 		std::lock_guard<std::mutex> lock(mutex_);
+
 		// Destroy subscribers
 		goal_sub_.reset();
 		// Destroy update timer
@@ -53,8 +55,9 @@ namespace flychams::control
 
 	void HeadController::goalCallback(const core::TrackingGoalMsg::SharedPtr msg)
 	{
-		// Get target position
+		// Lock mutex
 		std::lock_guard<std::mutex> lock(mutex_);
+
 		goal_ = *msg;
 		has_goal_ = true;
 	}
@@ -63,30 +66,24 @@ namespace flychams::control
 	// UPDATE: Update PID controllers
 	// ════════════════════════════════════════════════════════════════════════════
 
-	void HeadController::updateControl()
+	void HeadController::update()
 	{
+		// Lock mutex
 		std::lock_guard<std::mutex> lock(mutex_);
 
 		// Command central head to move to configured angles and fov
 		ext_tools_->setGimbalOrientations(agent_id_, { central_head_id_ }, { central_head_orientation_ });
 		ext_tools_->setCameraFovs(agent_id_, { central_head_id_ }, { central_head_fov_ });
 
-		// Check if goal is set
+		// Check if tracking goal is set
 		if (!has_goal_)
-		{
-			RCLCPP_WARN(node_->get_logger(), "Head controller: No goal set, skipping update");
 			return;
-		}
 
 		// Command tracking heads to move to given angles and fovs
 		if (goal_.head_ids.size() >= 1)
 		{
 			ext_tools_->setGimbalOrientations(agent_id_, goal_.head_ids, goal_.orientations);
 			ext_tools_->setCameraFovs(agent_id_, goal_.head_ids, goal_.fovs);
-		}
-		else
-		{
-			RCLCPP_WARN(node_->get_logger(), "Head controller: No head ids set, skipping update");
 		}
 	}
 

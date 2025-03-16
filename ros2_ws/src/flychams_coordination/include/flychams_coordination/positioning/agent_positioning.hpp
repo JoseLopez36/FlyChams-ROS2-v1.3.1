@@ -59,16 +59,16 @@ namespace flychams::coordination
     private: // Methods
         // Callbacks
         void odomCallback(const core::OdometryMsg::SharedPtr msg);
-        void infoCallback(const core::AgentInfoMsg::SharedPtr msg);
+        void infoCallback(const core::TrackingInfoMsg::SharedPtr msg);
         // Update
         void updatePosition();
 
     private:
         // Subscribers
         core::SubscriberPtr<core::OdometryMsg> odom_sub_;
-        core::SubscriberPtr<core::AgentInfoMsg> info_sub_;
+        core::SubscriberPtr<core::TrackingInfoMsg> info_sub_;
         // Publishers
-        core::PublisherPtr<core::AgentGoalMsg> goal_pub_;
+        core::PublisherPtr<core::PositionGoalMsg> goal_pub_;
         // Timers
         core::TimerPtr positioning_timer_;
     };

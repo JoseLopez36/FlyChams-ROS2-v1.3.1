@@ -46,11 +46,11 @@ namespace flychams::coordination
         // Subscribe to odom and goal topics
         odom_sub_ = topic_tools_->createAgentOdomSubscriber(agent_id_,
             std::bind(&AgentPositioning::odomCallback, this, std::placeholders::_1));
-        info_sub_ = topic_tools_->createAgentInfoSubscriber(agent_id_,
+        info_sub_ = topic_tools_->createAgentTrackingInfoSubscriber(agent_id_,
             std::bind(&AgentPositioning::infoCallback, this, std::placeholders::_1));
 
         // Publish to goal topic
-        goal_pub_ = topic_tools_->createAgentGoalPublisher(agent_id_);
+        goal_pub_ = topic_tools_->createAgentPositionGoalPublisher(agent_id_);
 
         // Set update timers
         positioning_timer_ = RosUtils::createTimerByRate(node_, update_rate,
@@ -80,7 +80,7 @@ namespace flychams::coordination
         // Transform to world frame
         const std::string& source_frame = msg->header.frame_id;
         const std::string& child_frame = msg->child_frame_id;
-        const std::string& target_frame = tf_tools_->getWorldFrame();
+        const std::string& target_frame = tf_tools_->getGlobalFrame();
         const PointMsg& curr_pos_msg = tf_tools_->transformPointMsg(msg->pose.pose.position, source_frame, target_frame);
         // Convert to Eigen
         std::lock_guard<std::mutex> lock(mutex_);
@@ -88,7 +88,7 @@ namespace flychams::coordination
         has_odom_ = true;
     }
 
-    void AgentPositioning::infoCallback(const core::AgentInfoMsg::SharedPtr msg)
+    void AgentPositioning::infoCallback(const core::TrackingInfoMsg::SharedPtr msg)
     {
         // Get cluster centers and radii
         std::lock_guard<std::mutex> lock(mutex_);
@@ -115,8 +115,8 @@ namespace flychams::coordination
         Vector3r optimal_pos = solver_->solve(curr_pos_, clusters_.first, clusters_.second);
 
         // Publish the goal
-        AgentGoalMsg goal_msg;
-        goal_msg.header = RosUtils::createHeader(node_, tf_tools_->getWorldFrame());
+        PositionGoalMsg goal_msg;
+        goal_msg.header = RosUtils::createHeader(node_, tf_tools_->getGlobalFrame());
         MsgConversions::toMsg(optimal_pos, goal_msg);
         goal_pub_->publish(goal_msg);
 

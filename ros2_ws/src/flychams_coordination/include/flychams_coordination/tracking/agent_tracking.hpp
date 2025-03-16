@@ -67,8 +67,7 @@ namespace flychams::coordination
     private: // Methods
         // Callbacks
         void odomCallback(const core::OdometryMsg::SharedPtr msg);
-        void infoCallback(const core::AgentInfoMsg::SharedPtr msg);
-        void cameraInfoCallback(const core::CameraInfoArrayMsg::SharedPtr msg);
+        void infoCallback(const core::TrackingInfoMsg::SharedPtr msg);
         // Update
         void updateTracking();
         // Implementation
@@ -78,8 +77,7 @@ namespace flychams::coordination
     private:
         // Subscribers
         core::SubscriberPtr<core::OdometryMsg> odom_sub_;
-        core::SubscriberPtr<core::AgentInfoMsg> info_sub_;
-        core::SubscriberPtr<core::CameraInfoArrayMsg> camera_info_sub_;
+        core::SubscriberPtr<core::TrackingInfoMsg> info_sub_;
         // Publishers
         core::PublisherPtr<core::TrackingGoalMsg> goal_pub_;
         // Timers

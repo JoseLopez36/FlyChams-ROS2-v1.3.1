@@ -58,9 +58,9 @@ private: // Element management
         RCLCPP_INFO(node_->get_logger(), "UAV controller created for agent %s", agent_id.c_str());
 
         // Create head controller
-        // auto head_controller = std::make_shared<HeadController>(agent_id, node_, config_tools_, ext_tools_, topic_tools_, tf_tools_);
-        // head_controllers_.insert(std::make_pair(agent_id, head_controller));
-        // RCLCPP_INFO(node_->get_logger(), "Head controller created for agent %s", agent_id.c_str());
+        auto head_controller = std::make_shared<HeadController>(agent_id, node_, config_tools_, ext_tools_, topic_tools_, tf_tools_);
+        head_controllers_.insert(std::make_pair(agent_id, head_controller));
+        RCLCPP_INFO(node_->get_logger(), "Head controller created for agent %s", agent_id.c_str());
     }
 
     void onRemoveAgent(const ID& agent_id) override

@@ -84,7 +84,7 @@ namespace flychams::coordination
     {
         // Transform to world frame
         const std::string& source_frame = msg->header.frame_id;
-        const std::string& target_frame = tf_tools_->getWorldFrame();
+        const std::string& target_frame = tf_tools_->getGlobalFrame();
         const PointMsg& curr_pos_msg = tf_tools_->transformPointMsg(msg->pose.pose.position, source_frame, target_frame);
         // Convert to Eigen
         std::lock_guard<std::mutex> lock(mutex_);
@@ -160,7 +160,7 @@ namespace flychams::coordination
             return;
 
         // Create and fill agent infos
-        std::unordered_map<ID, AgentInfoMsg> infos;
+        std::unordered_map<ID, TrackingInfoMsg> infos;
         for (const auto& [agent_id, cluster_ids] : agent_clusters_)
         {
             // Get number of clusters
@@ -185,7 +185,7 @@ namespace flychams::coordination
             }
 
             // Publish agent info
-            info.header = RosUtils::createHeader(node_, tf_tools_->getWorldFrame());
+            info.header = RosUtils::createHeader(node_, tf_tools_->getGlobalFrame());
             agent_info_pubs_[agent_id]->publish(info);
         }
     }
@@ -208,7 +208,7 @@ namespace flychams::coordination
                 this->agentOdomCallback(agent_id, msg);
             }) });
         // Create publisher
-        agent_info_pubs_.insert({ agent_id, topic_tools_->createAgentInfoPublisher(agent_id) });
+        agent_info_pubs_.insert({ agent_id, topic_tools_->createAgentTrackingInfoPublisher(agent_id) });
     }
 
     void AgentAssignment::removeAgent(const core::ID& agent_id)
