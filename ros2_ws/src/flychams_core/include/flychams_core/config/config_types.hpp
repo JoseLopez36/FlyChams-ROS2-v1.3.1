@@ -50,12 +50,9 @@ namespace flychams::core
         // Identifiers
         ID gimbal_link_id;
         ID link_configuration_id;
-        uint8_t link_index;
 
         // Internal config
         AxisType axis_type;
-        Vector3r link_offset;
-        float link_length;
         Vector2r joint_range;
         float max_angular_speed;
         float motor_rise_time;
@@ -72,7 +69,6 @@ namespace flychams::core
         ID link_configuration_id;
 
         // Internal config
-        Vector3r optical_center_offset;
         float weight;
         float idle_power;
         float active_power;
@@ -117,7 +113,6 @@ namespace flychams::core
         HeadRole head_role;
         Vector3r mount_position;
         Vector3r mount_orientation;
-        Vector3r initial_orientation;
         float initial_focal;
         float min_focal;
         float max_focal;

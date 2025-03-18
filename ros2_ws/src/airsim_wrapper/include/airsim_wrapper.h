@@ -231,8 +231,7 @@ namespace airsim_wrapper
         bool client_get_paused();
         bool client_get_enabled_control(const std::string& vehicle_name);
         msr::airlib::MultirotorState client_get_multirotor_state(const std::string& vehicle_name);
-        msr::airlib::CameraInfo client_get_camera_info(const std::string& vehicle_name, const std::string& camera_name);
-        msr::airlib::Vector2r client_get_camera_fov(const std::string& vehicle_name, const std::string& camera_name);
+        msr::airlib::Pose client_get_camera_pose(const std::string& vehicle_name, const std::string& camera_name);
 
         // Global methods
         void client_reset();
@@ -246,7 +245,7 @@ namespace airsim_wrapper
         void client_hover(const std::string& vehicle_name);
         void client_move_by_velocity(const float& vx, const float& vy, const float& vz, const float& dt, const std::string& vehicle_name);
         void client_move_by_position(const float& x, const float& y, const float& z, const float& vel, const float& timeout, const std::string& vehicle_name);
-        void client_set_camera_pose(const std::string& camera_name, const msr::airlib::Pose& pose, const std::string& vehicle_name);
+        void client_set_camera_angles(const float& roll, const float& pitch, const float& yaw, const std::string& camera_name, const std::string& vehicle_name);
         void client_set_camera_fov(const std::string& camera_name, const float& fov, const std::string& vehicle_name);
 
         // Window methods
@@ -272,6 +271,7 @@ namespace airsim_wrapper
         msr::airlib::Quaternionr get_airlib_quat(const tf2::Quaternion& tf2_quat) const;
         msr::airlib::Pose get_airlib_pose(const float& x, const float& y, const float& z, const msr::airlib::Quaternionr& airlib_quat) const;
         msr::airlib::Pose get_airlib_pose(const geometry_msgs::msg::Pose& geometry_msgs_pose) const;
+        msr::airlib::Vector3r get_airlib_rpy(const geometry_msgs::msg::Quaternion& geometry_msgs_quat) const;
         msr::airlib::Vector3r get_airlib_point(const geometry_msgs::msg::Point& geometry_msgs_point) const;
         msr::airlib::Vector2r get_airlib_point_2d(const geometry_msgs::msg::Point& geometry_msgs_point) const;
         std::vector<msr::airlib::Vector3r> get_airlib_points(const std::vector<geometry_msgs::msg::Point>& geometry_msgs_points) const;

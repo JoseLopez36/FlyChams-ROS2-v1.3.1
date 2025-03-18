@@ -331,8 +331,8 @@ namespace airsim_wrapper
         }
         body_tf.child_frame_id = camera_ros->body_frame_id;
         body_tf.header.stamp = get_sim_clock_time();
-        auto camera_info_data = airsim_client_control_->simGetCameraInfo(camera_ros->camera_name, vehicle_ros->vehicle_name);
-        body_tf.transform = get_transform_msg_from_airsim(camera_info_data.pose.position, camera_info_data.pose.orientation);
+        const auto& pose = client_get_camera_pose(vehicle_ros->vehicle_name, camera_ros->camera_name);
+        body_tf.transform = get_transform_msg_from_airsim(pose.position, pose.orientation);
         tf_broadcaster_->sendTransform(body_tf);
 
         // Body to Optical transform
@@ -457,15 +457,10 @@ namespace airsim_wrapper
                 const auto& orientation = orientations[i];
 
                 // Convert pose to airlib
-                geometry_msgs::msg::Pose pose_msg;
-                pose_msg.position.x = 0.0;
-                pose_msg.position.y = 0.0;
-                pose_msg.position.z = 0.0;
-                pose_msg.orientation = orientation;
-                msr::airlib::Pose pose = get_airlib_pose(pose_msg);
+                msr::airlib::Vector3r rpy = get_airlib_rpy(orientation);
 
                 // Send command to server
-                client_set_camera_pose(camera_name, pose, vehicle_name);
+                client_set_camera_angles(rpy(0), rpy(1), rpy(2), camera_name, vehicle_name);
             }
         }
         catch (rpc::rpc_error& e) {
@@ -930,13 +925,12 @@ namespace airsim_wrapper
                     // Iterate over cameras
                     for (auto& [camera_name, camera_ros] : vehicle_ros->camera_map)
                     {
-                        // Retrieve camera info from server
-                        msr::airlib::CameraInfo camera_info_data;
-                        camera_info_data = client_get_camera_info(vehicle_name, camera_name);
+                        // Get camera pose
+                        const auto& pose = client_get_camera_pose(vehicle_name, camera_name);
 
                         // Update camera body tf
                         camera_ros->body_tf_msg.header.stamp = curr_time;
-                        camera_ros->body_tf_msg.transform = get_transform_msg_from_airsim(camera_info_data.pose.position, camera_info_data.pose.orientation);
+                        camera_ros->body_tf_msg.transform = get_transform_msg_from_airsim(pose.position, pose.orientation);
                     }
                 }
             }
@@ -1023,7 +1017,7 @@ namespace airsim_wrapper
             tf_broadcaster_->sendTransform(vehicle_ros->body_tf_msg);
 
             // Publish camera body tf
-            for (auto& [camera_name, camera_ros] : vehicle_ros->camera_map)
+            for (auto& [_, camera_ros] : vehicle_ros->camera_map)
             {
                 tf_broadcaster_->sendTransform(camera_ros->body_tf_msg);
             }
@@ -1054,38 +1048,9 @@ namespace airsim_wrapper
         return airsim_client_state_->getMultirotorState(vehicle_name);
     }
 
-    msr::airlib::CameraInfo AirsimWrapper::client_get_camera_info(const std::string& vehicle_name, const std::string& camera_name)
+    msr::airlib::Pose AirsimWrapper::client_get_camera_pose(const std::string& vehicle_name, const std::string& gimbal_name)
     {
-        return airsim_client_state_->simGetCameraInfo(camera_name, vehicle_name);
-    }
-
-    msr::airlib::Vector2r AirsimWrapper::client_get_camera_fov(const std::string& vehicle_name, const std::string& camera_name)
-    {
-        const std::string& fov_string = airsim_client_state_->simGetCurrentFieldOfView(camera_name, vehicle_name);
-
-        // Extract horizontal and vertical FOV values from the string
-        float horizontal_fov = 0.0f;
-        float vertical_fov = 0.0f;
-
-        // Parse the FOV string
-        size_t h_pos = fov_string.find("Horizontal Field Of View: ");
-        size_t v_pos = fov_string.find("Vertical Field Of View: ");
-
-        if (h_pos != std::string::npos) {
-            size_t h_start = h_pos + 26; // Length of "Horizontal Field Of View: "
-            size_t h_end = fov_string.find(";", h_start);
-            if (h_end != std::string::npos) {
-                horizontal_fov = std::stof(fov_string.substr(h_start, h_end - h_start));
-            }
-        }
-
-        if (v_pos != std::string::npos) {
-            size_t v_start = v_pos + 24; // Length of "Vertical Field Of View: "
-            size_t v_end = fov_string.length();
-            vertical_fov = std::stof(fov_string.substr(v_start, v_end - v_start));
-        }
-
-        return msr::airlib::Vector2r(horizontal_fov, vertical_fov);
+        return airsim_client_state_->getCameraPose(gimbal_name, vehicle_name);
     }
 
     void AirsimWrapper::client_reset()
@@ -1149,9 +1114,9 @@ namespace airsim_wrapper
             -1, 1, vehicle_name);
     }
 
-    void AirsimWrapper::client_set_camera_pose(const std::string& camera_name, const msr::airlib::Pose& pose, const std::string& vehicle_name)
+    void AirsimWrapper::client_set_camera_angles(const float& roll, const float& pitch, const float& yaw, const std::string& camera_name, const std::string& vehicle_name)
     {
-        airsim_client_control_->simSetCameraPose(camera_name, pose, vehicle_name);
+        airsim_client_control_->setCameraAngles(math_common::rad2deg(roll), math_common::rad2deg(pitch), math_common::rad2deg(yaw), camera_name, vehicle_name);
     }
 
     void AirsimWrapper::client_set_camera_fov(const std::string& camera_name, const float& fov, const std::string& vehicle_name)
@@ -1242,6 +1207,12 @@ namespace airsim_wrapper
     msr::airlib::Pose AirsimWrapper::get_airlib_pose(const geometry_msgs::msg::Pose& geometry_msgs_pose) const
     {
         return get_airlib_pose(geometry_msgs_pose.position.x, -geometry_msgs_pose.position.y, -geometry_msgs_pose.position.z, get_airlib_quat(geometry_msgs_pose.orientation));
+    }
+
+    msr::airlib::Vector3r AirsimWrapper::get_airlib_rpy(const geometry_msgs::msg::Quaternion& geometry_msgs_quat) const
+    {
+        msr::airlib::Quaternionr quat = get_airlib_quat(geometry_msgs_quat);
+        return quat.toRotationMatrix().eulerAngles(0, 1, 2);
     }
 
     msr::airlib::Vector3r AirsimWrapper::get_airlib_point(const geometry_msgs::msg::Point& geometry_msgs_point) const

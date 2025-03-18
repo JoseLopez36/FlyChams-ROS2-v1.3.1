@@ -279,6 +279,7 @@ namespace flychams::core
         msg.window_indices = getWindowIndices(window_ids);
         msg.vehicle_names = vehicle_ids;
         msg.camera_names = camera_ids;
+
         for (size_t i = 0; i < window_ids.size(); i++)
         {
             PointMsg corner;

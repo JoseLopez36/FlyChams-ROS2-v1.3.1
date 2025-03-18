@@ -530,20 +530,11 @@ namespace flychams::core
 						head->mount_orientation(2) = MathUtils::degToRad(mount_orientation_vec[1]);
 					}
 
-					auto initial_orientation_str = getCellValueOrFail<std::string>(row.findCell(9));
-					auto initial_orientation_vec = parseStringToVector<float>(initial_orientation_str, 3, ',');
-					if (initial_orientation_vec.size() >= 3)
-					{
-						head->initial_orientation(0) = MathUtils::degToRad(initial_orientation_vec[2]);
-						head->initial_orientation(1) = MathUtils::degToRad(initial_orientation_vec[0]);
-						head->initial_orientation(2) = MathUtils::degToRad(initial_orientation_vec[1]);
-					}
+					head->initial_focal = getCellValueOrFail<float>(row.findCell(9)) / 1000.0f;
 
-					head->initial_focal = getCellValueOrFail<float>(row.findCell(10)) / 1000.0f;
+					head->min_focal = getCellValueOrFail<float>(row.findCell(10)) / 1000.0f;
 
-					head->min_focal = getCellValueOrFail<float>(row.findCell(11)) / 1000.0f;
-
-					head->max_focal = getCellValueOrFail<float>(row.findCell(12)) / 1000.0f;
+					head->max_focal = getCellValueOrFail<float>(row.findCell(11)) / 1000.0f;
 
 					// Resolve external ID references
 					head->gimbal = parseGimbalModel(book, head->gimbal_model_id);
@@ -657,20 +648,11 @@ namespace flychams::core
 
 					gimbal->link_configuration_id = getCellValueOrFail<std::string>(row.findCell(3));
 
-					auto optical_center_offset_str = getCellValueOrFail<std::string>(row.findCell(4));
-					auto optical_center_offset_vec = parseStringToVector<float>(optical_center_offset_str, 3, ',');
-					if (optical_center_offset_vec.size() >= 3)
-					{
-						gimbal->optical_center_offset(0) = optical_center_offset_vec[0] * 1000.0f;
-						gimbal->optical_center_offset(1) = optical_center_offset_vec[1] * 1000.0f;
-						gimbal->optical_center_offset(2) = optical_center_offset_vec[2] * 1000.0f;
-					}
+					gimbal->weight = getCellValueOrFail<float>(row.findCell(4));
 
-					gimbal->weight = getCellValueOrFail<float>(row.findCell(5));
+					gimbal->idle_power = getCellValueOrFail<float>(row.findCell(5));
 
-					gimbal->idle_power = getCellValueOrFail<float>(row.findCell(6));
-
-					gimbal->active_power = getCellValueOrFail<float>(row.findCell(7));
+					gimbal->active_power = getCellValueOrFail<float>(row.findCell(6));
 
 					// Resolve external ID references
 					gimbal->links = parseGimbalLinks(book.worksheet("GimbalLinks"), gimbal->link_configuration_id);
@@ -721,23 +703,10 @@ namespace flychams::core
 
 					link->link_configuration_id = FK;
 
-					link->link_index = getCellValueOrFail<int>(row.findCell(3));
-
-					const std::string& axis_type_str = getCellValueOrFail<std::string>(row.findCell(4));
+					const std::string& axis_type_str = getCellValueOrFail<std::string>(row.findCell(3));
 					link->axis_type = axisTypeFromString(axis_type_str);
 
-					auto link_offset_str = getCellValueOrFail<std::string>(row.findCell(5));
-					auto link_offset_vec = parseStringToVector<float>(link_offset_str, 3, ',');
-					if (link_offset_vec.size() >= 2)
-					{
-						link->link_offset(0) = link_offset_vec[0];
-						link->link_offset(1) = link_offset_vec[1];
-						link->link_offset(2) = link_offset_vec[2];
-					}
-
-					link->link_length = getCellValueOrFail<float>(row.findCell(6)) / 1000.0f;
-
-					auto joint_range_str = getCellValueOrFail<std::string>(row.findCell(7));
+					auto joint_range_str = getCellValueOrFail<std::string>(row.findCell(4));
 					auto joint_range_vec = parseStringToVector<float>(joint_range_str, 2, ',');
 					if (joint_range_vec.size() >= 2)
 					{
@@ -745,11 +714,11 @@ namespace flychams::core
 						link->joint_range(1) = MathUtils::degToRad(joint_range_vec[1]);
 					}
 
-					link->max_angular_speed = MathUtils::degToRad(getCellValueOrFail<float>(row.findCell(8)));
+					link->max_angular_speed = MathUtils::degToRad(getCellValueOrFail<float>(row.findCell(5)));
 
-					link->motor_rise_time = getCellValueOrFail<float>(row.findCell(9));
+					link->motor_rise_time = getCellValueOrFail<float>(row.findCell(6));
 
-					link->motor_damping_factor = getCellValueOrFail<float>(row.findCell(10));
+					link->motor_damping_factor = getCellValueOrFail<float>(row.findCell(7));
 
 					// Store setting
 					links.insert({ link->gimbal_link_id, link });
@@ -949,13 +918,13 @@ namespace flychams::core
 		settings["Vehicles"] = vehicles;
 	}
 
-	// Helper method: Populate cameras
+	// Helper method: Populate cameras and gimbals
 	void ConfigParser::populateCameras(const ID& agent_id, const HeadConfigMap& heads, nlohmann::ordered_json& cameras)
 	{
 		for (const auto& [head_id, head_ptr] : heads)
 		{
-			const auto& pos = head_ptr->mount_position;
-			const auto& ori = head_ptr->mount_orientation;
+			const auto& mount_pos = head_ptr->mount_position;
+			const auto& mount_ori = head_ptr->mount_orientation;
 
 			// Get camera parameters
 			const auto& width = head_ptr->camera->resolution.x();
@@ -965,15 +934,74 @@ namespace flychams::core
 			const auto& focal = head_ptr->initial_focal;
 			const auto& fov = MathUtils::radToDeg(CameraUtils::computeFov(focal, sensor_width));
 
+			// Get gimbal parameters
+			float yaw_min = 0.0f;
+			float pitch_min = 0.0f;
+			float roll_min = 0.0f;
+			float yaw_max = 0.0f;
+			float pitch_max = 0.0f;
+			float roll_max = 0.0f;
+			float yaw_speed = 0.0f;
+			float pitch_speed = 0.0f;
+			float roll_speed = 0.0f;
+			float yaw_rise_time = 0.0f;
+			float pitch_rise_time = 0.0f;
+			float roll_rise_time = 0.0f;
+			float yaw_damping = 0.0f;
+			float pitch_damping = 0.0f;
+			float roll_damping = 0.0f;
+
+			for (const auto& [link_id, link_ptr] : head_ptr->gimbal->links)
+			{
+				const auto& axis_type = link_ptr->axis_type;
+				const auto& joint_range = link_ptr->joint_range;
+				const auto& max_angular_speed = link_ptr->max_angular_speed;
+				const auto& motor_rise_time = link_ptr->motor_rise_time;
+				const auto& motor_damping_factor = link_ptr->motor_damping_factor;
+
+				switch (axis_type)
+				{
+				case AxisType::Yaw:
+					yaw_min = MathUtils::radToDeg(joint_range(0));
+					yaw_max = MathUtils::radToDeg(joint_range(1));
+					yaw_speed = MathUtils::degToRad(max_angular_speed);
+					yaw_rise_time = motor_rise_time;
+					yaw_damping = motor_damping_factor;
+					break;
+
+				case AxisType::Pitch:
+					pitch_min = MathUtils::radToDeg(joint_range(0));
+					pitch_max = MathUtils::radToDeg(joint_range(1));
+					pitch_speed = MathUtils::degToRad(max_angular_speed);
+					pitch_rise_time = motor_rise_time;
+					pitch_damping = motor_damping_factor;
+					break;
+
+				case AxisType::Roll:
+					roll_min = MathUtils::radToDeg(joint_range(0));
+					roll_max = MathUtils::radToDeg(joint_range(1));
+					roll_speed = MathUtils::degToRad(max_angular_speed);
+					roll_rise_time = motor_rise_time;
+					roll_damping = motor_damping_factor;
+					break;
+				}
+			}
+
 			cameras[head_id] = {
 				{"CaptureSettings", {{{"ImageType", 0}, {"Width", width}, {"Height", height}, {"FOV_Degrees", fov}}}},
-				{"Gimbal", {{"Stabilization", 1}, {"Pitch", MathUtils::radToDeg(-ori.y())}, {"Roll", MathUtils::radToDeg(ori.x())}, {"Yaw", MathUtils::radToDeg(-ori.z())}}},
-				{"X", pos.x()},
-				{"Y", -pos.y()},
-				{"Z", -pos.z()},
-				{"Roll", MathUtils::radToDeg(ori.x())},
-				{"Pitch", MathUtils::radToDeg(-ori.y())},
-				{"Yaw", MathUtils::radToDeg(-ori.z())} };
+				{"X", mount_pos.x()}, {"Y", -mount_pos.y()}, {"Z", -mount_pos.z()},
+				{"Roll", MathUtils::radToDeg(mount_ori.x())}, {"Pitch", MathUtils::radToDeg(-mount_ori.y())}, {"Yaw", MathUtils::radToDeg(-mount_ori.z())},
+				{"GimbalEnabled", true}, {"CameraVisible", true},
+				{"Gimbal", {
+					{"CameraName", "CAM_" + head_id},
+					{"YawMin", yaw_min}, {"PitchMin", pitch_min}, {"RollMin", roll_min},
+					{"YawMax", yaw_max}, {"PitchMax", pitch_max}, {"RollMax", roll_max},
+					{"YawSpeed", yaw_speed}, {"PitchSpeed", pitch_speed}, {"RollSpeed", roll_speed},
+					{"YawRiseTime", yaw_rise_time}, {"PitchRiseTime", pitch_rise_time}, {"RollRiseTime", roll_rise_time},
+					{"YawDamping", yaw_damping}, {"PitchDamping", pitch_damping}, {"RollDamping", roll_damping},
+					{"Pitch", 0.0f}, {"Roll", 0.0f}, {"Yaw", 0.0f}
+				}}
+			};
 		}
 
 		// Get agent view camera pose (ENU frame)
@@ -986,7 +1014,7 @@ namespace flychams::core
 		agent_view_rot.y() = 33.33f;
 		agent_view_rot.z() = 45.0f;
 
-		cameras["AGENTCAM_" + agent_id] = {
+		cameras["CAM_" + agent_id] = {
 			{"CaptureSettings", {{{"ImageType", 0}, {"Width", 1280}, {"Height", 720}, {"FOV_Degrees", 70}}}},
 			{"X", agent_view_pos.x()},
 			{"Y", -agent_view_pos.y()},
@@ -1008,7 +1036,7 @@ namespace flychams::core
 		scene_view_rot.y() = 33.33f;
 		scene_view_rot.z() = 45.0f;
 
-		cameras["SCENECAM"] = {
+		cameras["CAM_SCENE"] = {
 			{"CaptureSettings", {{{"ImageType", 0}, {"Width", 1920}, {"Height", 1080}, {"FOV_Degrees", 90}}}},
 			{"X", scene_view_pos.x()},
 			{"Y", -scene_view_pos.y()},
@@ -1026,7 +1054,7 @@ namespace flychams::core
 
 		// Scene view sub-window
 		settings["SubWindows"].push_back({ {"WindowID", idx++},
-										  {"CameraName", "SCENECAM"},
+										  {"CameraName", ""},
 										  {"ImageType", 0},
 										  {"VehicleName", ""},
 										  {"Visible", true} });

@@ -15,16 +15,6 @@ namespace flychams::control
 		// Get update rates
 		float update_rate = RosUtils::getParameterOr<float>(node_, "head_control.control_update_rate", 20.0f);
 
-		// Get central camera parameters
-		central_head_id_ = config_tools_->getAgent(agent_id_)->central_head_id;
-		const auto& central_camera_params = config_tools_->getCameraParameters(agent_id_, central_head_id_);
-
-		// Calculate central head fixed orientation and fov
-		const auto& central_head_config = config_tools_->getHead(agent_id_, central_head_id_);
-		const auto& central_head_rpy = central_head_config->initial_orientation;
-		MsgConversions::toMsg(MathUtils::eulerToQuaternion(central_head_rpy), central_head_orientation_);
-		central_head_fov_ = CameraUtils::computeFov(central_camera_params.f_ref, central_camera_params.sensor_width);
-
 		// Initialize agent data
 		goal_ = TrackingGoalMsg();
 		has_goal_ = false;
@@ -70,10 +60,6 @@ namespace flychams::control
 	{
 		// Lock mutex
 		std::lock_guard<std::mutex> lock(mutex_);
-
-		// Command central head to move to configured angles and fov
-		ext_tools_->setGimbalOrientations(agent_id_, { central_head_id_ }, { central_head_orientation_ });
-		ext_tools_->setCameraFovs(agent_id_, { central_head_id_ }, { central_head_fov_ });
 
 		// Check if tracking goal is set
 		if (!has_goal_)
