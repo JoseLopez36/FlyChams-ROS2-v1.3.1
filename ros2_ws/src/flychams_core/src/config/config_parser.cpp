@@ -425,7 +425,42 @@ namespace flychams::core
 
 					agent->max_altitude = getCellValueOrFail<float>(row.findCell(10));
 
-					agent->battery_capacity = getCellValueOrFail<float>(row.findCell(11));
+					auto barometer_params_str = getCellValueOrFail<std::string>(row.findCell(11));
+					auto barometer_params_vec = parseStringToVector<float>(barometer_params_str, 2, ',');
+					if (barometer_params_vec.size() >= 2)
+					{
+						agent->barometer_params.pressure_factor_sigma = barometer_params_vec[0];
+						agent->barometer_params.uncorrelated_noise_sigma = barometer_params_vec[1];
+					}
+
+					auto imu_params_str = getCellValueOrFail<std::string>(row.findCell(12));
+					auto imu_params_vec = parseStringToVector<float>(imu_params_str, 2, ',');
+					if (imu_params_vec.size() >= 2)
+					{
+						agent->imu_params.gyro_noise = imu_params_vec[0];
+						agent->imu_params.accel_noise = imu_params_vec[1];
+					}
+
+					auto gps_params_str = getCellValueOrFail<std::string>(row.findCell(13));
+					auto gps_params_vec = parseStringToVector<float>(gps_params_str, 4, ',');
+					if (gps_params_vec.size() >= 4)
+					{
+						agent->gps_params.eph_initial = gps_params_vec[0];
+						agent->gps_params.epv_initial = gps_params_vec[1];
+						agent->gps_params.eph_final = gps_params_vec[2];
+						agent->gps_params.epv_final = gps_params_vec[3];
+					}
+
+					auto magnetometer_params_str = getCellValueOrFail<std::string>(row.findCell(14));
+					auto magnetometer_params_vec = parseStringToVector<float>(magnetometer_params_str, 3, ',');
+					if (magnetometer_params_vec.size() >= 3)
+					{
+						agent->magnetometer_params.noise_sigma = magnetometer_params_vec[0];
+						agent->magnetometer_params.scale_factor = magnetometer_params_vec[1];
+						agent->magnetometer_params.noise_bias = magnetometer_params_vec[2];
+					}
+
+					agent->battery_capacity = getCellValueOrFail<float>(row.findCell(15));
 
 					// Resolve external ID references
 					agent->heads = parseAgentPayload(book, agent->head_payload_id);
@@ -885,8 +920,8 @@ namespace flychams::core
 
 		settings["Wind"] = {
 			{"X", config_ptr->map->wind_velocity.x()},
-			{"Y", -config_ptr->map->wind_velocity.y()},
-			{"Z", -config_ptr->map->wind_velocity.z()} };
+			{"Y", config_ptr->map->wind_velocity.y()},
+			{"Z", config_ptr->map->wind_velocity.z()} };
 
 		settings["CameraDefaults"] = {
 			{"CaptureSettings", {
@@ -936,11 +971,24 @@ namespace flychams::core
 		int instance = 0;
 		for (const auto& [agent_id, agent_ptr] : config_ptr->agents)
 		{
-			// Parameters
+			// Agent arameters
 			std::string vehicle_model = (agent_ptr->drone->drone_type == DroneType::Quadcopter) ? "Quadcopter" : "Hexacopter";
 			std::string pawn_path = (agent_ptr->drone->drone_type == DroneType::Quadcopter) ? "DefaultQuadrotor" : "DefaultHexacopter";
 			Vector3r ini_pos = agent_ptr->initial_position;
 			Vector3r ini_ori = agent_ptr->initial_orientation;
+
+			// Sensor parameters
+			float barometer_pressure_factor_sigma = agent_ptr->barometer_params.pressure_factor_sigma;
+			float barometer_uncorrelated_noise_sigma = agent_ptr->barometer_params.uncorrelated_noise_sigma;
+			float imu_gyro_noise = agent_ptr->imu_params.gyro_noise;
+			float imu_accel_noise = agent_ptr->imu_params.accel_noise;
+			float gps_eph_initial = agent_ptr->gps_params.eph_initial;
+			float gps_epv_initial = agent_ptr->gps_params.epv_initial;
+			float gps_eph_final = agent_ptr->gps_params.eph_final;
+			float gps_epv_final = agent_ptr->gps_params.epv_final;
+			float magnetometer_noise_sigma = agent_ptr->magnetometer_params.noise_sigma;
+			float magnetometer_scale_factor = agent_ptr->magnetometer_params.scale_factor;
+			float magnetometer_noise_bias = agent_ptr->magnetometer_params.noise_bias;
 
 			if (config_ptr->mission->autopilot == Autopilot::PX4)
 			{
@@ -956,14 +1004,50 @@ namespace flychams::core
 					{"ControlPortLocal", 14540 + instance},
 					{"ControlPortRemote", 14580 + instance},
 					{"LocalHostIp", "172.17.0.1"},
-					{"Sensors", {{"Barometer", {{"SensorType", 1}, {"Enabled", true}, {"PressureFactorSigma", 0.0001825}}}}},
-					{"Parameters", {{"NAV_RCL_ACT", 0}, {"NAV_DLL_ACT", 0}, {"COM_OBL_ACT", 1}, {"LPE_LAT", config_ptr->map->origin_geopoint.latitude}, {"LPE_LON", config_ptr->map->origin_geopoint.longitude}}},
 					{"X", ini_pos.x()},
 					{"Y", -ini_pos.y()},
 					{"Z", -ini_pos.z()},
 					{"Roll", MathUtils::radToDeg(ini_ori.x())},
 					{"Pitch", MathUtils::radToDeg(-ini_ori.y())},
-					{"Yaw", MathUtils::radToDeg(-ini_ori.z())} };
+					{"Yaw", MathUtils::radToDeg(-ini_ori.z())},
+					{"Parameters", {
+						{"NAV_RCL_ACT", 0},
+						{"NAV_DLL_ACT", 0},
+						{"COM_OBL_ACT", 1},
+						{"LPE_LAT", config_ptr->map->origin_geopoint.latitude},
+						{"LPE_LON", config_ptr->map->origin_geopoint.longitude}
+					}},
+					{"Sensors", {
+						{"Barometer", {
+							{"SensorType", 1},
+							{"Enabled", true},
+							{"PressureFactorSigma", std::max(barometer_pressure_factor_sigma, 0.0001825f)}, // More than 0.0001825 can generate problem with PX4
+							{"UncorrelatedNoiseSigma", barometer_uncorrelated_noise_sigma}
+						}},
+						{"Imu", {
+							{"SensorType", 2},
+							{"Enabled", true},
+							{"GenerateNoise", true},
+							{"AngularRandomWalk", imu_gyro_noise},
+							{"VelocityRandomWalk", imu_accel_noise}
+						}},
+						{"Gps", {
+							{"SensorType", 3},
+							{"Enabled", true},
+							{"EphInitial", gps_eph_initial},
+							{"EpvInitial", gps_epv_initial},
+							{"EphFinal", gps_eph_final},
+							{"EpvFinal", gps_epv_final}
+						}},
+						{"Magnetometer", {
+							{"SensorType", 4},
+							{"Enabled", true},
+							{"NoiseSigma", magnetometer_noise_sigma},
+							{"ScaleFactor", magnetometer_scale_factor},
+							{"NoiseBias", magnetometer_noise_bias}
+						}}
+					}}
+				};
 			}
 			else
 			{
@@ -977,7 +1061,38 @@ namespace flychams::core
 					{ "Z", -ini_pos.z() },
 					{ "Roll", MathUtils::radToDeg(ini_ori.x()) },
 					{ "Pitch", MathUtils::radToDeg(-ini_ori.y()) },
-					{ "Yaw", MathUtils::radToDeg(-ini_ori.z()) } };
+					{ "Yaw", MathUtils::radToDeg(-ini_ori.z()) },
+					{"Sensors", {
+						{"Barometer", {
+							{"SensorType", 1},
+							{"Enabled", true},
+							{"PressureFactorSigma", barometer_pressure_factor_sigma},
+							{"UncorrelatedNoiseSigma", barometer_uncorrelated_noise_sigma}
+						}},
+						{"Imu", {
+							{"SensorType", 2},
+							{"Enabled", true},
+							{"GenerateNoise", true},
+							{"AngularRandomWalk", imu_gyro_noise},
+							{"VelocityRandomWalk", imu_accel_noise}
+						}},
+						{"Gps", {
+							{"SensorType", 3},
+							{"Enabled", true},
+							{"EphInitial", gps_eph_initial},
+							{"EpvInitial", gps_epv_initial},
+							{"EphFinal", gps_eph_final},
+							{"EpvFinal", gps_epv_final}
+						}},
+						{"Magnetometer", {
+							{"SensorType", 4},
+							{"Enabled", true},
+							{"NoiseSigma", magnetometer_noise_sigma},
+							{"ScaleFactor", magnetometer_scale_factor},
+							{"NoiseBias", magnetometer_noise_bias}
+						}}
+					}}
+				};
 			}
 
 			// Add cameras to the vehicle

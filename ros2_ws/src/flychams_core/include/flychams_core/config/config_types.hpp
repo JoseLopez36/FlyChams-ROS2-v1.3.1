@@ -141,6 +141,10 @@ namespace flychams::core
         Vector3r initial_orientation;
         float safety_radius;
         float max_altitude;
+        BarometerParams barometer_params;
+        ImuParams imu_params;
+        GpsParams gps_params;
+        MagnetometerParams magnetometer_params;
         float battery_capacity;
 
         // External config

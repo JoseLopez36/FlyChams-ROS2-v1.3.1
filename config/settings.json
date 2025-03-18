@@ -19,9 +19,9 @@
         "UpdateIntervalSecs": 1
     },
     "Wind": {
-        "X": 0.0,
-        "Y": -0.0,
-        "Z": -0.0
+        "X": 5.0,
+        "Y": 3.5,
+        "Z": 0.800000011920929
     },
     "CameraDefaults": {
         "CaptureSettings": [
@@ -72,6 +72,36 @@
             "Roll": 0.0,
             "Pitch": -0.0,
             "Yaw": -0.0,
+            "Sensors": {
+                "Barometer": {
+                    "SensorType": 1,
+                    "Enabled": true,
+                    "PressureFactorSigma": 0.00018250000721309334,
+                    "UncorrelatedNoiseSigma": 3.0
+                },
+                "Imu": {
+                    "SensorType": 2,
+                    "Enabled": true,
+                    "GenerateNoise": true,
+                    "AngularRandomWalk": 0.4000000059604645,
+                    "VelocityRandomWalk": 0.20000000298023224
+                },
+                "Gps": {
+                    "SensorType": 3,
+                    "Enabled": true,
+                    "EphInitial": 30.0,
+                    "EpvInitial": 40.0,
+                    "EphFinal": 1.0,
+                    "EpvFinal": 2.0
+                },
+                "Magnetometer": {
+                    "SensorType": 4,
+                    "Enabled": true,
+                    "NoiseSigma": 0.029999999329447746,
+                    "ScaleFactor": 1.0199999809265137,
+                    "NoiseBias": 0.05000000074505806
+                }
+            },
             "Cameras": {
                 "HEAD13": {
                     "CaptureSettings": [

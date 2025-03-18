@@ -590,4 +590,31 @@ namespace flychams::core
         float rand_speed;
     };
 
+    struct BarometerParams
+    {
+        float pressure_factor_sigma;    // Pressure factor sigma
+        float uncorrelated_noise_sigma; // Uncorrelated noise sigma
+    };
+
+    struct ImuParams
+    {
+        float gyro_noise;        // Angular random walk
+        float accel_noise;       // Velocity random walk
+    };
+
+    struct GpsParams
+    {
+        float eph_initial;       // Initial horizontal position accuracy
+        float epv_initial;       // Initial vertical position accuracy
+        float eph_final;         // Final horizontal position accuracy
+        float epv_final;         // Final vertical position accuracy
+    };
+
+    struct MagnetometerParams
+    {
+        float noise_sigma;       // Sensor noise sigma
+        float scale_factor;      // Scale factor for readings
+        float noise_bias;        // Noise bias
+    };
+
 } // namespace flychams::core 
