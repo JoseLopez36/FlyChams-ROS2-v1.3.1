@@ -24,6 +24,19 @@
         "Z": -0.0
     },
     "CameraDefaults": {
+        "CaptureSettings": [
+            {
+                "ImageType": 0,
+                "Width": 1920,
+                "Height": 1080,
+                "FOV_Degrees": 90,
+                "LumenGIEnable": true,
+                "LumenReflectionEnable": true,
+                "LumenFinalQuality": 2,
+                "LumenSceneDetail": 2,
+                "LumenSceneLightningDetail": 2
+            }
+        ],
         "NoiseSettings": [
             {
                 "Enabled": true,
@@ -66,7 +79,12 @@
                             "ImageType": 0,
                             "Width": 5120,
                             "Height": 2880,
-                            "FOV_Degrees": 146.283203125
+                            "FOV_Degrees": 146.283203125,
+                            "LumenGIEnable": true,
+                            "LumenReflectionEnable": true,
+                            "LumenFinalQuality": 2,
+                            "LumenSceneDetail": 2,
+                            "LumenSceneLightningDetail": 2
                         }
                     ],
                     "Gimbal": {
@@ -114,7 +132,7 @@
                     ],
                     "X": 0.0,
                     "Y": -0.0,
-                    "Z": 0.15000000596046448,
+                    "Z": 0.05000000074505806,
                     "Roll": 0.0,
                     "Pitch": -90.0,
                     "Yaw": 0.0,
@@ -122,30 +140,14 @@
                     "CameraVisible": true
                 },
                 "CAM_AGENT05": {
-                    "CaptureSettings": [
-                        {
-                            "ImageType": 0,
-                            "Width": 1280,
-                            "Height": 720,
-                            "FOV_Degrees": 70
-                        }
-                    ],
-                    "X": -1.5,
-                    "Y": 1.5,
-                    "Z": 1.5,
+                    "X": -0.75,
+                    "Y": 0.75,
+                    "Z": 0.75,
                     "Roll": 0.0,
                     "Pitch": 33.33000183105469,
                     "Yaw": -45.0
                 },
                 "CAM_SCENE": {
-                    "CaptureSettings": [
-                        {
-                            "ImageType": 0,
-                            "Width": 1920,
-                            "Height": 1080,
-                            "FOV_Degrees": 90
-                        }
-                    ],
                     "X": -75.0,
                     "Y": 75.0,
                     "Z": -75.0,

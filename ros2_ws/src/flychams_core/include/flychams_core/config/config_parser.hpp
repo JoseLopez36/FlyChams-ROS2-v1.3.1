@@ -61,7 +61,7 @@ namespace flychams::core
 	private: // AirSim settings methods
 		static void populateGeneralSettings(const ConfigPtr& config_ptr, nlohmann::ordered_json& settings);
 		static void populateVehicles(const ConfigPtr& config_ptr, nlohmann::ordered_json& settings);
-		static void populateCameras(const ID& agent_id, const HeadConfigMap& heads, nlohmann::ordered_json& cameras);
+		static void populateCameras(const ID& agent_id, const ConfigPtr& config_ptr, const HeadConfigMap& heads, nlohmann::ordered_json& cameras);
 		static void populateExternalCameras(nlohmann::ordered_json& cameras);
 		static void populateSubWindows(nlohmann::ordered_json& settings);
 

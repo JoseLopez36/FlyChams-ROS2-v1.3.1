@@ -213,6 +213,7 @@ namespace flychams::core
         bool record_metrics;
         bool draw_rviz_markers;
         bool draw_world_markers;
+        bool enable_lumen;
     };
     using SimulationConfigPtr = std::shared_ptr<SimulationConfig>;
 

@@ -208,6 +208,8 @@ namespace flychams::core
 
 					simulation->draw_world_markers = getCellValueOrFail<bool>(row.findCell(7));
 
+					simulation->enable_lumen = getCellValueOrFail<bool>(row.findCell(8));
+
 					// Only first found simulation is loaded
 					return simulation;
 				}
@@ -887,6 +889,19 @@ namespace flychams::core
 			{"Z", -config_ptr->map->wind_velocity.z()} };
 
 		settings["CameraDefaults"] = {
+			{"CaptureSettings", {
+				{
+					{"ImageType", 0},
+					{"Width", 1920},
+					{"Height", 1080},
+					{"FOV_Degrees", 90},
+					{"LumenGIEnable", config_ptr->simulation->enable_lumen},
+					{"LumenReflectionEnable", config_ptr->simulation->enable_lumen},
+					{"LumenFinalQuality", 2},
+					{"LumenSceneDetail", 2},
+					{"LumenSceneLightningDetail", 2}
+				}
+			}},
 			{"NoiseSettings", {
 				{
 					{"Enabled", true},
@@ -909,7 +924,7 @@ namespace flychams::core
 					{"LensDistortionAreaRadius", 2.0f},
 					{"LensDistortionInvert", false}
 				}
-			}},
+			}}
 		};
 	}
 
@@ -966,7 +981,7 @@ namespace flychams::core
 			}
 
 			// Add cameras to the vehicle
-			populateCameras(agent_id, agent_ptr->heads, vehicles[agent_id]["Cameras"]);
+			populateCameras(agent_id, config_ptr, agent_ptr->heads, vehicles[agent_id]["Cameras"]);
 
 			// Add scene view once
 			if (first_time)
@@ -983,7 +998,7 @@ namespace flychams::core
 	}
 
 	// Helper method: Populate cameras and gimbals
-	void ConfigParser::populateCameras(const ID& agent_id, const HeadConfigMap& heads, nlohmann::ordered_json& cameras)
+	void ConfigParser::populateCameras(const ID& agent_id, const ConfigPtr& config_ptr, const HeadConfigMap& heads, nlohmann::ordered_json& cameras)
 	{
 		for (const auto& [head_id, head_ptr] : heads)
 		{
@@ -1059,7 +1074,12 @@ namespace flychams::core
 						{"ImageType", 0},
 						{"Width", width},
 						{"Height", height},
-						{"FOV_Degrees", fov}
+						{"FOV_Degrees", fov},
+						{"LumenGIEnable", config_ptr->simulation->enable_lumen},
+						{"LumenReflectionEnable", config_ptr->simulation->enable_lumen},
+						{"LumenFinalQuality", 2},
+						{"LumenSceneDetail", 2},
+						{"LumenSceneLightningDetail", 2}
 					}
 				}},
 				{"Gimbal", {
@@ -1101,23 +1121,15 @@ namespace flychams::core
 
 		// Get agent view camera pose (ENU frame)
 		Vector3r agent_view_pos;
-		agent_view_pos.x() = -1.5f;
-		agent_view_pos.y() = -1.5f;
-		agent_view_pos.z() = -1.5f;
+		agent_view_pos.x() = -0.75f;
+		agent_view_pos.y() = -0.75f;
+		agent_view_pos.z() = -0.75f;
 		Vector3r agent_view_rot;
 		agent_view_rot.x() = 0.0f;
 		agent_view_rot.y() = -33.33f;
 		agent_view_rot.z() = 45.0f;
 
 		cameras["CAM_" + agent_id] = {
-			{"CaptureSettings",{
-				{
-					{"ImageType", 0},
-					{"Width", 1280},
-					{"Height", 720},
-					{"FOV_Degrees", 70}
-				}
-			}},
 			{"X", agent_view_pos.x()},
 			{"Y", -agent_view_pos.y()},
 			{"Z", -agent_view_pos.z()},
@@ -1139,14 +1151,6 @@ namespace flychams::core
 		scene_view_rot.z() = 45.0f;
 
 		cameras["CAM_SCENE"] = {
-			{"CaptureSettings",{
-				{
-					{"ImageType", 0},
-					{"Width", 1920},
-					{"Height", 1080},
-					{"FOV_Degrees", 90}
-				}
-			}},
 			{"X", scene_view_pos.x()},
 			{"Y", -scene_view_pos.y()},
 			{"Z", -scene_view_pos.z()},
