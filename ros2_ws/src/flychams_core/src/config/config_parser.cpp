@@ -965,7 +965,7 @@ namespace flychams::core
 		for (const auto& [agent_id, agent_ptr] : config_ptr->agents)
 		{
 			// Agent arameters
-			std::string vehicle_model = (agent_ptr->drone->drone_type == DroneType::Quadcopter) ? "Quadcopter" : "Hexacopter";
+			std::string vehicle_model = (agent_ptr->drone->drone_type == DroneType::Quadcopter) ? "Quadcopter" : "FlyChamsHexacopter";
 			std::string pawn_path = (agent_ptr->drone->drone_type == DroneType::Quadcopter) ? "FlyChamsQuadcopter" : "FlyChamsHexacopter";
 			Vector3r ini_pos = agent_ptr->initial_position;
 			Vector3r ini_ori = agent_ptr->initial_orientation;

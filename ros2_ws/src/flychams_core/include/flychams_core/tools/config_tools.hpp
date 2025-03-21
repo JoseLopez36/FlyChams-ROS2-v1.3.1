@@ -245,17 +245,18 @@ namespace flychams::core
             ProjectionParameters params;
 
             // Extract ROI parameters
-            const auto& s_min_pix = RosUtils::getParameterOr<float>(node_, "tracking.s_min_pix", 50.0f); // [pix]
-            const auto& kappa_s = RosUtils::getParameterOr<float>(node_, "tracking.kappa_s", 0.8f);
+            const auto& min_apparent_size = RosUtils::getParameterOr<float>(node_, "tracking.min_apparent_size", 0.2f);
+            const auto& max_apparent_size = RosUtils::getParameterOr<float>(node_, "tracking.max_apparent_size", 0.9f);
+            const auto& ref_apparent_size = RosUtils::getParameterOr<float>(node_, "tracking.ref_apparent_size", 0.8f);
+            float sensor_half_size = static_cast<float>(std::min(width, height)) / 2.0f;
+
+            // Minimum admissible apparent size of the object in the image (in pixels)
+            float s_min_pix = sensor_half_size * min_apparent_size;
+            params.s_min_pix = s_min_pix; // [pix]
 
             // Maximum admissible apparent size of the object in the image (in pixels)
-            // Assuming 90% of the half-height (or width if smaller)
-            float s_max_pix = 0.5f * static_cast<float>(std::min(width, height)) * 0.9f;
+            float s_max_pix = sensor_half_size * max_apparent_size;
             params.s_max_pix = s_max_pix; // [pix]
-
-            // Minimum admissible apparent size (in pixels)
-            // Provided externally
-            params.s_min_pix = s_min_pix; // [pix]
 
             // Reference apparent size (in pixels)
             // Calculated using kappaS (half-width fraction) parameter

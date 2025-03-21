@@ -3,8 +3,9 @@
     # Tracking parameters
     tracking:
       num_tracking_windows: 4 # For MultiWindowTracking mode
-      kappa_s: 0.8            # Half-width fraction
-      s_min_pix: 0.0          # Minimum apparent size of the target (pix)
+      min_apparent_size: 0.2  # Minimum fraction of half-sensor that the target will occupy in the image
+      max_apparent_size: 0.9  # Maximum fraction of half-sensor that the target will occupy in the image
+      ref_apparent_size: 0.8  # Reference fraction of half-sensor that the target will occupy in the image
     # Window IDs (for GUI purposes)
     fixed_window_ids: [
       scene_view: "SCENE"
