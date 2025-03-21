@@ -6,20 +6,23 @@
       kappa_s: 0.8            # Half-width fraction
       s_min_pix: 0.0          # Minimum apparent size of the target (pix)
     # Window IDs (for GUI purposes)
-    window_ids:
-      scene_id: "SCENE"
-      agent_1_id: "AGENT_1"
-      agent_2_id: "AGENT_2"
-      map_id: "MAP"
-      central_id: "CENTRAL"
-      tracking_ids: [
-        "TRACKING00",
-        "TRACKING01",
-        "TRACKING02",
-        "TRACKING03"
-        ]
-    # Camera IDs (for GUI purposes)
-    camera_ids:
-      scene_id: "CAM_SCENE"
-      agent_1_id: "CAM_AGENTID_1"
-      agent_2_id: "CAM_AGENTID_2"
+    fixed_window_ids: [
+      scene_view: "SCENE"
+      agent_view_0: "AGENT00"
+      agent_view_1: "AGENT01"
+      map_view: "MAP"
+    ]
+    dynamic_window_ids: [
+      central_view: "CENTRAL"
+      tracking_view_0: "TRACKING00"
+      tracking_view_1: "TRACKING01"
+      tracking_view_2: "TRACKING02"
+      tracking_view_3: "TRACKING03"
+    ]
+    # Fixed camera IDs (for GUI purposes)
+    fixed_camera_ids: [
+      scene_camera: "CAM_SCENE"
+      agent_camera_0: "CAM_AGENTID_00"
+      agent_camera_1: "CAM_AGENTID_01"
+      map_camera: ""
+    ]

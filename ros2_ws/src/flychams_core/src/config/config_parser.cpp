@@ -1091,12 +1091,10 @@ namespace flychams::core
 			// Add cameras to the vehicle
 			populateCameras(agent_id, config_ptr, agent_ptr->heads, vehicles[agent_id]["Cameras"]);
 
-			// Add scene view once
+			// Add external cameras
+			populateExternalCameras(agent_id, first_time, vehicles[agent_id]["Cameras"]);
 			if (first_time)
-			{
-				populateExternalCameras(vehicles[agent_id]["Cameras"]);
 				first_time = false;
-			}
 
 			// Update instance offset
 			instance++;
@@ -1226,27 +1224,41 @@ namespace flychams::core
 				{"EnableGimbal", true}, {"CameraVisible", true}
 			};
 		}
+	}
 
-		// Get agent view camera pose (ENU frame)
+	void ConfigParser::populateExternalCameras(const ID& agent_id, const bool& is_first_agent, nlohmann::ordered_json& cameras)
+	{
+		// Get agent view 0 camera pose (ENU frame)
+		Vector3r agent_view_0_pos;
+		agent_view_0_pos.x() = -1.15f;
+		agent_view_0_pos.y() = -1.15f;
+		agent_view_0_pos.z() = 1.15f;
+		Vector3r agent_view_0_rot;
+		agent_view_0_rot.x() = 0.0f;
+		agent_view_0_rot.y() = 33.33f;
+		agent_view_0_rot.z() = 45.0f;
+
+		// Agent view camera 0 (whole UAV view)
+		cameras["CAM_" + agent_id + "_00"] = {
+			{"X", agent_view_0_pos.x()},
+			{"Y", -agent_view_0_pos.y()},
+			{"Z", -agent_view_0_pos.z()},
+			{"Roll", agent_view_0_rot.x()},
+			{"Pitch", -agent_view_0_rot.y()},
+			{"Yaw", -agent_view_0_rot.z()} };
+
+		// Get agent view 1 camera pose (ENU frame)
 		Vector3r agent_view_1_pos;
-		agent_view_1_pos.x() = -1.15f;
-		agent_view_1_pos.y() = -1.15f;
-		agent_view_1_pos.z() = 1.15f;
+		agent_view_1_pos.x() = -0.6f;
+		agent_view_1_pos.y() = -0.6f;
+		agent_view_1_pos.z() = -0.3f;
 		Vector3r agent_view_1_rot;
 		agent_view_1_rot.x() = 0.0f;
-		agent_view_1_rot.y() = 33.33f;
+		agent_view_1_rot.y() = 0.0f;
 		agent_view_1_rot.z() = 45.0f;
-		Vector3r agent_view_2_pos;
-		agent_view_2_pos.x() = -0.6f;
-		agent_view_2_pos.y() = -0.6f;
-		agent_view_2_pos.z() = -0.3f;
-		Vector3r agent_view_2_rot;
-		agent_view_2_rot.x() = 0.0f;
-		agent_view_2_rot.y() = 0.0f;
-		agent_view_2_rot.z() = 45.0f;
 
-		// Agent view camera 1 (whole UAV view)
-		cameras["CAM_" + agent_id + "_1"] = {
+		// Agent view camera 1 (Payload view)
+		cameras["CAM_" + agent_id + "_01"] = {
 			{"X", agent_view_1_pos.x()},
 			{"Y", -agent_view_1_pos.y()},
 			{"Z", -agent_view_1_pos.z()},
@@ -1254,18 +1266,9 @@ namespace flychams::core
 			{"Pitch", -agent_view_1_rot.y()},
 			{"Yaw", -agent_view_1_rot.z()} };
 
-		// Agent view camera 2 (Payload view)
-		cameras["CAM_" + agent_id + "_2"] = {
-			{"X", agent_view_2_pos.x()},
-			{"Y", -agent_view_2_pos.y()},
-			{"Z", -agent_view_2_pos.z()},
-			{"Roll", agent_view_2_rot.x()},
-			{"Pitch", -agent_view_2_rot.y()},
-			{"Yaw", -agent_view_2_rot.z()} };
-	}
+		if (!is_first_agent)
+			return; // Only first agent has scene view (avoids duplicating global cameras)
 
-	void ConfigParser::populateExternalCameras(nlohmann::ordered_json& cameras)
-	{
 		// Get scene view camera pose (ENU frame)
 		Vector3r scene_view_pos;
 		scene_view_pos.x() = -75.0f;

@@ -42,19 +42,20 @@ namespace flychams::dashboard
         // Agent parameters
         core::ID agent_id_;
         // Window IDs
-        core::ID scene_window_id_;
-        core::ID agent_1_window_id_;
-        core::ID agent_2_window_id_;
-        core::ID map_window_id_;
-        core::ID central_window_id_;
-        std::vector<core::ID> tracking_window_ids_;
-        // Camera IDs (for fixed windows)
-        core::ID scene_camera_id_;
-        core::ID agent_1_camera_id_;
-        core::ID agent_2_camera_id_;
+        core::IDs fixed_window_ids_;
+        core::IDs dynamic_window_ids_;
+        int num_fixed_windows_;
+        int num_dynamic_windows_;
+        // Camera IDs
+        core::IDs fixed_camera_ids_;
         core::ID central_camera_id_;
-        // Number of windows
-        int num_windows_;
+        // Fixed command vectors
+        core::IDs fixed_vehicle_id_cmds_;
+        core::IDs fixed_camera_id_cmds_;
+        std::vector<int> fixed_crop_x_cmds_;
+        std::vector<int> fixed_crop_y_cmds_;
+        std::vector<int> fixed_crop_w_cmds_;
+        std::vector<int> fixed_crop_h_cmds_;
 
     private: // Data
         // Agent tracking goal
@@ -62,32 +63,21 @@ namespace flychams::dashboard
         bool has_goal_;
         // Tracking goal mutex
         std::mutex mutex_;
-        // Command vectors
-        core::IDs window_ids_;
-        core::IDs vehicle_ids_;
-        core::IDs camera_ids_;
-        std::vector<int> crop_x_;
-        std::vector<int> crop_y_;
-        std::vector<int> crop_w_;
-        std::vector<int> crop_h_;
-        // Rectangle vectors (for drawing on central window)
-        std::vector<core::PointMsg> rectangle_corners_;
-        std::vector<core::PointMsg> rectangle_sizes_;
-        core::ColorMsg rectangle_color_;
-        float rectangle_thickness_;
-        // String vectors (for drawing on central window)
-        std::vector<std::string> strings_;
-        std::vector<core::PointMsg> string_positions_;
-        core::ColorMsg string_color_;
-        float string_scale_;
+        // Dynamic command vectors
+        core::IDs dynamic_vehicle_id_cmds_;
+        core::IDs dynamic_camera_id_cmds_;
+        std::vector<int> dynamic_crop_x_cmds_;
+        std::vector<int> dynamic_crop_y_cmds_;
+        std::vector<int> dynamic_crop_w_cmds_;
+        std::vector<int> dynamic_crop_h_cmds_;
 
     private: // Safe callbacks
         void trackingCallback(const core::TrackingGoalMsg::SharedPtr msg);
 
     public: // Public methods
         // Update
-        void updateAgent();
-        void updateTracking();
+        void setFixedWindows();
+        void setTrackingWindows();
 
     private:
         // Subscribers

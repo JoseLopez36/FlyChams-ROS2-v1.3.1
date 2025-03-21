@@ -14,8 +14,6 @@ namespace flychams::coordination
         // Get parameters from parameter server
         // Get update rate
         float update_rate = RosUtils::getParameterOr<float>(node_, "agent_tracking.tracking_update_rate", 20.0f);
-        // Get tracking window IDs
-        tracking_window_ids_ = RosUtils::getParameter<std::vector<core::ID>>(node_, "window_ids.tracking_ids");
 
         // Get tracking parameters
         tracking_params_ = config_tools_->getTrackingParameters(agent_id_);
@@ -38,7 +36,6 @@ namespace flychams::coordination
         {
         case TrackingMode::MultiCameraTracking:
             goal_.unit_types = std::vector<uint8_t>(n);
-            goal_.window_ids = std::vector<std::string>(n);
             goal_.head_ids = std::vector<std::string>(n);
             goal_.orientations = std::vector<QuaternionMsg>(n);
             goal_.fovs = std::vector<float>(n);
@@ -46,7 +43,6 @@ namespace flychams::coordination
             for (int i = 0; i < n; i++)
             {
                 goal_.unit_types[i] = static_cast<uint8_t>(TrackingUnitType::Physical);
-                goal_.window_ids[i] = tracking_window_ids_[i];
                 goal_.head_ids[i] = tracking_params_.camera_params[i].id;
                 goal_.orientations[i] = QuaternionMsg();
                 goal_.fovs[i] = 0.0f;
@@ -56,14 +52,12 @@ namespace flychams::coordination
         case TrackingMode::MultiWindowTracking:
             goal_.camera_id = tracking_params_.window_params[0].camera_params.id;
             goal_.unit_types = std::vector<uint8_t>(n);
-            goal_.window_ids = std::vector<std::string>(n);
             goal_.crops = std::vector<CropMsg>(n);
             goal_.resolution_factors = std::vector<float>(n);
 
             for (int i = 0; i < n; i++)
             {
                 goal_.unit_types[i] = static_cast<uint8_t>(TrackingUnitType::Digital);
-                goal_.window_ids[i] = tracking_window_ids_[i];
                 goal_.crops[i] = CropMsg();
                 goal_.resolution_factors[i] = 0.0f;
             }
@@ -220,7 +214,7 @@ namespace flychams::coordination
         // Project points on central camera
         Matrix2Xr tab_p = CameraUtils::projectPoints(tab_P, wTc, camera_params.k_ref);
 
-        // Flip the X coordinates to handle the mirroring issue. TODO: Check if this is correct
+        // Flip the horizontal coordinates to handle X-axis mirroring
         for (int i = 0; i < tab_p.cols(); i++)
         {
             tab_p(0, i) = camera_params.width - tab_p(0, i);
@@ -238,27 +232,24 @@ namespace flychams::coordination
             const auto& r = tab_r(i);
             const auto& p = tab_p.col(i);
 
-            // Check if target is out of the view
-            if (p(0) <= 0.0f || p(0) >= camera_params.width || p(1) <= 0.0f || p(1) >= camera_params.height)
-            {
-                goal.crops[i].x = -1;
-                goal.crops[i].y = -1;
-                goal.crops[i].w = -1;
-                goal.crops[i].h = -1;
-                goal.resolution_factors[i] = 0;
-                continue;
-            }
-
             // Create tracking crop parameters
             float lambda;
             Vector2i size = TrackingUtils::computeWindowSize(wPt, r, wPc, window_params, projection_params, lambda);
             Vector2i corner = TrackingUtils::computeWindowCorner(p, size);
+
+            // Check if crop is out of bounds (i.e. if the crop is completely outside the image bounds)
+            bool is_out_of_bounds =
+                (corner(0) + size(0) <= 0) ||           // Completely to the left
+                (corner(1) + size(1) <= 0) ||           // Completely above
+                (corner(0) >= camera_params.width) ||   // Completely to the right
+                (corner(1) >= camera_params.height);    // Completely below
 
             // Update tracking goal
             goal.crops[i].x = corner(0);
             goal.crops[i].y = corner(1);
             goal.crops[i].w = size(0);
             goal.crops[i].h = size(1);
+            goal.crops[i].is_out_of_bounds = is_out_of_bounds;
             goal.resolution_factors[i] = lambda;
 
             // Print tracking goal

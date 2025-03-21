@@ -41,7 +41,7 @@ public: // Constructor/Destructor
         selected_agent_id_ = "NONE";
 
         // Set update timer
-        float update_rate = RosUtils::getParameterOr<float>(node_, "gui.gui_update_rate", 10.0f);
+        float update_rate = RosUtils::getParameterOr<float>(node_, "gui.gui_update_rate", 20.0f);
         update_timer_ = RosUtils::createTimerByRate(node_, update_rate,
             std::bind(&GuiNode::onUpdate, this));
     }
@@ -61,7 +61,7 @@ private: // Update methods
         {
             // Update GUI controller
             auto controller = gui_controllers_[selected_agent_id_];
-            controller->updateTracking();
+            controller->setTrackingWindows();
         }
     }
 
@@ -101,7 +101,7 @@ private: // Agent management
         if (selected_agent_id_ != "NONE")
         {
             auto controller = gui_controllers_[selected_agent_id_];
-            controller->updateAgent();
+            controller->setFixedWindows();
         }
     }
 

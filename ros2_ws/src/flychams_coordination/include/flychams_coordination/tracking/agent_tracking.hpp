@@ -47,8 +47,6 @@ namespace flychams::coordination
         core::ID central_head_id_;
         // Module parameters
         core::TrackingParameters tracking_params_;
-        // Window IDs
-        std::vector<core::ID> tracking_window_ids_;
 
     private: // Data
         // Odom

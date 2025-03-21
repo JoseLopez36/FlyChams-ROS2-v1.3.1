@@ -1,7 +1,4 @@
-std_msgs/Header header
-
-# IDs of the windows where the tracking image will be displayed
-string[] window_ids                
+std_msgs/Header header             
 
 # Tracking unit types
 uint8[] unit_types                     # Tracking unit types (0: phys-zoom, 1: dig-zoom)

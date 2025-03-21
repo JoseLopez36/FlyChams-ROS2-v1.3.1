@@ -42,12 +42,6 @@ public: // Constructor/Destructor
         // Initialize target controllers
         target_controllers_.clear();
 
-        // Remove all targets from simulation
-        ext_tools_->removeAllTargets();
-
-        // Wait 2 seconds to ensure targets are removed
-        std::this_thread::sleep_for(std::chrono::seconds(2));
-
         // Set target update timer
         prev_time_ = RosUtils::getTimeNow(node_);
         const auto& update_rate = RosUtils::getParameter<float>(node_, "target_control.target_update_rate");
@@ -81,19 +75,6 @@ private: // Element management
         target_positions_.push_back(controller->getPosition());
 
         RCLCPP_INFO(node_->get_logger(), "Target controller created for target %s", target_id.c_str());
-
-        // Add target to simulation
-        ColorMsg highlight_color;
-        highlight_color.r = 1.0f;
-        highlight_color.g = 0.0f;
-        highlight_color.b = 0.0f;
-        highlight_color.a = 0.015f;
-        PointMsg position = controller->getPosition();
-        position.z += 4.0f;
-        ext_tools_->addTargetGroup({ target_id }, { config_tools_->getTarget(target_id)->target_type }, { position }, config_tools_->getSimulation()->draw_world_markers, { highlight_color }, config_tools_->getMap()->region_type);
-
-        // Wait for 0.1 seconds to ensure target is added
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 
     void onRemoveTarget(const ID& target_id) override
