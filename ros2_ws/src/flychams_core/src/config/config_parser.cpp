@@ -1249,9 +1249,9 @@ namespace flychams::core
 	{
 		// Get agent view 0 camera pose (ENU frame)
 		Vector3r agent_view_0_pos;
-		agent_view_0_pos.x() = -1.15f;
-		agent_view_0_pos.y() = -1.15f;
-		agent_view_0_pos.z() = 1.15f;
+		agent_view_0_pos.x() = -1.5f;
+		agent_view_0_pos.y() = -1.5f;
+		agent_view_0_pos.z() = 1.0f;
 		Vector3r agent_view_0_rot;
 		agent_view_0_rot.x() = 0.0f;
 		agent_view_0_rot.y() = 33.33f;

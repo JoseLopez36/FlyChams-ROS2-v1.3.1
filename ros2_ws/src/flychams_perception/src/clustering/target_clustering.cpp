@@ -190,16 +190,19 @@ namespace flychams::perception
 		case State::Active:
 		{
 			// Perform clustering
-			const auto& assignments = kmeans_->performClustering(points_, dt);
-			RCLCPP_INFO(node_->get_logger(), "Target clustering: Clustering performed, assignments:");
-			for (const auto& [target_id, cluster_id] : assignments)
+			if (!has_assignments_)
 			{
-				RCLCPP_INFO(node_->get_logger(), "	-Target ID: %s, Cluster ID: %s", target_id.c_str(), cluster_id.c_str());
-			}
+				const auto& assignments = kmeans_->performClustering(points_, dt);
+				RCLCPP_INFO(node_->get_logger(), "Target clustering: Clustering performed, assignments:");
+				for (const auto& [target_id, cluster_id] : assignments)
+				{
+					RCLCPP_INFO(node_->get_logger(), "	-Target ID: %s, Cluster ID: %s", target_id.c_str(), cluster_id.c_str());
+				}
 
-			// Update assignments
-			assignments_ = assignments;
-			has_assignments_ = true;
+				// Update assignments
+				assignments_ = assignments;
+				has_assignments_ = true;
+			}
 		}
 		break;
 		}

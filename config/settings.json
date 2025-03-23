@@ -21,7 +21,7 @@
     },
     "TimeOfDay": {
         "Enabled": true,
-        "StartDateTime": "2024-12-13 17:0:0",
+        "StartDateTime": "2024-12-13 17:30:0",
         "CelestialClockSpeed": 1,
         "StartDateTimeDst": false,
         "UpdateIntervalSecs": 1
@@ -109,7 +109,7 @@
                             "ImageType": 0,
                             "Width": 7680,
                             "Height": 4320,
-                            "FOV_Degrees": 162.76870727539063,
+                            "FOV_Degrees": 146.283203125,
                             "LumenGIEnable": true,
                             "LumenReflectionEnable": true,
                             "LumenFinalQuality": 2,
@@ -170,9 +170,9 @@
                     "CameraVisible": true
                 },
                 "CAM_AGENT05_00": {
-                    "X": -1.149999976158142,
-                    "Y": 1.149999976158142,
-                    "Z": -1.149999976158142,
+                    "X": -1.5,
+                    "Y": 1.5,
+                    "Z": -1.0,
                     "Roll": 0.0,
                     "Pitch": -33.33000183105469,
                     "Yaw": -45.0
@@ -190,7 +190,7 @@
                     "Y": 150.0,
                     "Z": -150.0,
                     "Roll": 0.0,
-                    "Pitch": -15.0,
+                    "Pitch": -25.0,
                     "Yaw": -45.0,
                     "External": true
                 }
