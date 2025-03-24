@@ -65,6 +65,9 @@ The project leverages:
 ```bash
 git clone https://github.com/JoseLopez36/FlyChams-ROS2.git
 git clone https://github.com/JoseLopez36/FlyChams-Cosys-AirSim.git
+# Checkout to branch 5.2.1
+cd FlyChams-Cosys-AirSim
+git checkout 5.2.1
 ```
 
 ### 2. Setup the PX4-Autopilot repository
