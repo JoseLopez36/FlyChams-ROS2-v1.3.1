@@ -1,9 +1,8 @@
 /flychams/**:
   ros__parameters:
     clustering:
-      # Update rate (Hz)
-      clustering_update_rate: 3.33
-      analysis_update_rate: 20.0
+      clustering_update_rate: 3.33 # (Hz)
+      analysis_update_rate: 20.0   # (Hz)
       # Weights for clustering persistence
       persistence_weights:
         optimality: 1.0

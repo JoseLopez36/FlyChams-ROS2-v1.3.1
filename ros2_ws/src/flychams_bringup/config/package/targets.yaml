@@ -1,5 +1,4 @@
 /flychams/**:
   ros__parameters:
     target_control:
-      # Update rates (Hz)
-      target_update_rate: 20.0
+      target_update_rate: 20.0 # (Hz)

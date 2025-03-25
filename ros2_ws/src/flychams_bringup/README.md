@@ -107,10 +107,9 @@ ros2 launch flychams_bringup run.launch.py track:=True log_track:=warn
 Configuration files are stored in the `config` directory and organized by category:
 
 - `core/` - Core system configuration
-  - `system.yaml` - General system parameters (e.g. paths to configuration files, etc.)
+  - `system.yaml` - General simulation parameters (e.g. simulation speed, paths to configuration files, etc.)
   - `topics.yaml` - Topic naming configuration
   - `frames.yaml` - Frame ID configuration
-  - `params.yaml` - General simulation parameters
 
 - `packages/` - Package-specific configuration
   - `control/` - Control nodes configuration

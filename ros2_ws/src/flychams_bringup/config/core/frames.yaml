@@ -1,7 +1,9 @@
 /flychams/**:
   ros__parameters:
+    # Global frames
     global_frames:
       world: "world"
+    # Agent frames
     agent_frames:
       agent_local: "AGENTID/local"
       agent_body: "AGENTID/body"

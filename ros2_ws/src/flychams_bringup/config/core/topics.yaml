@@ -1,8 +1,10 @@
 /flychams/**:
   ros__parameters:
+    # Global topics
     global_topics:
       registration: "global/registration"
       metrics: "global/metrics"
+    # Agent topics
     agent_topics:
       global_odom: "/airsim/AGENTID/global/state/odom"
       position_goal: "agents/AGENTID/position/goal"
@@ -10,10 +12,12 @@
       tracking_goal: "agents/AGENTID/tracking/goal"
       metrics: "agents/AGENTID/visual/metrics"
       markers: "agents/AGENTID/visual/markers"
+    # Target topics
     target_topics:
       info: "targets/TARGETID/info"
       metrics: "targets/TARGETID/visual/metrics"
       markers: "targets/TARGETID/visual/markers"
+    # Cluster topics
     cluster_topics:
       info: "clusters/CLUSTERID/info"
       metrics: "clusters/CLUSTERID/visual/metrics"

@@ -25,12 +25,6 @@ def generate_launch_description():
         'config',
         'core',
         'frames.yaml'
-    ]) 
-    params_path = PathJoinSubstitution([
-        FindPackageShare('flychams_bringup'),
-        'config',
-        'core',
-        'params.yaml'
     ])
 
     # Set environment variable to control ROS logger output
@@ -75,8 +69,7 @@ def generate_launch_description():
             parameters=[
                 system_path, 
                 topics_path, 
-                frames_path, 
-                params_path
+                frames_path
             ]
         )
     )

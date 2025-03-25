@@ -64,12 +64,6 @@ def generate_launch_description():
         'config',
         'core',
         'frames.yaml'
-    ]) 
-    params_path = PathJoinSubstitution([
-        FindPackageShare('flychams_bringup'),
-        'config',
-        'core',
-        'params.yaml'
     ])
     
     # Package parameters
@@ -210,7 +204,6 @@ def generate_launch_description():
                 system_path, 
                 topics_path, 
                 frames_path, 
-                params_path, 
                 control_path,
                 {'use_sim_time': True}
             ]
@@ -232,7 +225,6 @@ def generate_launch_description():
                 system_path, 
                 topics_path, 
                 frames_path, 
-                params_path, 
                 perception_path,
                 {'use_sim_time': True}
             ]
@@ -254,7 +246,6 @@ def generate_launch_description():
                 system_path, 
                 topics_path, 
                 frames_path, 
-                params_path, 
                 coordination_path,
                 {'use_sim_time': True}
             ]
@@ -275,7 +266,6 @@ def generate_launch_description():
                 system_path, 
                 topics_path, 
                 frames_path, 
-                params_path, 
                 coordination_path,
                 {'use_sim_time': True}
             ]
@@ -296,7 +286,6 @@ def generate_launch_description():
                 system_path, 
                 topics_path, 
                 frames_path, 
-                params_path, 
                 coordination_path,
                 {'use_sim_time': True}
             ]
@@ -318,7 +307,6 @@ def generate_launch_description():
                 system_path, 
                 topics_path, 
                 frames_path, 
-                params_path, 
                 dashboard_path,
                 {'use_sim_time': True}
             ]
@@ -339,7 +327,6 @@ def generate_launch_description():
                 system_path, 
                 topics_path, 
                 frames_path, 
-                params_path, 
                 dashboard_path,
                 {'use_sim_time': True}
             ]
@@ -361,7 +348,6 @@ def generate_launch_description():
                 system_path, 
                 topics_path, 
                 frames_path, 
-                params_path, 
                 targets_path,
                 {'use_sim_time': True}
             ]
