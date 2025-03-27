@@ -29,7 +29,7 @@ namespace flychams::dashboard
             camera_id = RosUtils::replace(camera_id, "AGENTID", agent_id_);
 
         // Get central camera ID
-        central_camera_id_ = config_tools_->getAgent(agent_id_)->central_head_id;
+        central_camera_id_ = config_tools_->getCentralHead(agent_id_)->id;
 
         // Initialize tracking command vectors
         tracking_vehicle_id_cmds_.resize(num_tracking_windows_);

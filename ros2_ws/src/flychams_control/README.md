@@ -6,18 +6,23 @@ Control package for the Flying Chameleons (FlyChams) project that manages the mo
 
 The `flychams_control` package provides control algorithms for aerial agents in the FlyChams system. It handles:
 
-1. **Agent movement control** - Manages the flight control of aerial platforms
-2. **Trajectory tracking** - Implements algorithms for following specified trajectories
-3. **Position control** - Maintains desired positions based on commands from coordination nodes
+1. **Agent movement control** - Manages the flight control of aerial platforms (e.g. takeoff, landing, moving to a position, etc.)
+2. **Head control** - Manages the control of the heads of the agents (e.g. zoom, pan, tilt)
 
 ## Nodes
 
-### Agent Control
+### Drone Control
 
-- Main node that handles agent movement:
-  - Manages agent state and transitions between flight modes (e.g. arming, disarming, takingoff, moving, landing, etc.)
+- Node that handles UAV platform movement:
+  - Manages drone state and transitions between flight modes (e.g. arming, disarming, takingoff, tracking, landing, etc.)
   - Receives position commands from coordination nodes
   - Implements speed scheduling and other control algorithms
+
+### Head Control
+
+- Node that handles head control:
+  - Receives head commands from coordination nodes
+  - Sends commands to the heads of the agents
 
 ## Configuration
 

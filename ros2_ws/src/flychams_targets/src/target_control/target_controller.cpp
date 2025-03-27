@@ -51,7 +51,7 @@ namespace flychams::targets
     void TargetController::update(const float& dt)
     {
         // Update target info
-        info_.header.stamp = RosUtils::getTimeNow(node_);
+        info_.header.stamp = RosUtils::now(node_);
         updateInfo(dt, info_.position);
 
         // Publish target info

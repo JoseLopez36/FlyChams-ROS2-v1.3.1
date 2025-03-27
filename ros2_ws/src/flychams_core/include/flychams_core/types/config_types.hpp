@@ -73,6 +73,7 @@ namespace flychams::core
         std::string global_metrics;
 
         // Agent topics
+        std::string agent_state;
         std::string agent_global_odom;
         std::string agent_position_goal;
         std::string agent_tracking_info;

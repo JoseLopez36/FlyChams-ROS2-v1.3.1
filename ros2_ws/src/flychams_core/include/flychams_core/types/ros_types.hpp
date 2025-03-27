@@ -41,6 +41,7 @@
 // Custom message types
 #include "flychams_interfaces/msg/element.hpp"
 #include "flychams_interfaces/msg/registration.hpp"
+#include "flychams_interfaces/msg/agent_state.hpp"
 #include "flychams_interfaces/msg/position_goal.hpp"
 #include "flychams_interfaces/msg/tracking_info.hpp"
 #include "flychams_interfaces/msg/tracking_goal.hpp"
@@ -140,6 +141,7 @@ namespace flychams::core
     // Registration messages
     using RegistrationMsg = flychams_interfaces::msg::Registration;
     // Agent messages
+    using AgentStateMsg = flychams_interfaces::msg::AgentState;
     using PositionGoalMsg = flychams_interfaces::msg::PositionGoal;
     using TrackingInfoMsg = flychams_interfaces::msg::TrackingInfo;
     using TrackingGoalMsg = flychams_interfaces::msg::TrackingGoal;

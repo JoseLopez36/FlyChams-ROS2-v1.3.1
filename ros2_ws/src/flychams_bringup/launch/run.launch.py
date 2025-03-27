@@ -11,7 +11,8 @@ def generate_launch_description():
     # Define logging level for each node
     log_level = {
         # Control nodes
-        'agent_control': 'info',
+        'drone_control': 'info',
+        'head_control': 'info',
         # Perception nodes
         'clustering': 'info',
         # Coordination nodes
@@ -26,24 +27,26 @@ def generate_launch_description():
     }
 
     # Define launch arguments for each node
-    launch_agent_control = LaunchConfiguration('ctrl')
-    launch_clustering = LaunchConfiguration('clus')
-    launch_agent_positioning = LaunchConfiguration('pos')
-    launch_agent_assignment = LaunchConfiguration('assign')
-    launch_agent_tracking = LaunchConfiguration('track')
+    launch_drone_control = LaunchConfiguration('drone_control')
+    launch_head_control = LaunchConfiguration('head_control')
+    launch_clustering = LaunchConfiguration('clustering')
+    launch_agent_positioning = LaunchConfiguration('agent_positioning')
+    launch_agent_assignment = LaunchConfiguration('agent_assignment')
+    launch_agent_tracking = LaunchConfiguration('agent_tracking')
     launch_gui = LaunchConfiguration('gui')
-    launch_visualization = LaunchConfiguration('viz')
-    launch_target_control = LaunchConfiguration('tgt_ctrl')
+    launch_visualization = LaunchConfiguration('visualization')
+    launch_target_control = LaunchConfiguration('target_control')
 
     # Define log level arguments for each node
-    log_level_agent_control = LaunchConfiguration('log_ctrl')
-    log_level_clustering = LaunchConfiguration('log_clu')
-    log_level_agent_positioning = LaunchConfiguration('log_pos')
-    log_level_agent_assignment = LaunchConfiguration('log_assign')
-    log_level_agent_tracking = LaunchConfiguration('log_track')
+    log_level_drone_control = LaunchConfiguration('log_drone_control')
+    log_level_head_control = LaunchConfiguration('log_head_control')
+    log_level_clustering = LaunchConfiguration('log_clustering')
+    log_level_agent_positioning = LaunchConfiguration('log_agent_positioning')
+    log_level_agent_assignment = LaunchConfiguration('log_agent_assignment')
+    log_level_agent_tracking = LaunchConfiguration('log_agent_tracking')
     log_level_gui = LaunchConfiguration('log_gui')
-    log_level_visualization = LaunchConfiguration('log_viz')
-    log_level_target_control = LaunchConfiguration('log_tgt_ctrl')
+    log_level_visualization = LaunchConfiguration('log_visualization')
+    log_level_target_control = LaunchConfiguration('log_target_control')
 
     # Get paths to config files
     # Core parameters
@@ -107,27 +110,27 @@ def generate_launch_description():
 
     # Declare launch arguments with default values
     ld.append(DeclareLaunchArgument(
-        'ctrl',
+        'drone_control',
         default_value='True',
-        description='Flag to enable/disable the Agent Control node'))
+        description='Flag to enable/disable the Drone Control node'))
     
     ld.append(DeclareLaunchArgument(
-        'clus',
+        'head_control',
+        default_value='True',
+        description='Flag to enable/disable the Head Control node'))
+    
+    ld.append(DeclareLaunchArgument(
+        'clustering',
         default_value='True',
         description='Flag to enable/disable the Clustering node'))
     
     ld.append(DeclareLaunchArgument(
-        'pos',
-        default_value='True',
-        description='Flag to enable/disable the Agent Positioning node'))
-    
-    ld.append(DeclareLaunchArgument(
-        'assign',
+        'agent_assignment',
         default_value='True',
         description='Flag to enable/disable the Agent Assignment node'))
     
     ld.append(DeclareLaunchArgument(
-        'track',
+        'agent_tracking',
         default_value='True',
         description='Flag to enable/disable the Agent Tracking node'))
     
@@ -137,38 +140,38 @@ def generate_launch_description():
         description='Flag to enable/disable the GUI node'))
     
     ld.append(DeclareLaunchArgument(
-        'viz',
+        'visualization',
         default_value='True',
         description='Flag to enable/disable the Visualization node'))
     
     ld.append(DeclareLaunchArgument(
-        'tgt_ctrl',
+        'target_control',
         default_value='True',
         description='Flag to enable/disable the Target Control node'))
     
     # Declare log level arguments with default values
     ld.append(DeclareLaunchArgument(
-        'log_ctrl',
+        'log_drone_control',
         default_value='info',
-        description='Log level for the Agent Control node'))
+        description='Log level for the Drone Control node'))
     
     ld.append(DeclareLaunchArgument(
-        'log_clu',
+        'log_head_control',
+        default_value='info',
+        description='Log level for the Head Control node'))
+    
+    ld.append(DeclareLaunchArgument(
+        'log_clustering',
         default_value='info',
         description='Log level for the Clustering node'))
     
     ld.append(DeclareLaunchArgument(
-        'log_pos',
-        default_value='info',
-        description='Log level for the Agent Positioning node'))
-    
-    ld.append(DeclareLaunchArgument(
-        'log_assign',
+        'log_agent_assignment',
         default_value='info',
         description='Log level for the Agent Assignment node'))
     
     ld.append(DeclareLaunchArgument(
-        'log_track',
+        'log_agent_tracking',
         default_value='info',
         description='Log level for the Agent Tracking node'))
     
@@ -178,28 +181,48 @@ def generate_launch_description():
         description='Log level for the GUI node'))
     
     ld.append(DeclareLaunchArgument(
-        'log_viz',
+        'log_visualization',
         default_value='info',
         description='Log level for the Visualization node'))
     
     ld.append(DeclareLaunchArgument(
-        'log_tgt_ctrl',
+        'log_target_control',
         default_value='info',
         description='Log level for the Target Control node'))
 
     # Launch command example: ros2 launch flychams_bringup run.launch.py ctrl:=True clus:=True pos:=True assign:=True track:=True gui:=True viz:=True tgt_ctrl:=True log_ctrl:=info log_clu:=info log_pos:=info log_assign:=info log_track:=info log_gui:=info log_viz:=info log_tgt_ctrl:=info
 
     # ============= CONTROL NODES =============
-    # Conditionally add Agent Controller node
+    # Conditionally add Drone Controller node
     ld.append(
         Node(
             package='flychams_control',
-            executable='agent_control_node',
-            name='agent_control_node',
+            executable='drone_control_node',
+            name='drone_control_node',
             output='screen',
             namespace='flychams',
-            condition=IfCondition(launch_agent_control),
-            arguments=['--ros-args', '--log-level', log_level_agent_control],
+            condition=IfCondition(launch_drone_control),
+            arguments=['--ros-args', '--log-level', log_level_drone_control],
+            parameters=[
+                system_path, 
+                topics_path, 
+                frames_path, 
+                control_path,
+                {'use_sim_time': True}
+            ]
+        )
+    )
+
+    # Conditionally add Head Controller node
+    ld.append(
+        Node(
+            package='flychams_control',
+            executable='head_control_node',
+            name='head_control_node',
+            output='screen',
+            namespace='flychams',
+            condition=IfCondition(launch_head_control),
+            arguments=['--ros-args', '--log-level', log_level_head_control],
             parameters=[
                 system_path, 
                 topics_path, 

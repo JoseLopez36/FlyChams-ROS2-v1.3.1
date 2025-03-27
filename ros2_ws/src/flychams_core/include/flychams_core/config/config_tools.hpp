@@ -476,6 +476,7 @@ namespace flychams::core
             config_ptr->topics.global_metrics = RosUtils::getParameter<std::string>(node_, "global_topics.metrics");
 
             // Agent topics
+            config_ptr->topics.agent_state = RosUtils::getParameter<std::string>(node_, "agent_topics.state");
             config_ptr->topics.agent_global_odom = RosUtils::getParameter<std::string>(node_, "agent_topics.global_odom");
             config_ptr->topics.agent_position_goal = RosUtils::getParameter<std::string>(node_, "agent_topics.position_goal");
             config_ptr->topics.agent_tracking_info = RosUtils::getParameter<std::string>(node_, "agent_topics.tracking_info");

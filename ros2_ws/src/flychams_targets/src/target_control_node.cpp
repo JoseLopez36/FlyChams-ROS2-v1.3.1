@@ -43,9 +43,9 @@ public: // Constructor/Destructor
         target_controllers_.clear();
 
         // Set target update timer
-        prev_time_ = RosUtils::getTimeNow(node_);
+        prev_time_ = RosUtils::now(node_);
         const auto& update_rate = RosUtils::getParameter<float>(node_, "target_control.target_update_rate");
-        update_timer_ = RosUtils::createTimerByRate(node_, update_rate,
+        update_timer_ = RosUtils::createTimer(node_, update_rate,
             std::bind(&TargetControlNode::onUpdate, this));
     }
 
@@ -105,7 +105,7 @@ private: // Update methods
         std::lock_guard<std::mutex> lock(mutex_);
 
         // Get current time
-        const auto current_time = RosUtils::getTimeNow(node_);
+        const auto current_time = RosUtils::now(node_);
         const float dt = (current_time - prev_time_).seconds();
         prev_time_ = current_time;
 

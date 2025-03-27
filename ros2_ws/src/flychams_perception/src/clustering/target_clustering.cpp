@@ -44,10 +44,10 @@ namespace flychams::perception
 		kmeans_->setPersistenceWeights(optimality_weight, cooldown_weight, switch_weight, bonding_weight);
 
 		// Set update timers
-		prev_time_ = RosUtils::getTimeNow(node_);
-		clustering_timer_ = RosUtils::createTimerByRate(node_, clustering_update_rate,
+		prev_time_ = RosUtils::now(node_);
+		clustering_timer_ = RosUtils::createTimer(node_, clustering_update_rate,
 			std::bind(&TargetClustering::updateClustering, this));
-		analysis_timer_ = RosUtils::createTimerByRate(node_, analysis_update_rate,
+		analysis_timer_ = RosUtils::createTimer(node_, analysis_update_rate,
 			std::bind(&TargetClustering::updateAnalysis, this));
 	}
 
@@ -82,7 +82,7 @@ namespace flychams::perception
 	{
 		// Convert to Eigen
 		std::lock_guard<std::mutex> lock(mutex_);
-		const Vector3r position = MsgConversions::fromMsg(msg->position);
+		const Vector3r position = RosUtils::fromMsg(msg->position);
 		points_[target_id] = position;
 		has_points_[target_id] = true;
 	}
@@ -162,7 +162,7 @@ namespace flychams::perception
 		std::lock_guard<std::mutex> lock(mutex_);
 
 		// Get current time
-		auto curr_time = RosUtils::getTimeNow(node_);
+		auto curr_time = RosUtils::now(node_);
 		float dt = (curr_time - prev_time_).seconds();
 		prev_time_ = curr_time;
 

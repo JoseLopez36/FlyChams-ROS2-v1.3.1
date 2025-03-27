@@ -30,6 +30,7 @@ namespace flychams::core
             global_topics_.metrics = topic_config.global_metrics;
 
             // Get agent topics
+            agent_topics_.state_pattern = topic_config.agent_state;
             agent_topics_.global_odom_pattern = topic_config.agent_global_odom;
             agent_topics_.position_goal_pattern = topic_config.agent_position_goal;
             agent_topics_.tracking_info_pattern = topic_config.agent_tracking_info;
@@ -72,6 +73,7 @@ namespace flychams::core
         // Agent topics
         struct AgentTopics
         {
+            std::string state_pattern;
             std::string global_odom_pattern;
             std::string position_goal_pattern;
             std::string tracking_info_pattern;
@@ -118,6 +120,10 @@ namespace flychams::core
             return global_topics_.metrics;
         }
         // Agent topics
+        std::string getAgentStateTopic(const ID& agent_id)
+        {
+            return RosUtils::replace(agent_topics_.state_pattern, "AGENTID", agent_id);
+        }
         std::string getAgentOdomTopic(const ID& agent_id)
         {
             return RosUtils::replace(agent_topics_.global_odom_pattern, "AGENTID", agent_id);
@@ -182,6 +188,11 @@ namespace flychams::core
             return node_->create_publisher<GlobalMetricsMsg>(getGlobalMetricsTopic(), 10);
         }
         // Agent publishers
+        PublisherPtr<AgentStateMsg> createAgentStatePublisher(const ID& agent_id)
+        {
+            rclcpp::QoS qos = rclcpp::QoS(rclcpp::KeepLast(1)).reliable().transient_local();
+            return node_->create_publisher<AgentStateMsg>(getAgentStateTopic(agent_id), qos);
+        }
         PublisherPtr<PositionGoalMsg> createAgentPositionGoalPublisher(const ID& agent_id)
         {
             return node_->create_publisher<PositionGoalMsg>(getAgentPositionGoalTopic(agent_id), 10);
@@ -237,6 +248,11 @@ namespace flychams::core
             return node_->create_subscription<RegistrationMsg>(getRegistrationTopic(), qos, callback, options);
         }
         // Agent subscribers
+        SubscriberPtr<AgentStateMsg> createAgentStateSubscriber(const ID& agent_id, const std::function<void(const AgentStateMsg::SharedPtr)>& callback, const rclcpp::SubscriptionOptions& options = rclcpp::SubscriptionOptions())
+        {
+            rclcpp::QoS qos = rclcpp::QoS(rclcpp::KeepLast(1)).reliable().transient_local();
+            return node_->create_subscription<AgentStateMsg>(getAgentStateTopic(agent_id), qos, callback, options);
+        }
         SubscriberPtr<OdometryMsg> createAgentOdomSubscriber(const ID& agent_id, const std::function<void(const OdometryMsg::SharedPtr)>& callback, const rclcpp::SubscriptionOptions& options = rclcpp::SubscriptionOptions())
         {
             return node_->create_subscription<OdometryMsg>(getAgentOdomTopic(agent_id), 10, callback, options);

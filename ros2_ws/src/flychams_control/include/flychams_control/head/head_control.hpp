@@ -22,10 +22,10 @@ namespace flychams::control
 	 * @date 2025-03-04
 	 * ════════════════════════════════════════════════════════════════
 	 */
-	class HeadController : public core::BaseModule
+	class HeadControl : public core::BaseModule
 	{
 	public: // Constructor/Destructor
-		HeadController(const core::ID& agent_id, core::NodePtr node, core::ConfigTools::SharedPtr config_tools, core::FrameworkTools::SharedPtr framework_tools, core::TopicTools::SharedPtr topic_tools, core::TransformTools::SharedPtr transform_tools)
+		HeadControl(const core::ID& agent_id, core::NodePtr node, core::ConfigTools::SharedPtr config_tools, core::FrameworkTools::SharedPtr framework_tools, core::TopicTools::SharedPtr topic_tools, core::TransformTools::SharedPtr transform_tools)
 			: BaseModule(node, config_tools, framework_tools, topic_tools, transform_tools), agent_id_(agent_id)
 		{
 			init();
@@ -36,33 +36,44 @@ namespace flychams::control
 		void onShutdown() override;
 
 	public: // Types
-		using SharedPtr = std::shared_ptr<HeadController>;
+		using SharedPtr = std::shared_ptr<HeadControl>;
+		struct HeadCmd
+		{
+			core::ID id;
+			core::QuaternionMsg ori;
+			float fov;
+		};
 
 	private: // Parameters
-		// Agent parameters
 		core::ID agent_id_;
-		core::ID central_head_id_;
-		core::QuaternionMsg central_head_orientation_;
-		float central_head_fov_;
+		float update_rate_;
 
 	private: // Data
-		// Goal
+		// Current state
+		core::AgentState curr_state_;
+		bool has_state_;
+		// Tracking goal
 		core::TrackingGoalMsg goal_;
 		bool has_goal_;
-		// State, odom and goal mutex
-		std::mutex mutex_;
+		// Central head command
+		HeadCmd central_cmd_;
 
-	private: // Methods
-		// Callbacks
+	private: // Callbacks
+		void stateCallback(const core::AgentStateMsg::SharedPtr msg);
 		void goalCallback(const core::TrackingGoalMsg::SharedPtr msg);
+
+	private: // Head management
 		// Update
 		void update();
 
 	private:
+		// Callback group
+		core::CallbackGroupPtr callback_group_;
 		// Subscribers
+		core::SubscriberPtr<core::AgentStateMsg> state_sub_;
 		core::SubscriberPtr<core::TrackingGoalMsg> goal_sub_;
-		// Timers
-		core::TimerPtr control_timer_;
+		// Timer
+		core::TimerPtr update_timer_;
 	};
 
 } // namespace flychams::control

@@ -1,0 +1,90 @@
+#pragma once
+
+// Control includes
+#include "flychams_control/drone/speed_planner.hpp"
+
+// Base module include
+#include "flychams_core/base/base_module.hpp"
+
+namespace flychams::control
+{
+	/**
+	 * ════════════════════════════════════════════════════════════════
+	 * @brief Motion manager for UAV drones
+	 *
+	 * @details
+	 * This class is responsible for managing the motion of UAV drones.
+	 * It handles the motion of the drone, mainly the speed and the goal
+	 * position to ensure the drone moves smoothly and reaches the goal
+	 * position.
+	 *
+	 * ════════════════════════════════════════════════════════════════
+	 * @author Jose Francisco Lopez Ruiz
+	 * @date 2025-01-29
+	 * ════════════════════════════════════════════════════════════════
+	 */
+	class DroneMotion : public core::BaseModule
+	{
+	public: // Constructor/Destructor
+		DroneMotion(const core::ID& agent_id, core::NodePtr node, core::ConfigTools::SharedPtr config_tools, core::FrameworkTools::SharedPtr framework_tools, core::TopicTools::SharedPtr topic_tools, core::TransformTools::SharedPtr transform_tools)
+			: BaseModule(node, config_tools, framework_tools, topic_tools, transform_tools), agent_id_(agent_id)
+		{
+			init();
+		}
+
+	protected: // Overrides
+		void onInit() override;
+		void onShutdown() override;
+
+	public: // Types
+		using SharedPtr = std::shared_ptr<DroneMotion>;
+		enum class MotionMode
+		{
+			POSITION,
+			VELOCITY
+		};
+
+	private: // Parameters
+		core::ID agent_id_;
+		float update_rate_;
+		float cmd_timeout_;
+		// Motion mode
+		MotionMode motion_mode_;
+
+	private: // Data
+		// Current state
+		core::AgentState curr_state_;
+		bool has_state_;
+		// Current position
+		core::PointMsg curr_position_;
+		bool has_position_;
+		// Goal position
+		core::PointMsg goal_position_;
+		bool has_goal_;
+		// Speed planner
+		SpeedPlanner speed_planner_;
+		// Step time
+		core::Time last_update_time_;
+
+	private: // Callbacks
+		void stateCallback(const core::AgentStateMsg::SharedPtr msg);
+		void odomCallback(const core::OdometryMsg::SharedPtr msg);
+		void goalCallback(const core::PositionGoalMsg::SharedPtr msg);
+
+	private: // Motion management
+		void update();
+		void handlePositionMotion(const float& dt);
+		void handleVelocityMotion(const float& dt);
+
+	private:
+		// Callback group
+		core::CallbackGroupPtr callback_group_;
+		// Subscribers
+		core::SubscriberPtr<core::AgentStateMsg> state_sub_;
+		core::SubscriberPtr<core::OdometryMsg> odom_sub_;
+		core::SubscriberPtr<core::PositionGoalMsg> goal_sub_;
+		// Timer
+		core::TimerPtr update_timer_;
+	};
+
+} // namespace flychams::control

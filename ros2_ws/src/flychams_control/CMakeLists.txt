@@ -13,8 +13,9 @@ find_package(flychams_core REQUIRED)
 
 # Create control library
 set(CONTROL_SRC
-  src/agent_control/uav_controller.cpp
-  src/agent_control/head_controller.cpp
+  src/drone/drone_motion.cpp
+  src/drone/drone_state.cpp
+  src/head/head_control.cpp
 )
 add_library(${PROJECT_NAME} SHARED ${CONTROL_SRC})
 target_include_directories(${PROJECT_NAME} PUBLIC
@@ -33,9 +34,9 @@ target_link_libraries(${PROJECT_NAME}
 )
 
 # Create executable for control node
-add_executable(agent_control_node src/agent_control_node.cpp)
-target_link_libraries(agent_control_node ${PROJECT_NAME})
-ament_target_dependencies(agent_control_node rclcpp flychams_core)
+add_executable(drone_control_node src/drone_control_node.cpp)
+target_link_libraries(drone_control_node ${PROJECT_NAME})
+ament_target_dependencies(drone_control_node rclcpp flychams_core)
 
 # Install targets and headers
 install(TARGETS ${PROJECT_NAME}
@@ -46,7 +47,7 @@ install(TARGETS ${PROJECT_NAME}
   INCLUDES DESTINATION include
 )
 
-install(TARGETS agent_control_node
+install(TARGETS drone_control_node
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 

@@ -6,6 +6,7 @@
       metrics: "global/metrics"
     # Agent topics
     agent_topics:
+      state: "agents/AGENTID/state"
       global_odom: "/airsim/AGENTID/global/state/odom"
       position_goal: "agents/AGENTID/position/goal"
       tracking_info: "agents/AGENTID/tracking/info"

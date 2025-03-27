@@ -39,7 +39,7 @@ namespace flychams::dashboard
         callback_group_ = node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
 
         // Set update timers
-        prev_time_ = RosUtils::getTimeNow(node_);
+        prev_time_ = RosUtils::now(node_);
         if (record_metrics)
         {
             metrics_timer_ = RosUtils::createWallTimerByRate(node_, metrics_update_rate_,
@@ -130,7 +130,7 @@ namespace flychams::dashboard
     void VisualizationFactory::updateMetrics()
     {
         // Get current time
-        auto curr_time = RosUtils::getTimeNow(node_);
+        auto curr_time = RosUtils::now(node_);
         float dt = (curr_time - prev_time_).seconds();
         prev_time_ = curr_time;
 
@@ -143,7 +143,7 @@ namespace flychams::dashboard
             AgentMetricsMsg agent_metrics_msg;
             agent_metrics_msg.header.stamp = curr_time;
             agent_metrics_msg.header.frame_id = transform_tools_->getGlobalFrame();
-            MsgConversions::toMsg(curr_agent_metrics_[agent_id], agent_metrics_msg);
+            RosUtils::toMsg(curr_agent_metrics_[agent_id], agent_metrics_msg);
             agent_metrics_pubs_[agent_id]->publish(agent_metrics_msg);
         }
 
@@ -156,7 +156,7 @@ namespace flychams::dashboard
             TargetMetricsMsg target_metrics_msg;
             target_metrics_msg.header.stamp = curr_time;
             target_metrics_msg.header.frame_id = transform_tools_->getGlobalFrame();
-            MsgConversions::toMsg(curr_target_metrics_[target_id], target_metrics_msg);
+            RosUtils::toMsg(curr_target_metrics_[target_id], target_metrics_msg);
             target_metrics_pubs_[target_id]->publish(target_metrics_msg);
         }
 
@@ -169,7 +169,7 @@ namespace flychams::dashboard
             ClusterMetricsMsg cluster_metrics_msg;
             cluster_metrics_msg.header.stamp = curr_time;
             cluster_metrics_msg.header.frame_id = transform_tools_->getGlobalFrame();
-            MsgConversions::toMsg(curr_cluster_metrics_[cluster_id], cluster_metrics_msg);
+            RosUtils::toMsg(curr_cluster_metrics_[cluster_id], cluster_metrics_msg);
             cluster_metrics_pubs_[cluster_id]->publish(cluster_metrics_msg);
         }
 
@@ -180,14 +180,14 @@ namespace flychams::dashboard
         GlobalMetricsMsg global_metrics_msg;
         global_metrics_msg.header.stamp = curr_time;
         global_metrics_msg.header.frame_id = transform_tools_->getGlobalFrame();
-        MsgConversions::toMsg(curr_global_metrics_, global_metrics_msg);
+        RosUtils::toMsg(curr_global_metrics_, global_metrics_msg);
         global_metrics_pubs_->publish(global_metrics_msg);
     }
 
     void VisualizationFactory::updateRvizMarkers()
     {
         // Get current time
-        auto curr_time = RosUtils::getTimeNow(node_);
+        auto curr_time = RosUtils::now(node_);
 
         // Update agent markers
         for (const auto& agent_id : agent_ids_)

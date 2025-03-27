@@ -5,10 +5,10 @@
 #include <unordered_map>
 
 // Tools includes
-#include "flychams_core/tools/config_tools.hpp"
-#include "flychams_core/tools/external_tools.hpp"
-#include "flychams_core/tools/topic_tools.hpp"
-#include "flychams_core/tools/transform_tools.hpp"
+#include "flychams_core/config/config_tools.hpp"
+#include "flychams_core/framework/framework_tools.hpp"
+#include "flychams_core/ros/topic_tools.hpp"
+#include "flychams_core/ros/transform_tools.hpp"
 
 namespace flychams::core
 {
@@ -50,7 +50,8 @@ namespace flychams::core
 
             // Initialize discovery subscriber
             elements_.clear();
-            discovery_sub_ = topic_tools_->createRegistrationSubscriber([this]() { onDiscovery(); });
+            discovery_sub_ = topic_tools_->createRegistrationSubscriber(
+                std::bind(&BaseDiscovererNode::onDiscovery, this, std::placeholders::_1));
 
             // Call on init overridable method
             onInit();
@@ -86,12 +87,12 @@ namespace flychams::core
     protected: // Overridable methods
         virtual void onInit() = 0;
         virtual void onShutdown() = 0;
-        virtual void onAddAgent(const ID& agent_id) = 0;
-        virtual void onRemoveAgent(const ID& agent_id) = 0;
-        virtual void onAddTarget(const ID& target_id) = 0;
-        virtual void onRemoveTarget(const ID& target_id) = 0;
-        virtual void onAddCluster(const ID& cluster_id) = 0;
-        virtual void onRemoveCluster(const ID& cluster_id) = 0;
+        virtual void onAddAgent(const ID& agent_id) {}
+        virtual void onRemoveAgent(const ID& agent_id) {}
+        virtual void onAddTarget(const ID& target_id) {}
+        virtual void onRemoveTarget(const ID& target_id) {}
+        virtual void onAddCluster(const ID& cluster_id) {}
+        virtual void onRemoveCluster(const ID& cluster_id) {}
 
     private: // Discovery callback
         void onDiscovery(const RegistrationMsg::SharedPtr msg)

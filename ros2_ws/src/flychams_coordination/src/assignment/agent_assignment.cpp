@@ -51,9 +51,9 @@ namespace flychams::coordination
         solver_.setFunctionParams(function_params);
 
         // Set update timers
-        assignment_timer_ = RosUtils::createTimerByRate(node_, update_rate,
+        assignment_timer_ = RosUtils::createTimer(node_, update_rate,
             std::bind(&AgentAssignment::updateAssignment, this));
-        publish_timer_ = RosUtils::createTimerByRate(node_, publish_rate,
+        publish_timer_ = RosUtils::createTimer(node_, publish_rate,
             std::bind(&AgentAssignment::publishAssignment, this));
     }
 
@@ -84,7 +84,7 @@ namespace flychams::coordination
     {
         // Get agent position
         std::lock_guard<std::mutex> lock(mutex_);
-        agents_[agent_id].pos = MsgConversions::fromMsg(msg->pose.pose.position);
+        agents_[agent_id].pos = RosUtils::fromMsg(msg->pose.pose.position);
         agents_[agent_id].valid = true;
     }
 
@@ -92,7 +92,7 @@ namespace flychams::coordination
     {
         // Get cluster centers and radii
         std::lock_guard<std::mutex> lock(mutex_);
-        clusters_[cluster_id].center = MsgConversions::fromMsg(msg->center);
+        clusters_[cluster_id].center = RosUtils::fromMsg(msg->center);
         clusters_[cluster_id].radius = msg->radius;
         clusters_[cluster_id].valid = true;
     }
@@ -171,7 +171,7 @@ namespace flychams::coordination
                 // Extract cluster info
                 const auto& cluster = clusters_.at(cluster_id);
                 PointMsg center_msg;
-                MsgConversions::toMsg(cluster.center, center_msg);
+                RosUtils::toMsg(cluster.center, center_msg);
                 float radius_msg = cluster.radius;
 
                 // Add to message

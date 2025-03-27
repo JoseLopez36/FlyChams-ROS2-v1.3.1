@@ -19,7 +19,7 @@ namespace flychams::coordination
         tracking_params_ = config_tools_->getTrackingParameters(agent_id_);
 
         // Get central head ID
-        central_head_id_ = config_tools_->getAgent(agent_id_)->central_head_id;
+        central_head_id_ = config_tools_->getCentralHead(agent_id_)->id;
 
         // Initialize agent data
         curr_pos_ = Vector3r::Zero();
@@ -79,7 +79,7 @@ namespace flychams::coordination
         goal_pub_ = topic_tools_->createAgentTrackingGoalPublisher(agent_id_);
 
         // Set update timers
-        tracking_timer_ = RosUtils::createTimerByRate(node_, update_rate,
+        tracking_timer_ = RosUtils::createTimer(node_, update_rate,
             std::bind(&AgentTracking::updateTracking, this));
     }
 
@@ -103,7 +103,7 @@ namespace flychams::coordination
     {
         // Get agent position
         std::lock_guard<std::mutex> lock(mutex_);
-        curr_pos_ = MsgConversions::fromMsg(msg->pose.pose.position);
+        curr_pos_ = RosUtils::fromMsg(msg->pose.pose.position);
         has_odom_ = true;
     }
 
@@ -111,7 +111,7 @@ namespace flychams::coordination
     {
         // Get cluster centers and radii
         std::lock_guard<std::mutex> lock(mutex_);
-        clusters_ = MsgConversions::fromMsg(*msg);
+        clusters_ = RosUtils::fromMsg(*msg);
         has_clusters_ = true;
     }
 
@@ -147,7 +147,7 @@ namespace flychams::coordination
         }
 
         // Publish tracking goal
-        goal_.header.stamp = RosUtils::getTimeNow(node_);
+        goal_.header.stamp = RosUtils::now(node_);
         goal_pub_->publish(goal_);
         RCLCPP_INFO(node_->get_logger(), "Tracking goal published for agent %s", agent_id_.c_str());
     }
@@ -170,8 +170,8 @@ namespace flychams::coordination
 
             // First, get the transform between world and optical frame
             const TransformMsg& wTc = transform_tools_->getTransformBetweenFrames(transform_tools_->getGlobalFrame(), transform_tools_->getCameraOpticalFrame(agent_id_, camera_params.id));
-            const Vector3r& wPc = MsgConversions::fromMsg(wTc.translation);
-            const Matrix3r& wRc = MathUtils::quaternionToRotationMatrix(MsgConversions::fromMsg(wTc.rotation));
+            const Vector3r& wPc = RosUtils::fromMsg(wTc.translation);
+            const Matrix3r& wRc = MathUtils::quaternionToRotationMatrix(RosUtils::fromMsg(wTc.rotation));
 
             // Second, compute tracking focal length
             float new_f = TrackingUtils::computeFocal(wPt, r, wPc, camera_params, projection_params);
@@ -186,8 +186,8 @@ namespace flychams::coordination
             prev_angles_[i] = new_rpy;
 
             // Update tracking goal
-            MsgConversions::toMsg(MathUtils::eulerToQuaternion(new_rpy), goal.orientations[i]);
-            goal.fovs[i] = CameraUtils::computeFov(new_f, camera_params.sensor_width);
+            RosUtils::toMsg(MathUtils::eulerToQuaternion(new_rpy), goal.orientations[i]);
+            goal.fovs[i] = MathUtils::computeFov(new_f, camera_params.sensor_width);
         }
 
         // Update first update flag
@@ -203,11 +203,11 @@ namespace flychams::coordination
         const std::string& world_frame = transform_tools_->getGlobalFrame();
         const std::string& optical_frame = transform_tools_->getCameraOpticalFrame(agent_id_, central_head_id_);
         const TransformMsg& world_to_optical = transform_tools_->getTransform(world_frame, optical_frame);
-        const Matrix4r& wTc = MsgConversions::fromMsg(world_to_optical);
+        const Matrix4r& wTc = RosUtils::fromMsg(world_to_optical);
         const Vector3r& wPc = wTc.block<3, 1>(0, 3);
 
         // Project points on central camera
-        Matrix2Xr tab_p = CameraUtils::projectPoints(tab_P, wTc, camera_params.k_ref);
+        Matrix2Xr tab_p = MathUtils::projectPoints(tab_P, wTc, camera_params.k_ref);
 
         // Flip the horizontal coordinates to handle X-axis mirroring
         for (int i = 0; i < tab_p.cols(); i++)

@@ -42,7 +42,7 @@ public: // Constructor/Destructor
 
         // Set update timer
         float update_rate = RosUtils::getParameterOr<float>(node_, "gui.gui_update_rate", 20.0f);
-        update_timer_ = RosUtils::createTimerByRate(node_, update_rate,
+        update_timer_ = RosUtils::createTimer(node_, update_rate,
             std::bind(&GuiNode::onUpdate, this));
     }
 

@@ -53,7 +53,7 @@ namespace flychams::coordination
         goal_pub_ = topic_tools_->createAgentPositionGoalPublisher(agent_id_);
 
         // Set update timers
-        positioning_timer_ = RosUtils::createTimerByRate(node_, update_rate,
+        positioning_timer_ = RosUtils::createTimer(node_, update_rate,
             std::bind(&AgentPositioning::updatePosition, this));
     }
 
@@ -79,7 +79,7 @@ namespace flychams::coordination
     {
         // Get agent position
         std::lock_guard<std::mutex> lock(mutex_);
-        curr_pos_ = MsgConversions::fromMsg(msg->pose.pose.position);
+        curr_pos_ = RosUtils::fromMsg(msg->pose.pose.position);
         has_odom_ = true;
     }
 
@@ -87,7 +87,7 @@ namespace flychams::coordination
     {
         // Get cluster centers and radii
         std::lock_guard<std::mutex> lock(mutex_);
-        clusters_ = MsgConversions::fromMsg(*msg);
+        clusters_ = RosUtils::fromMsg(*msg);
         has_clusters_ = true;
     }
 
@@ -112,7 +112,7 @@ namespace flychams::coordination
         // Publish the goal
         PositionGoalMsg goal_msg;
         goal_msg.header = RosUtils::createHeader(node_, transform_tools_->getGlobalFrame());
-        MsgConversions::toMsg(optimal_pos, goal_msg);
+        RosUtils::toMsg(optimal_pos, goal_msg);
         goal_pub_->publish(goal_msg);
 
         RCLCPP_INFO(node_->get_logger(), "Agent positioning: Agent %s has updated optimal goal to x=%f, y=%f, z=%f",

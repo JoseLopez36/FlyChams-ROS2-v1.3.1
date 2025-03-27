@@ -200,9 +200,9 @@ This will start all the control, perception, coordination, target, and dashboard
 
 **Docker**
 ```bash
-# Launch only tracking node with warning level logging
+# Launch only drone control node with warning level logging
 source $FLYCHAMS_ROS2_PATH/install/setup.bash
-ros2 launch flychams_bringup run.launch.py track:=True log_track:=warn
+ros2 launch flychams_bringup run.launch.py drone_control:=True log_drone_control:=warn
 ```
 
 ### 5. (Optional) Visualization

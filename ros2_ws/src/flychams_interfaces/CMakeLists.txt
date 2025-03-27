@@ -19,6 +19,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Registration.msg"
 
   # Agent messages
+  "msg/AgentState.msg"
   "msg/PositionGoal.msg"
   "msg/TrackingInfo.msg"
   "msg/TrackingGoal.msg"

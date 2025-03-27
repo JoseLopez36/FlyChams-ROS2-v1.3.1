@@ -205,6 +205,24 @@ namespace flychams::core
     }
 
     /**
+     * Enum for agent states
+     */
+    enum class AgentState
+    {
+        IDLE,                // Initial state, UAV is inactive
+        DISARMED,            // UAV is disarmed, safe state
+        ARMED,               // UAV is armed, ready for takeoff
+        TAKING_OFF,          // UAV is taking off
+        TAKEN_OFF,           // UAV has taken off
+        HOVERING,            // UAV is hovering
+        HOVERED,             // UAV has hovered
+        TRACKING,            // UAV is tracking targets
+        LANDING,             // UAV is landing
+        LANDED,              // UAV has landed
+        ERROR                // Error state, requires reset
+    };
+
+    /**
      * @brief Tracking unit type enumeration
      */
     enum class TrackingUnitType
