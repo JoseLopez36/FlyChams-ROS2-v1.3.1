@@ -156,6 +156,7 @@ namespace flychams::coordination
             for (int i = 0; i < data_struct->params.n; i++)
             {
                 J1 += calculateWindowJ1(data_struct->tab_P.col(i), data_struct->tab_r(i), xVec,
+                    data_struct->params.central_params,
                     data_struct->params.window_params[i],
                     data_struct->params.projection_params[i]);
             }
@@ -192,6 +193,7 @@ namespace flychams::coordination
             for (int i = 0; i < data_struct->params.n; i++)
             {
                 J2 += calculateWindowJ2(data_struct->tab_P.col(i), data_struct->tab_r(i), xVec, data_struct->xHat,
+                    data_struct->params.central_params,
                     data_struct->params.window_params[i],
                     data_struct->params.projection_params[i]);
             }
@@ -319,7 +321,7 @@ namespace flychams::coordination
         return psi_i + lambda_i + gamma_i;
     }
 
-    float PositionSolver::calculateWindowJ1(const Vector3r& z, const float& r, const Vector3r& x, const WindowParameters& window_params, const ProjectionParameters& projection_params)
+    float PositionSolver::calculateWindowJ1(const Vector3r& z, const float& r, const Vector3r& x, const CameraParameters& central_params, const WindowParameters& window_params, const ProjectionParameters& projection_params)
     {
         // Args:
         // z: center of the cluster
@@ -332,7 +334,7 @@ namespace flychams::coordination
         const auto& s_min = projection_params.s_min;
         const auto& s_max = projection_params.s_max;
         const auto& s_ref = projection_params.s_ref;
-        const auto& f = window_params.camera_params.f_ref;
+        const auto& f = central_params.f_ref;
         const auto& lambda_min = window_params.lambda_min;
         const auto& lambda_max = window_params.lambda_max;
         const auto& lambda_ref = window_params.lambda_ref;
@@ -367,13 +369,14 @@ namespace flychams::coordination
         return psi_i + lambda_i + gamma_i;
     }
 
-    float PositionSolver::calculateWindowJ2(const Vector3r& z, const float& r, const Vector3r& x, const Vector3r& xHat, const WindowParameters& window_params, const ProjectionParameters& projection_params)
+    float PositionSolver::calculateWindowJ2(const Vector3r& z, const float& r, const Vector3r& x, const Vector3r& xHat, const CameraParameters& central_params, const WindowParameters& window_params, const ProjectionParameters& projection_params)
     {
         // Args:
         // z: center of the cluster
         // r: radius of the cluster
         // x: position of the vehicle
         // xHat: estimated position of the vehicle
+        // central_params: parameters of the central camera
         // window_params: parameters of the window
         // projection_params: parameters of the cluster projection
 
@@ -385,7 +388,7 @@ namespace flychams::coordination
         const auto& s_min = projection_params.s_min;
         const auto& s_max = projection_params.s_max;
         const auto& s_ref = projection_params.s_ref;
-        const auto& f = window_params.camera_params.f_ref;
+        const auto& f = central_params.f_ref;
         const auto& lambda_min = window_params.lambda_min;
         const auto& lambda_max = window_params.lambda_max;
         const auto& lambda_ref = window_params.lambda_ref;

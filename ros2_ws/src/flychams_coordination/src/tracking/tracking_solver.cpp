@@ -45,7 +45,7 @@ namespace flychams::coordination
         return std::make_pair(data_.focal, data_.rpy);
     }
 
-    std::pair<Vector2i, Vector2i> TrackingSolver::runWindow(const Vector3r& z, const float& r, const Matrix4r& T, const WindowParameters& window_params, const ProjectionParameters& projection_params)
+    std::pair<Vector2i, Vector2i> TrackingSolver::runWindow(const Vector3r& z, const float& r, const Matrix4r& T, const CameraParameters& central_params, const WindowParameters& window_params, const ProjectionParameters& projection_params)
     {
         // Args:
         // z: Target position in world frame (m)
@@ -58,11 +58,11 @@ namespace flychams::coordination
         const Vector3r x = T.block<3, 1>(0, 3);
 
         // Project target position onto source camera
-        Vector2r p = MathUtils::projectPoint(z, T, window_params.camera_params.K);
-        p(0) = window_params.camera_params.width - p(0); // Flip x-axis (TODO: Check why this is needed)
+        Vector2r p = MathUtils::projectPoint(z, T, central_params.K);
+        p(0) = central_params.width - p(0); // Flip x-axis (TODO: Check why this is needed)
 
         // Compute window size
-        const Vector2i size = computeWindowSize(z, r, x, window_params, projection_params);
+        const Vector2i size = computeWindowSize(z, r, x, central_params, window_params, projection_params);
 
         // Compute window corner
         const Vector2i corner = computeWindowCorner(p, size);
@@ -182,7 +182,7 @@ namespace flychams::coordination
     // IMPLEMENTATION: MultiWindow tracking methods
     // ════════════════════════════════════════════════════════════════════════════
 
-    Vector2i TrackingSolver::computeWindowSize(const Vector3r& z, const float& r, const Vector3r& x, const WindowParameters& window_params, const ProjectionParameters& projection_params)
+    Vector2i TrackingSolver::computeWindowSize(const Vector3r& z, const float& r, const Vector3r& x, const CameraParameters& central_params, const WindowParameters& window_params, const ProjectionParameters& projection_params)
     {
         // Args:
         // z: Target position in world frame (m)
@@ -192,7 +192,7 @@ namespace flychams::coordination
         // projection_params: Projection parameters
 
         // Extract parameters
-        const auto& f = window_params.camera_params.f_ref;
+        const auto& f = central_params.f_ref;
         const auto& tracking_width = window_params.tracking_width;
         const auto& tracking_height = window_params.tracking_height;
         const auto& lambda_min = window_params.lambda_min;

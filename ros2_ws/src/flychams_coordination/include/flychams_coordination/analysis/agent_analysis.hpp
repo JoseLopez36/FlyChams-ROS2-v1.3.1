@@ -55,6 +55,8 @@ namespace flychams::coordination
             // Status data
             core::AgentStatus status;
             bool has_status;
+            // Clusters message
+            core::AgentClustersMsg clusters;
             // Subscriber
             core::SubscriberPtr<core::AgentStatusMsg> status_sub;
             // Publisher
@@ -88,6 +90,9 @@ namespace flychams::coordination
 
     private: // Analysis management
         void update();
+
+    private: // Implementation
+        std::vector<core::ID> ensureOrder(const std::vector<core::ID>& previous_clusters, const std::unordered_set<core::ID>& new_clusters);
 
     private: // ROS components
         // Timer

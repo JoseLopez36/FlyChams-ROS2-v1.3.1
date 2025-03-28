@@ -77,8 +77,8 @@ namespace flychams::coordination
         // Cost function implementations
         static float calculateCameraJ1(const core::Vector3r& z, const float& r, const core::Vector3r& x, const core::CameraParameters& camera_params, const core::ProjectionParameters& projection_params);
         static float calculateCameraJ2(const core::Vector3r& z, const float& r, const core::Vector3r& x, const core::Vector3r& xHat, const core::CameraParameters& camera_params, const core::ProjectionParameters& projection_params);
-        static float calculateWindowJ1(const core::Vector3r& z, const float& r, const core::Vector3r& x, const core::WindowParameters& window_params, const core::ProjectionParameters& projection_params);
-        static float calculateWindowJ2(const core::Vector3r& z, const float& r, const core::Vector3r& x, const core::Vector3r& xHat, const core::WindowParameters& window_params, const core::ProjectionParameters& projection_params);
+        static float calculateWindowJ1(const core::Vector3r& z, const float& r, const core::Vector3r& x, const core::CameraParameters& central_params, const core::WindowParameters& window_params, const core::ProjectionParameters& projection_params);
+        static float calculateWindowJ2(const core::Vector3r& z, const float& r, const core::Vector3r& x, const core::Vector3r& xHat, const core::CameraParameters& central_params, const core::WindowParameters& window_params, const core::ProjectionParameters& projection_params);
         // Optimization utility methods
         float optimize(core::Vector3r& xOpt);
     };

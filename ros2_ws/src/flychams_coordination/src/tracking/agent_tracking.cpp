@@ -19,44 +19,27 @@ namespace flychams::coordination
 
         // Get tracking parameters
         tracking_params_ = config_tools_->getTrackingParameters(agent_id_);
-        int n = tracking_params_.n; // Number of tracking units
 
-        // Get central head parameters
-        const auto& central_id = config_tools_->getCentralHead(agent_id_)->id;
-
-        // Get tracking heads
-        const auto& tracking_head_ptrs = config_tools_->getTrackingHeads(agent_id_);
-
-        // Initialize setpoint messages
+        // Initialize head setpoint message
         agent_.head_setpoints.header = RosUtils::createHeader(node_, transform_tools_->getGlobalFrame());
-        agent_.window_setpoints.header = RosUtils::createHeader(node_, transform_tools_->getGlobalFrame());
-        switch (tracking_params_.mode)
+        for (const auto& camera : tracking_params_.camera_params)
         {
-        case TrackingMode::MultiCameraTracking:
-            agent_.head_setpoints.head_ids = std::vector<std::string>(n);
-            agent_.head_setpoints.quat_setpoints = std::vector<QuaternionMsg>(n, QuaternionMsg());
-            agent_.head_setpoints.fov_setpoints = std::vector<float>(n, 0.0f);
+            agent_.head_setpoints.head_ids.push_back(camera.id);
+            agent_.head_setpoints.quat_setpoints.push_back(QuaternionMsg());
+            agent_.head_setpoints.fov_setpoints.push_back(0.0f);
+        }
 
-            for (int i = 0; i < n; i++)
-            {
-                agent_.head_setpoints.head_ids[i] = tracking_head_ptrs[i]->id;
-            }
-            break;
-
-        case TrackingMode::MultiWindowTracking:
-            agent_.window_setpoints.camera_id = central_id;
-            agent_.window_setpoints.crop_setpoints = std::vector<CropMsg>(n, CropMsg());
-            break;
-
-        default:
-            RCLCPP_ERROR(node_->get_logger(), "AgentTracking: Invalid tracking mode for agent %s", agent_id_.c_str());
-            rclcpp::shutdown();
-            return;
+        // Initialize window setpoint message
+        agent_.window_setpoints.header = RosUtils::createHeader(node_, transform_tools_->getGlobalFrame());
+        agent_.window_setpoints.camera_id = tracking_params_.central_params.id;
+        for (const auto& window : tracking_params_.window_params)
+        {
+            agent_.window_setpoints.crop_setpoints.push_back(CropMsg());
         }
 
         // Initialize solvers
-        solvers_.resize(n);
-        for (int i = 0; i < n; i++)
+        solvers_.resize(tracking_params_.n);
+        for (int i = 0; i < tracking_params_.n; i++)
         {
             solvers_[i].reset();
         }
@@ -197,6 +180,9 @@ namespace flychams::coordination
 
     void AgentTracking::computeMultiWindow(const Matrix3Xr& tab_P, const RowVectorXr& tab_r, AgentWindowSetpointsMsg& setpoints)
     {
+        // Get central camera parameters
+        const auto& central_params = tracking_params_.central_params;
+
         // Get the transform between world and central camera optical frame
         const std::string& world_frame = transform_tools_->getGlobalFrame();
         const std::string& optical_frame = transform_tools_->getCameraOpticalFrame(agent_id_, setpoints.camera_id);
@@ -215,14 +201,14 @@ namespace flychams::coordination
             const auto& r = tab_r(i);
 
             // Solve tracking for this window
-            const auto& [size, corner] = solvers_[i].runWindow(z, r, T, window_params, projection_params);
+            const auto& [size, corner] = solvers_[i].runWindow(z, r, T, central_params, window_params, projection_params);
 
             // Check if crop is out of bounds (i.e. if the crop is completely outside the image)
             bool is_out_of_bounds =
-                (corner(0) + size(0) <= 0) ||                           // Completely to the left
-                (corner(1) + size(1) <= 0) ||                           // Completely above
-                (corner(0) >= window_params.camera_params.width) ||     // Completely to the right
-                (corner(1) >= window_params.camera_params.height);      // Completely below
+                (corner(0) + size(0) <= 0) ||              // Completely to the left
+                (corner(1) + size(1) <= 0) ||              // Completely above
+                (corner(0) >= central_params.width) ||     // Completely to the right
+                (corner(1) >= central_params.height);      // Completely below
 
             // Update tracking setpoint
             auto& crop = setpoints.crop_setpoints[i];

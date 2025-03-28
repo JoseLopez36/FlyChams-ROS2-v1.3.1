@@ -261,19 +261,16 @@ namespace flychams::core
             return params;
         }
 
-        const WindowParameters getWindowParameters(const std::string& agent_id, const std::string& source_head_id) const
+        const WindowParameters getWindowParameters(const std::string& agent_id, const CameraParameters& central_params) const
         {
             WindowParameters params;
 
             // Get tracking config
             const auto& tracking = getTracking(agent_id);
 
-            // Extract source head parameters
-            params.camera_params = getCameraParameters(agent_id, source_head_id);
-
             // Full resolution (pix)
-            params.full_width = params.camera_params.width;
-            params.full_height = params.camera_params.height;
+            params.full_width = central_params.width;
+            params.full_height = central_params.height;
 
             // Scene resolution (pix)
             params.scene_width = tracking.scene_resolution(0);
@@ -289,7 +286,7 @@ namespace flychams::core
             params.lambda_ref = (params.lambda_max + params.lambda_min) / 2.0f; // Middle of the range
 
             // Print window parameters for debugging
-            RCLCPP_INFO(node_->get_logger(), "Window parameters for agent %s, source head %s:", agent_id.c_str(), source_head_id.c_str());
+            RCLCPP_INFO(node_->get_logger(), "Window parameters for agent %s, central head %s:", agent_id.c_str(), central_params.id.c_str());
             RCLCPP_INFO(node_->get_logger(), "  Full resolution: %d x %d", params.full_width, params.full_height);
             RCLCPP_INFO(node_->get_logger(), "  Scene resolution: %d x %d", params.scene_width, params.scene_height);
             RCLCPP_INFO(node_->get_logger(), "  Tracking resolution: %d x %d", params.tracking_width, params.tracking_height);
@@ -347,6 +344,10 @@ namespace flychams::core
             // Get tracking config
             const auto& tracking = getTracking(agent_id);
 
+            // Get central head parameters
+            const auto& central_head = getCentralHead(agent_id);
+            const auto& central_params = getCameraParameters(agent_id, central_head->id);
+
             // Proceed based on tracking mode
             params.mode = tracking.mode;
             switch (params.mode)
@@ -383,8 +384,8 @@ namespace flychams::core
                 params.projection_params.resize(params.n);
                 for (int i = 0; i < params.n; i++)
                 {
-                    params.window_params[i] = getWindowParameters(agent_id, central_head->id);
-                    params.projection_params[i] = getProjectionParameters(agent_id, params.window_params[i].camera_params);
+                    params.window_params[i] = getWindowParameters(agent_id, central_params);
+                    params.projection_params[i] = getProjectionParameters(agent_id, central_params);
                 }
                 break;
             }
