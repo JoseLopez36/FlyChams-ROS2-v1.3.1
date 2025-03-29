@@ -3,9 +3,7 @@
     # Simulation settings
     simulation:
       framework: AirSim
-      clock_speed: 1.0                              # Clock speed multiplier (1.0 = real-time)
-      draw_rviz: true                               # Draw RViz markers
-      record_metrics: false                         # Record metrics to rosbag
+      clock_speed: 1.0    # Clock speed multiplier (1.0 = real-time)
     # Path settings
     path:
       config_spreadsheet_path: "/home/testuser/FlyChams-ROS2/config/Configuration.xlsx"

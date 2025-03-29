@@ -192,7 +192,7 @@ namespace flychams::dashboard
             break;
 
         default:
-            RCLCPP_ERROR(node_->get_logger(), "GUI manager: Invalid GUI mode: %d", gui_mode_);
+            RCLCPP_ERROR(node_->get_logger(), "GUI manager: Invalid GUI mode: %d", static_cast<int>(gui_mode_));
             break;
         }
     }

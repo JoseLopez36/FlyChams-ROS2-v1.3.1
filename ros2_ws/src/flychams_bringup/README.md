@@ -68,7 +68,8 @@ Runtime nodes are launched by the `run.launch.py` file and perform the core func
 
 5. **Dashboard Nodes** (from flychams_dashboard package):
    - `gui_manager:` Provides user interface for system monitoring and control
-   - `visualization:` Creates RViz2 visualizations and system metrics for plotting
+   - `metrics_factory:` Creates system metrics for plotting (e.g. in PlotJuggler)
+   - `marker_factory:` Creates RViz2 markers for visualization
 
 ## Usage
 

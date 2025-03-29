@@ -143,63 +143,10 @@ namespace flychams::core
             quat.w = static_cast<double>(orientation.w());
         }
 
-        static void toMsg(const AgentMetrics& metrics, AgentMetricsMsg& ros_metrics)
+        static void toMsg(const Matrix4r& matrix, TransformMsg& transform)
         {
-            // Agent data
-            ros_metrics.curr_x = metrics.curr_x;
-            ros_metrics.curr_y = metrics.curr_y;
-            ros_metrics.curr_z = metrics.curr_z;
-            ros_metrics.curr_yaw = metrics.curr_yaw;
-            ros_metrics.vel_x = metrics.vel_x;
-            ros_metrics.vel_y = metrics.vel_y;
-            ros_metrics.vel_z = metrics.vel_z;
-            ros_metrics.vel_yaw = metrics.vel_yaw;
-            ros_metrics.goal_x = metrics.goal_x;
-            ros_metrics.goal_y = metrics.goal_y;
-            ros_metrics.goal_z = metrics.goal_z;
-            ros_metrics.goal_yaw = metrics.goal_yaw;
-
-            // Position and movement metrics
-            ros_metrics.total_distance_traveled = metrics.total_distance_traveled;
-            ros_metrics.current_speed = metrics.current_speed;
-
-            // Goal-related metrics
-            ros_metrics.distance_to_goal = metrics.distance_to_goal;
-
-            // Mission metrics
-            ros_metrics.time_elapsed = metrics.time_elapsed;
-
-            // Performance metrics
-            ros_metrics.average_speed = metrics.average_speed;
-        }
-
-        static void toMsg(const TargetMetrics& metrics, TargetMetricsMsg& ros_metrics)
-        {
-            // Target data
-            ros_metrics.curr_x = metrics.curr_x;
-            ros_metrics.curr_y = metrics.curr_y;
-            ros_metrics.curr_z = metrics.curr_z;
-
-            // Position and movement metrics
-            ros_metrics.total_distance_traveled = metrics.total_distance_traveled;
-        }
-
-        static void toMsg(const ClusterMetrics& metrics, ClusterMetricsMsg& ros_metrics)
-        {
-            // Cluster data
-            ros_metrics.curr_center_x = metrics.curr_center_x;
-            ros_metrics.curr_center_y = metrics.curr_center_y;
-            ros_metrics.curr_center_z = metrics.curr_center_z;
-            ros_metrics.curr_radius = metrics.curr_radius;
-
-            // Position and movement metrics
-            ros_metrics.total_distance_traveled = metrics.total_distance_traveled;
-        }
-
-        static void toMsg(const GlobalMetrics& metrics, GlobalMetricsMsg& ros_metrics)
-        {
-            // Mission metrics
-            ros_metrics.mission_time = metrics.mission_time;
+            toMsg(matrix.block<3, 1>(0, 3), transform.translation);
+            toMsg(MathUtils::rotationMatrixToQuaternion(matrix.block<3, 3>(0, 0)), transform.rotation);
         }
 
         // ════════════════════════════════════════════════════════════════════════════

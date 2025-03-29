@@ -62,11 +62,6 @@ namespace flychams::core
             return ori.toRotationMatrix().eulerAngles(0, 1, 2);
         }
 
-        static Matrix3r quaternionToRotationMatrix(const Quaternionr& ori)
-        {
-            return ori.toRotationMatrix();
-        }
-
         static Quaternionr eulerToQuaternion(const Vector3r& euler)
         {
             Eigen::AngleAxisf rollAngle(euler.x(), Vector3r::UnitX());
@@ -74,6 +69,16 @@ namespace flychams::core
             Eigen::AngleAxisf yawAngle(euler.z(), Vector3r::UnitZ());
 
             return yawAngle * pitchAngle * rollAngle;
+        }
+
+        static Matrix3r quaternionToRotationMatrix(const Quaternionr& ori)
+        {
+            return ori.toRotationMatrix();
+        }
+
+        static Quaternionr rotationMatrixToQuaternion(const Matrix3r& rot)
+        {
+            return Quaternionr(rot);
         }
 
         // ════════════════════════════════════════════════════════════════════════════

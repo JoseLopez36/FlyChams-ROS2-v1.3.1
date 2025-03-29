@@ -1,4 +1,4 @@
-#include "flychams_dashboard/visualization/metrics_factory.hpp"
+#include "flychams_dashboard/metrics/metrics_factory.hpp"
 
 using namespace flychams::core;
 

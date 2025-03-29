@@ -7,20 +7,30 @@ Visualization and monitoring package for the Flying Chameleons (FlyChams) projec
 The `flychams_dashboard` package provides user interface and visualization tools for the FlyChams system. It handles:
 
 1. **GUI interface** - Provides a graphical user interface for monitoring the system
-2. **Data visualization** - Creates visual representations of system state
+2. **Metrics creation** - Creates metrics for plotting purposes
+3. **Marker creation** - Creates markers for visualization purposes
 
 ## Nodes
 
 ### GUI Manager
 
-- Graphical user interface for system monitoring:
+- Graphical user interface manager for system monitoring:
   - Manages windowing and display of system information
+  - Handles user interactions and GUI control
 
-### Visualization
+### Metrics Factory
 
-- Handles visual representation of system state:
-  - Creates and publishes RViz2 markers
-  - Provides metrics for agents, targets, clusters, etc. for plotting purposes
+- Handles creation of metrics for plotting purposes:
+  - Creates metrics for agents, targets, clusters, etc.
+  - Publishes metrics to specific topics
+  - Allows plotting of metrics in PlotJuggler or other tools
+
+### Marker Factory
+
+- Handles creation of markers for visualization purposes:
+  - Creates markers for agents, targets, clusters, etc.
+  - Publishes markers to specific topics
+  - Allows visualization of markers in RViz2
 
 ## Configuration
 

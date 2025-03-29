@@ -413,16 +413,36 @@ def generate_launch_description():
         )
     )
 
-    # Conditionally add Visualization node
+    # Conditionally add Metrics Factory node
     ld.append(
         Node(
             package='flychams_dashboard',
-            executable='visualization_node',
-            name='visualization_node',
+            executable='metrics_factory_node',
+            name='metrics_factory_node',
             output='screen',
             namespace='flychams',
-            condition=IfCondition(launch_visualization),
-            arguments=['--ros-args', '--log-level', log_level_visualization],
+            condition=IfCondition(launch_metrics_factory),
+            arguments=['--ros-args', '--log-level', log_level_metrics_factory],
+            parameters=[
+                system_path, 
+                topics_path, 
+                frames_path, 
+                dashboard_path,
+                {'use_sim_time': True}
+            ]
+        )
+    )
+
+    # Conditionally add Marker Factory node
+    ld.append(
+        Node(
+            package='flychams_dashboard',
+            executable='marker_factory_node',
+            name='marker_factory_node',
+            output='screen',
+            namespace='flychams',
+            condition=IfCondition(launch_marker_factory),
+            arguments=['--ros-args', '--log-level', log_level_marker_factory],
             parameters=[
                 system_path, 
                 topics_path, 

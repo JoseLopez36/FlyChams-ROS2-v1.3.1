@@ -14,6 +14,7 @@ find_package(flychams_core REQUIRED)
 # Create dashboard library
 set(DASHBOARD_SRC
   src/gui/gui_manager.cpp
+  src/metrics/metrics_factory.cpp
 )
 add_library(${PROJECT_NAME} SHARED ${DASHBOARD_SRC})
 target_include_directories(${PROJECT_NAME} PUBLIC
@@ -31,10 +32,15 @@ target_link_libraries(${PROJECT_NAME}
   rclcpp::rclcpp
 )
 
-# Create executable for GUI node
+# Create executable for GUI manager node
 add_executable(gui_manager_node src/gui_manager_node.cpp)
 target_link_libraries(gui_manager_node ${PROJECT_NAME})
 ament_target_dependencies(gui_manager_node rclcpp flychams_core)
+
+# Create executable for metrics factory node
+add_executable(metrics_factory_node src/metrics_factory_node.cpp)
+target_link_libraries(metrics_factory_node ${PROJECT_NAME})
+ament_target_dependencies(metrics_factory_node rclcpp flychams_core)
 
 # Install targets and headers
 install(TARGETS ${PROJECT_NAME}
@@ -45,7 +51,7 @@ install(TARGETS ${PROJECT_NAME}
   INCLUDES DESTINATION include
 )
 
-install(TARGETS gui_manager_node
+install(TARGETS gui_manager_node metrics_factory_node
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 

@@ -1,9 +1,11 @@
 /flychams/**:
   ros__parameters:
-    # GUI parameters
-    gui:
-      gui_update_rate: 20.0 # (Hz)
-    # Visualization parameters
-    visualization:
-      metrics_update_rate: 10.0 # (Hz)
-      markers_update_rate: 10.0 # (Hz)
+    # GUI manager parameters
+    gui_manager:
+      update_rate: 20.0 # (Hz)
+    # Metrics factory parameters
+    metrics_factory:
+      update_rate: 10.0 # (Hz)
+    # Marker factory parameters
+    marker_factory:
+      update_rate: 10.0 # (Hz)

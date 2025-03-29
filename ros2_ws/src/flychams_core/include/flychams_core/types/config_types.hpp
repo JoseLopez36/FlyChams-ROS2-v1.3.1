@@ -31,8 +31,6 @@ namespace flychams::core
         // Simulation settings
         Framework framework;
         float clock_speed;
-        bool draw_rviz;
-        bool record_metrics;
 
         // Path settings
         std::string config_source_file;

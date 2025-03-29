@@ -1,22 +1,12 @@
 std_msgs/Header header
 
 # Agent data
-float32 curr_x
-float32 curr_y
-float32 curr_z
-float32 curr_yaw
-float32 vel_x
-float32 vel_y
-float32 vel_z
-float32 vel_yaw
-float32 goal_x
-float32 goal_y
-float32 goal_z
-float32 goal_yaw
+geometry_msgs/Point position
+geometry_msgs/Point setpoint
 
 # Position and movement metrics
-float32 total_distance_traveled      # Total distance covered by the UAV (m)
-float32 current_speed                # Current speed of the UAV (m/s)
+float32 distance_traveled            # Total distance covered by the UAV (m)
+float32 speed                        # Current speed of the UAV (m/s)
 
 # Goal-related metrics
 float32 distance_to_goal             # Current distance to assigned goal (m)

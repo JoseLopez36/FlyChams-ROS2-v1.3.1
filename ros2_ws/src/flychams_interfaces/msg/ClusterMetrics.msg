@@ -1,13 +1,12 @@
 std_msgs/Header header
 
 # Cluster data
-float32 curr_center_x
-float32 curr_center_y
-float32 curr_center_z
-float32 curr_radius
+geometry_msgs/Point center
+float32 radius
 
 # Position and movement metrics
-float32 total_distance_traveled      # Total distance covered by cluster (m)
+float32 distance_traveled            # Total distance covered by cluster (m)
+float32 speed                        # Current speed of cluster (m/s)
 
 # Cluster composition metrics
 #int32 num_targets                   # TODO: Number of targets in cluster
@@ -25,3 +24,9 @@ float32 total_distance_traveled      # Total distance covered by cluster (m)
 
 # Tracking metrics
 #float32 tracking_confidence         # TODO: Confidence in cluster tracking (0-1)
+
+# Mission metrics
+float32 time_elapsed                 # Time elapsed since mission start (s)
+
+# Performance metrics
+float32 average_speed                # Average speed during mission (m/s)
