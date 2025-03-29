@@ -15,6 +15,7 @@ find_package(flychams_core REQUIRED)
 set(DASHBOARD_SRC
   src/gui/gui_manager.cpp
   src/metrics/metrics_factory.cpp
+  src/marker/marker_factory.cpp
 )
 add_library(${PROJECT_NAME} SHARED ${DASHBOARD_SRC})
 target_include_directories(${PROJECT_NAME} PUBLIC
@@ -42,6 +43,11 @@ add_executable(metrics_factory_node src/metrics_factory_node.cpp)
 target_link_libraries(metrics_factory_node ${PROJECT_NAME})
 ament_target_dependencies(metrics_factory_node rclcpp flychams_core)
 
+# Create executable for marker factory node
+add_executable(marker_factory_node src/marker_factory_node.cpp)
+target_link_libraries(marker_factory_node ${PROJECT_NAME})
+ament_target_dependencies(marker_factory_node rclcpp flychams_core)
+
 # Install targets and headers
 install(TARGETS ${PROJECT_NAME}
   EXPORT ${PROJECT_NAME}
@@ -51,7 +57,7 @@ install(TARGETS ${PROJECT_NAME}
   INCLUDES DESTINATION include
 )
 
-install(TARGETS gui_manager_node metrics_factory_node
+install(TARGETS gui_manager_node metrics_factory_node marker_factory_node
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 

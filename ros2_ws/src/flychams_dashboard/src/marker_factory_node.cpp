@@ -1,7 +1,7 @@
 #include "rclcpp/rclcpp.hpp"
 
 // Dashboard includes
-#include "flychams_dashboard/marker/marker_creator.hpp"
+#include "flychams_dashboard/marker/marker_factory.hpp"
 
 // Core includes
 #include "flychams_core/base/base_discoverer_node.hpp"
@@ -11,22 +11,22 @@ using namespace flychams::dashboard;
 
 /**
  * ════════════════════════════════════════════════════════════════
- * @brief Marker creator node for the FlyingChameleons system
+ * @brief Marker factory node for the FlyingChameleons system
  *
  * @details
- * This class implements the marker creator node for the FlyingChameleons
+ * This class implements the marker factory node for the FlyingChameleons
  * system. It uses the discoverer node to discover the different elements
- * and then creates a marker creator for each element discovered.
+ * and then creates a marker factory for each element discovered.
  *
  * ════════════════════════════════════════════════════════════════
  * @author Jose Francisco Lopez Ruiz
  * @date 2025-03-01
  * ════════════════════════════════════════════════════════════════
  */
-class MarkerCreatorNode : public BaseDiscovererNode
+class MarkerFactoryNode : public BaseDiscovererNode
 {
 public: // Constructor/Destructor
-    MarkerCreatorNode(const std::string& node_name, const rclcpp::NodeOptions& options)
+    MarkerFactoryNode(const std::string& node_name, const rclcpp::NodeOptions& options)
         : BaseDiscovererNode(node_name, options)
     {
         // Nothing to do
@@ -35,56 +35,56 @@ public: // Constructor/Destructor
     void onInit() override
     {
         // Use callback group from discovery node (to avoid race conditions)
-        // Initialize marker creator
-        marker_creator_ = std::make_shared<MarkerCreator>(node_, config_tools_, framework_tools_, topic_tools_, transform_tools_, discovery_cb_group_);
+        // Initialize marker factory
+        marker_factory_ = std::make_shared<MarkerFactory>(node_, config_tools_, framework_tools_, topic_tools_, transform_tools_, discovery_cb_group_);
     }
 
     void onShutdown() override
     {
-        // Destroy marker creator
-        marker_creator_.reset();
+        // Destroy marker factory
+        marker_factory_.reset();
     }
 
 private: // Element management
     void onAddAgent(const ID& agent_id) override
     {
-        // Add agent to marker creator
-        marker_creator_->addAgent(agent_id);
+        // Add agent to marker factory
+        marker_factory_->addAgent(agent_id);
     }
 
     void onRemoveAgent(const ID& agent_id) override
     {
-        // Remove agent from marker creator
-        marker_creator_->removeAgent(agent_id);
+        // Remove agent from marker factory
+        marker_factory_->removeAgent(agent_id);
     }
 
     void onAddTarget(const ID& target_id) override
     {
-        // Add target to marker creator
-        marker_creator_->addTarget(target_id);
+        // Add target to marker factory
+        marker_factory_->addTarget(target_id);
     }
 
     void onRemoveTarget(const ID& target_id) override
     {
-        // Remove target from marker creator
-        marker_creator_->removeTarget(target_id);
+        // Remove target from marker factory
+        marker_factory_->removeTarget(target_id);
     }
 
     void onAddCluster(const ID& cluster_id) override
     {
-        // Add cluster to marker creator
-        marker_creator_->addCluster(cluster_id);
+        // Add cluster to marker factory
+        marker_factory_->addCluster(cluster_id);
     }
 
     void onRemoveCluster(const ID& cluster_id) override
     {
-        // Remove cluster from marker creator
-        marker_creator_->removeCluster(cluster_id);
+        // Remove cluster from marker factory
+        marker_factory_->removeCluster(cluster_id);
     }
 
 private: // Components
-    // Marker creator
-    MarkerCreator::SharedPtr marker_creator_;
+    // Marker factory
+    MarkerFactory::SharedPtr marker_factory_;
 };
 
 int main(int argc, char** argv)
@@ -96,7 +96,7 @@ int main(int argc, char** argv)
     options.allow_undeclared_parameters(true);
     options.automatically_declare_parameters_from_overrides(true);
     // Create node
-    auto node = std::make_shared<MarkerCreatorNode>("marker_creator_node", options);
+    auto node = std::make_shared<MarkerFactoryNode>("marker_factory_node", options);
     node->init();
     // Spin node
     rclcpp::spin(node);

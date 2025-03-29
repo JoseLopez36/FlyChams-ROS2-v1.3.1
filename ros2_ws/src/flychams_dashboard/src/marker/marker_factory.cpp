@@ -1,4 +1,4 @@
-#include "flychams_dashboard/visualization/visualization_factory.hpp"
+#include "flychams_dashboard/marker/marker_factory.hpp"
 
 using namespace flychams::core;
 
@@ -8,351 +8,359 @@ namespace flychams::dashboard
     // CONSTRUCTOR: Constructor and destructor
     // ════════════════════════════════════════════════════════════════════════════
 
-    void VisualizationFactory::onInit()
+    void MarkerFactory::onInit()
     {
         // Get parameters from parameter server
-        // Get update rates
-        metrics_update_rate_ = RosUtils::getParameterOr<float>(node_, "visualization.metrics_update_rate", 10.0f);
-        markers_update_rate_ = RosUtils::getParameterOr<float>(node_, "visualization.markers_update_rate", 10.0f);
-        // Get recording flags from config
-        bool record_metrics = config_tools_->getSimulation()->record_metrics;
-        bool draw_rviz_markers = config_tools_->getSimulation()->draw_rviz_markers;
+        // Get update rate
+        update_rate_ = RosUtils::getParameterOr<float>(node_, "marker_factory.update_rate", 10.0f);
 
         // Initialize data
-        curr_agent_metrics_.clear();
-        prev_agent_metrics_.clear();
-        curr_target_metrics_.clear();
-        prev_target_metrics_.clear();
-        curr_cluster_metrics_.clear();
-        prev_cluster_metrics_.clear();
-        curr_global_metrics_ = MetricsFactory::createDefaultGlobal();
-        prev_global_metrics_ = MetricsFactory::createDefaultGlobal();
-        agent_markers_.clear();
-        target_markers_.clear();
-        cluster_markers_.clear();
+        agents_.clear();
+        targets_.clear();
+        clusters_.clear();
 
-        // Initialize global metrics publisher
-        global_metrics_pubs_ = topic_tools_->createGlobalMetricsPublisher();
-
-        // Initialize callback group
-        callback_group_ = node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
-
-        // Set update timers
-        prev_time_ = RosUtils::now(node_);
-        if (record_metrics)
-        {
-            metrics_timer_ = RosUtils::createWallTimerByRate(node_, metrics_update_rate_,
-                std::bind(&VisualizationFactory::updateMetrics, this), callback_group_);
-        }
-        if (draw_rviz_markers)
-        {
-            rviz_markers_timer_ = RosUtils::createWallTimerByRate(node_, markers_update_rate_,
-                std::bind(&VisualizationFactory::updateRvizMarkers, this), callback_group_);
-        }
+        // Set update timer
+        update_timer_ = RosUtils::createTimer(node_, update_rate_,
+            std::bind(&MarkerFactory::update, this), module_cb_group_);
     }
 
-    void VisualizationFactory::onShutdown()
+    void MarkerFactory::onShutdown()
     {
-        // Destroy data
-        curr_agent_metrics_.clear();
-        prev_agent_metrics_.clear();
-        curr_target_metrics_.clear();
-        prev_target_metrics_.clear();
-        curr_cluster_metrics_.clear();
-        prev_cluster_metrics_.clear();
-        agent_markers_.clear();
-        target_markers_.clear();
-        cluster_markers_.clear();
-        // Destroy subscribers
-        agent_odom_subs_.clear();
-        agent_goal_subs_.clear();
-        target_info_subs_.clear();
-        cluster_info_subs_.clear();
-        // Destroy publishers
-        agent_metrics_pubs_.clear();
-        agent_markers_pubs_.clear();
-        target_metrics_pubs_.clear();
-        target_markers_pubs_.clear();
-        cluster_metrics_pubs_.clear();
-        cluster_markers_pubs_.clear();
-        global_metrics_pubs_.reset();
-        // Destroy update timers
-        metrics_timer_.reset();
-        rviz_markers_timer_.reset();
+        // Destroy agents, targets and clusters
+        agents_.clear();
+        targets_.clear();
+        clusters_.clear();
+        // Destroy update timer
+        update_timer_.reset();
+    }
+
+    // ════════════════════════════════════════════════════════════════════════════
+    // PUBLIC METHODS: Public methods for adding/removing agents, targets and clusters
+    // ════════════════════════════════════════════════════════════════════════════
+
+    void MarkerFactory::addAgent(const ID& agent_id)
+    {
+        // Create and add agent
+        agents_.insert({ agent_id, Agent() });
+
+        // Initialize agent markers
+        createAgentMarkers(agents_[agent_id].markers);
+
+        // Create agent position subscriber
+        agents_[agent_id].position_sub = topic_tools_->createAgentPositionSubscriber(agent_id,
+            [this, agent_id](const PointStampedMsg::SharedPtr msg)
+            {
+                this->agentPositionCallback(agent_id, msg);
+            }, sub_options_with_module_cb_group_);
+
+        // Create agent position setpoint subscriber
+        agents_[agent_id].position_setpoint_sub = topic_tools_->createAgentPositionSetpointSubscriber(agent_id,
+            [this, agent_id](const PointStampedMsg::SharedPtr msg)
+            {
+                this->agentPositionSetpointCallback(agent_id, msg);
+            }, sub_options_with_module_cb_group_);
+
+        // Create agent marker publisher
+        agents_[agent_id].marker_pub = topic_tools_->createAgentMarkersPublisher(agent_id);
+    }
+
+    void MarkerFactory::removeAgent(const ID& agent_id)
+    {
+        // Remove agent from map
+        agents_.erase(agent_id);
+    }
+
+    void MarkerFactory::addTarget(const ID& target_id)
+    {
+        // Create and add target
+        targets_.insert({ target_id, Target() });
+
+        // Initialize target markers
+        createTargetMarkers(targets_[target_id].markers);
+
+        // Create target position subscriber
+        targets_[target_id].position_sub = topic_tools_->createTargetTruePositionSubscriber(target_id,
+            [this, target_id](const PointStampedMsg::SharedPtr msg)
+            {
+                this->targetPositionCallback(target_id, msg);
+            }, sub_options_with_module_cb_group_);
+
+        // Create target marker publisher
+        targets_[target_id].marker_pub = topic_tools_->createTargetMarkersPublisher(target_id);
+    }
+
+    void MarkerFactory::removeTarget(const ID& target_id)
+    {
+        // Remove target from map
+        targets_.erase(target_id);
+    }
+
+    void MarkerFactory::addCluster(const ID& cluster_id)
+    {
+        // Create and add cluster
+        clusters_.insert({ cluster_id, Cluster() });
+
+        // Initialize cluster markers
+        createClusterMarkers(clusters_[cluster_id].markers);
+
+        // Create cluster geometry subscriber
+        clusters_[cluster_id].geometry_sub = topic_tools_->createClusterGeometrySubscriber(cluster_id,
+            [this, cluster_id](const ClusterGeometryMsg::SharedPtr msg)
+            {
+                this->clusterGeometryCallback(cluster_id, msg);
+            }, sub_options_with_module_cb_group_);
+
+        // Create cluster marker publisher
+        clusters_[cluster_id].marker_pub = topic_tools_->createClusterMarkersPublisher(cluster_id);
+    }
+
+    void MarkerFactory::removeCluster(const ID& cluster_id)
+    {
+        // Remove cluster from map
+        clusters_.erase(cluster_id);
     }
 
     // ════════════════════════════════════════════════════════════════════════════
     // CALLBACKS: Callback functions
     // ════════════════════════════════════════════════════════════════════════════
 
-    void VisualizationFactory::agentOdomCallback(const core::ID& agent_id, const core::OdometryMsg::SharedPtr msg)
+    void MarkerFactory::agentPositionCallback(const ID& agent_id, const PointStampedMsg::SharedPtr msg)
     {
-        // Update agent metrics under lock
-        curr_agent_metrics_[agent_id].curr_x = msg->pose.position.x;
-        curr_agent_metrics_[agent_id].curr_y = msg->pose.position.y;
-        curr_agent_metrics_[agent_id].curr_z = msg->pose.position.z;
-        curr_agent_metrics_[agent_id].vel_x = msg->twist.linear.x;
-        curr_agent_metrics_[agent_id].vel_y = msg->twist.linear.y;
-        curr_agent_metrics_[agent_id].vel_z = msg->twist.linear.z;
+        // Update agent position
+        agents_[agent_id].markers.markers[0].header.stamp = RosUtils::now(node_);
+        agents_[agent_id].markers.markers[0].pose.position = msg->point;
     }
 
-    void VisualizationFactory::agentGoalCallback(const core::ID& agent_id, const core::PositionGoalMsg::SharedPtr msg)
+    void MarkerFactory::agentPositionSetpointCallback(const ID& agent_id, const PointStampedMsg::SharedPtr msg)
     {
-        // Get target position
-        curr_agent_metrics_[agent_id].goal_x = msg->position.x;
-        curr_agent_metrics_[agent_id].goal_y = msg->position.y;
-        curr_agent_metrics_[agent_id].goal_z = msg->position.z;
+        // Update agent position setpoint
+        agents_[agent_id].markers.markers[1].header.stamp = RosUtils::now(node_);
+        agents_[agent_id].markers.markers[1].pose.position = msg->point;
     }
 
-
-    void VisualizationFactory::targetInfoCallback(const core::ID& target_id, const core::TargetInfoMsg::SharedPtr msg)
+    void MarkerFactory::targetPositionCallback(const ID& target_id, const PointStampedMsg::SharedPtr msg)
     {
-        // Update target metrics under lock
-        curr_target_metrics_[target_id].curr_x = msg->position.x;
-        curr_target_metrics_[target_id].curr_y = msg->position.y;
-        curr_target_metrics_[target_id].curr_z = msg->position.z;
+        // Update target position
+        targets_[target_id].markers.markers[0].header.stamp = RosUtils::now(node_);
+        targets_[target_id].markers.markers[0].pose.position = msg->point;
     }
 
-    void VisualizationFactory::clusterInfoCallback(const core::ID& cluster_id, const core::ClusterInfoMsg::SharedPtr msg)
+    void MarkerFactory::clusterGeometryCallback(const ID& cluster_id, const ClusterGeometryMsg::SharedPtr msg)
     {
-        // Update cluster metrics under lock
-        curr_cluster_metrics_[cluster_id].curr_center_x = msg->center.x;
-        curr_cluster_metrics_[cluster_id].curr_center_y = msg->center.y;
-        curr_cluster_metrics_[cluster_id].curr_center_z = msg->center.z;
-        curr_cluster_metrics_[cluster_id].curr_radius = msg->radius;
+        // Update cluster geometry
+        const float& cx = msg->center.x;
+        const float& cy = msg->center.y;
+        const float& cz = msg->center.z;
+        const float& r = msg->radius;
+
+        // Update X points
+        const float half_size = BASE_MARKER_SIZE * 0.5f;
+        // First line of X (top-left to bottom-right)
+        clusters_[cluster_id].markers.markers[0].header.stamp = RosUtils::now(node_);
+        auto& p1 = clusters_[cluster_id].markers.markers[0].points[0];
+        p1.x = cx - half_size;
+        p1.y = cy - half_size;
+        p1.z = cz;
+        auto& p2 = clusters_[cluster_id].markers.markers[0].points[1];
+        p2.x = cx + half_size;
+        p2.y = cy + half_size;
+        p2.z = cz;
+        // Second line of X (top-right to bottom-left)
+        auto& p3 = clusters_[cluster_id].markers.markers[0].points[2];
+        p3.x = cx + half_size;
+        p3.y = cy - half_size;
+        p3.z = cz;
+        auto& p4 = clusters_[cluster_id].markers.markers[0].points[3];
+        p4.x = cx - half_size;
+        p4.y = cy + half_size;
+        p4.z = cz;
+
+        // Update cluster boundary
+        clusters_[cluster_id].markers.markers[1].header.stamp = RosUtils::now(node_);
+        clusters_[cluster_id].markers.markers[1].pose.position = msg->center;
+        clusters_[cluster_id].markers.markers[1].scale.x = 2.0f * r;
+        clusters_[cluster_id].markers.markers[1].scale.y = 2.0f * r;
     }
 
     // ════════════════════════════════════════════════════════════════════════════
-    // UPDATE: Update metrics and markers
+    // UPDATE: Update markers
     // ════════════════════════════════════════════════════════════════════════════
 
-    void VisualizationFactory::updateMetrics()
+    void MarkerFactory::update()
     {
-        // Get current time
-        auto curr_time = RosUtils::now(node_);
-        float dt = (curr_time - prev_time_).seconds();
-        prev_time_ = curr_time;
-
-        // Update agent metrics
-        for (const auto& agent_id : agent_ids_)
+        // Iterate over agents
+        for (auto& [agent_id, agent] : agents_)
         {
-            MetricsFactory::updateAgentMetrics(prev_agent_metrics_[agent_id], curr_agent_metrics_[agent_id], dt);
-            prev_agent_metrics_[agent_id] = curr_agent_metrics_[agent_id];
-            // Publish agent metrics
-            AgentMetricsMsg agent_metrics_msg;
-            agent_metrics_msg.header.stamp = curr_time;
-            agent_metrics_msg.header.frame_id = transform_tools_->getGlobalFrame();
-            RosUtils::toMsg(curr_agent_metrics_[agent_id], agent_metrics_msg);
-            agent_metrics_pubs_[agent_id]->publish(agent_metrics_msg);
+            // Publish agent markers
+            agent.marker_pub->publish(agent.markers);
         }
 
-        // Update target metrics
-        for (const auto& target_id : target_ids_)
+        // Iterate over targets
+        for (auto& [target_id, target] : targets_)
         {
-            MetricsFactory::updateTargetMetrics(prev_target_metrics_[target_id], curr_target_metrics_[target_id], dt);
-            prev_target_metrics_[target_id] = curr_target_metrics_[target_id];
-            // Publish target metrics
-            TargetMetricsMsg target_metrics_msg;
-            target_metrics_msg.header.stamp = curr_time;
-            target_metrics_msg.header.frame_id = transform_tools_->getGlobalFrame();
-            RosUtils::toMsg(curr_target_metrics_[target_id], target_metrics_msg);
-            target_metrics_pubs_[target_id]->publish(target_metrics_msg);
+            // Publish target markers
+            target.marker_pub->publish(target.markers);
         }
 
-        // Update cluster metrics
-        for (const auto& cluster_id : cluster_ids_)
+        // Iterate over clusters
+        for (auto& [cluster_id, cluster] : clusters_)
         {
-            MetricsFactory::updateClusterMetrics(prev_cluster_metrics_[cluster_id], curr_cluster_metrics_[cluster_id], dt);
-            prev_cluster_metrics_[cluster_id] = curr_cluster_metrics_[cluster_id];
-            // Publish cluster metrics
-            ClusterMetricsMsg cluster_metrics_msg;
-            cluster_metrics_msg.header.stamp = curr_time;
-            cluster_metrics_msg.header.frame_id = transform_tools_->getGlobalFrame();
-            RosUtils::toMsg(curr_cluster_metrics_[cluster_id], cluster_metrics_msg);
-            cluster_metrics_pubs_[cluster_id]->publish(cluster_metrics_msg);
-        }
-
-        // Update global metrics
-        MetricsFactory::updateGlobalMetrics(prev_global_metrics_, curr_global_metrics_, dt);
-        prev_global_metrics_ = curr_global_metrics_;
-        // Publish global metrics
-        GlobalMetricsMsg global_metrics_msg;
-        global_metrics_msg.header.stamp = curr_time;
-        global_metrics_msg.header.frame_id = transform_tools_->getGlobalFrame();
-        RosUtils::toMsg(curr_global_metrics_, global_metrics_msg);
-        global_metrics_pubs_->publish(global_metrics_msg);
-    }
-
-    void VisualizationFactory::updateRvizMarkers()
-    {
-        // Get current time
-        auto curr_time = RosUtils::now(node_);
-
-        // Update agent markers
-        for (const auto& agent_id : agent_ids_)
-        {
-            // Get agent metrics
-            const auto& metrics = curr_agent_metrics_[agent_id];
-            // Get agent markers
-            auto& markers = agent_markers_[agent_id];
-            // Update agent markers
-            MarkersFactory::updateAgentPoint(metrics.curr_x, metrics.curr_y, metrics.curr_z, curr_time, markers.markers[0]);
-            MarkersFactory::updateAgentGoalPoint(metrics.goal_x, metrics.goal_y, metrics.goal_z, curr_time, markers.markers[1]);
-            // Publish updated agent markers
-            agent_markers_pubs_[agent_id]->publish(markers);
-        }
-
-        // Update target markers
-        for (const auto& target_id : target_ids_)
-        {
-            // Get target metrics
-            const auto& metrics = curr_target_metrics_[target_id];
-            // Get target markers
-            auto& markers = target_markers_[target_id];
-            // Update target markers
-            MarkersFactory::updateTargetPoint(metrics.curr_x, metrics.curr_y, metrics.curr_z, curr_time, markers.markers[0]);
-            // Publish updated target markers
-            target_markers_pubs_[target_id]->publish(markers);
-        }
-
-        // Update cluster markers
-        for (const auto& cluster_id : cluster_ids_)
-        {
-            // Get cluster metrics
-            const auto& metrics = curr_cluster_metrics_[cluster_id];
-            // Get cluster markers
-            auto& markers = cluster_markers_[cluster_id];
-            // Update cluster markers
-            MarkersFactory::updateClusterCenter(metrics.curr_center_x, metrics.curr_center_y, metrics.curr_center_z, curr_time, markers.markers[0]);
-            MarkersFactory::updateClusterBoundary(metrics.curr_center_x, metrics.curr_center_y, metrics.curr_center_z, metrics.curr_radius, curr_time, markers.markers[1]);
             // Publish cluster markers
-            cluster_markers_pubs_[cluster_id]->publish(markers);
+            cluster.marker_pub->publish(cluster.markers);
         }
     }
 
     // ════════════════════════════════════════════════════════════════════════════
-    // HELPER METHODS: Helper methods for adding and removing elements
+    // MARKERS METHODS: Markers methods for creating markers
     // ════════════════════════════════════════════════════════════════════════════
 
-    void VisualizationFactory::addAgent(const core::ID& agent_id)
+    void MarkerFactory::createAgentMarkers(MarkerArrayMsg& markers)
     {
-        // Add agent to set
-        agent_ids_.insert(agent_id);
-        // Add metrics
-        curr_agent_metrics_.insert({ agent_id, MetricsFactory::createDefaultAgent() });
-        prev_agent_metrics_.insert({ agent_id, MetricsFactory::createDefaultAgent() });
-        // Add markers
-        agent_markers_.insert({ agent_id, MarkersFactory::createAgentMarkers(transform_tools_->getGlobalFrame(), markers_update_rate_ * 1.1f) });
-        // Add subscribers
-        auto options = rclcpp::SubscriptionOptions();
-        options.callback_group = callback_group_;
-        agent_odom_subs_.insert({ agent_id, topic_tools_->createAgentOdomSubscriber(agent_id,
-            [this, agent_id](const OdometryMsg::SharedPtr msg)
-            {
-                this->agentOdomCallback(agent_id, msg);
-            }, options) });
-        agent_goal_subs_.insert({ agent_id, topic_tools_->createAgentPositionGoalSubscriber(agent_id,
-            [this, agent_id](const PositionGoalMsg::SharedPtr msg)
-            {
-                this->agentGoalCallback(agent_id, msg);
-            }, options) });
-        // Add publishers
-        agent_metrics_pubs_.insert({ agent_id, topic_tools_->createAgentMetricsPublisher(agent_id) });
-        agent_markers_pubs_.insert({ agent_id, topic_tools_->createAgentMarkersPublisher(agent_id) });
+        // Create marker for UAV body (a blue point)
+        MarkerMsg body_marker;
+        body_marker.header = RosUtils::createHeader(node_, transform_tools_->getGlobalFrame());
+        body_marker.id = 0;
+        body_marker.type = MarkerMsg::SPHERE;
+        body_marker.action = MarkerMsg::ADD;
+        body_marker.lifetime = rclcpp::Duration::from_seconds(1.0f / update_rate_ * 1.25f);
+        // Set initial pose
+        body_marker.pose.position.x = 0.0f;
+        body_marker.pose.position.y = 0.0f;
+        body_marker.pose.position.z = 0.0f;
+        body_marker.pose.orientation.w = 1.0f;
+        // Set scale
+        body_marker.scale.x = BASE_MARKER_SIZE * 1.0f; // length
+        body_marker.scale.y = BASE_MARKER_SIZE * 1.0f; // width
+        body_marker.scale.z = BASE_MARKER_SIZE * 1.0f; // height
+        // Set color (blue)
+        body_marker.color.r = 0.0f;
+        body_marker.color.g = 0.0f;
+        body_marker.color.b = 1.0f;
+        body_marker.color.a = BASE_MARKER_ALPHA;
+        // Add marker to array
+        markers.markers.push_back(body_marker);
 
+        // Create marker for UAV goal (a green point)
+        MarkerMsg goal_marker;
+        goal_marker.header = RosUtils::createHeader(node_, transform_tools_->getGlobalFrame());
+        goal_marker.id = 1;
+        goal_marker.type = MarkerMsg::SPHERE;
+        goal_marker.action = MarkerMsg::ADD;
+        goal_marker.lifetime = rclcpp::Duration::from_seconds(1.0f / update_rate_ * 1.25f);
+        // Set initial pose
+        goal_marker.pose.position.x = 0.0f;
+        goal_marker.pose.position.y = 0.0f;
+        goal_marker.pose.position.z = 0.0f;
+        goal_marker.pose.orientation.w = 1.0f;
+        // Set scale
+        goal_marker.scale.x = BASE_MARKER_SIZE * 1.0f; // length
+        goal_marker.scale.y = BASE_MARKER_SIZE * 1.0f; // width
+        goal_marker.scale.z = BASE_MARKER_SIZE * 1.0f; // height
+        // Set color (yellow)
+        goal_marker.color.r = 1.0f;
+        goal_marker.color.g = 1.0f;
+        goal_marker.color.b = 0.0f;
+        goal_marker.color.a = BASE_MARKER_ALPHA;
+        // Add marker to array
+        markers.markers.push_back(goal_marker);
     }
 
-    void VisualizationFactory::removeAgent(const core::ID& agent_id)
+    void MarkerFactory::createTargetMarkers(MarkerArrayMsg& markers)
     {
-        // Remove agent from set
-        agent_ids_.erase(agent_id);
-        // Remove metrics
-        curr_agent_metrics_.erase(agent_id);
-        prev_agent_metrics_.erase(agent_id);
-        // Remove markers
-        agent_markers_.erase(agent_id);
-        // Remove subscriber
-        agent_odom_subs_.erase(agent_id);
-        agent_goal_subs_.erase(agent_id);
-        // Remove publishers
-        agent_metrics_pubs_.erase(agent_id);
-        agent_markers_pubs_.erase(agent_id);
+        // Create marker for target (a red point)
+        MarkerMsg target_marker;
+        target_marker.header = RosUtils::createHeader(node_, transform_tools_->getGlobalFrame());
+        target_marker.id = 0;
+        target_marker.type = MarkerMsg::SPHERE;
+        target_marker.action = MarkerMsg::ADD;
+        target_marker.lifetime = rclcpp::Duration::from_seconds(1.0f / update_rate_ * 1.25f);
+        // Set initial pose
+        target_marker.pose.position.x = 0.0f;
+        target_marker.pose.position.y = 0.0f;
+        target_marker.pose.position.z = 0.0f;
+        target_marker.pose.orientation.w = 1.0f;
+        // Set scale
+        target_marker.scale.x = BASE_MARKER_SIZE * 0.7f; // length
+        target_marker.scale.y = BASE_MARKER_SIZE * 0.7f; // width
+        target_marker.scale.z = BASE_MARKER_SIZE * 0.7f; // height
+        // Set color (red)
+        target_marker.color.r = 1.0f;
+        target_marker.color.g = 0.0f;
+        target_marker.color.b = 0.0f;
+        target_marker.color.a = BASE_MARKER_ALPHA;
+        // Add marker to array
+        markers.markers.push_back(target_marker);
     }
 
-    void VisualizationFactory::addTarget(const core::ID& target_id)
+    void MarkerFactory::createClusterMarkers(MarkerArrayMsg& markers)
     {
-        // Add target to set
-        target_ids_.insert(target_id);
-        // Add metrics
-        curr_target_metrics_.insert({ target_id, MetricsFactory::createDefaultTarget() });
-        prev_target_metrics_.insert({ target_id, MetricsFactory::createDefaultTarget() });
-        // Add markers
-        target_markers_.insert({ target_id, MarkersFactory::createTargetMarkers(transform_tools_->getGlobalFrame(), markers_update_rate_ * 1.1f) });
-        // Add subscriber
-        auto options = rclcpp::SubscriptionOptions();
-        options.callback_group = callback_group_;
-        target_info_subs_.insert({ target_id, topic_tools_->createTargetInfoSubscriber(target_id,
-            [this, target_id](const TargetInfoMsg::SharedPtr msg)
-            {
-                this->targetInfoCallback(target_id, msg);
-            }, options) });
-        // Add publishers   
-        target_metrics_pubs_.insert({ target_id, topic_tools_->createTargetMetricsPublisher(target_id) });
-        target_markers_pubs_.insert({ target_id, topic_tools_->createTargetMarkersPublisher(target_id) });
-    }
+        // Create marker for cluster center (a yellow X)
+        MarkerMsg x_marker;
+        x_marker.header = RosUtils::createHeader(node_, transform_tools_->getGlobalFrame());
+        x_marker.id = 0;
+        x_marker.type = MarkerMsg::LINE_LIST;
+        x_marker.action = MarkerMsg::ADD;
+        x_marker.lifetime = rclcpp::Duration::from_seconds(1.0f / update_rate_ * 1.25f);
+        // Set initial pose
+        x_marker.pose.position.x = 0.0f;
+        x_marker.pose.position.y = 0.0f;
+        x_marker.pose.position.z = 0.0f;
+        x_marker.pose.orientation.w = 1.0f;
+        // Create the X shape using line segments
+        float half_size = BASE_MARKER_SIZE * 0.5f;
+        PointMsg p1, p2, p3, p4;
+        // First line of X (top-left to bottom-right)
+        p1.x = 0.0f - half_size;
+        p1.y = 0.0f - half_size;
+        p1.z = 0.0f;
+        p2.x = 0.0f + half_size;
+        p2.y = 0.0f + half_size;
+        p2.z = 0.0f;
+        // Second line of X (top-right to bottom-left)
+        p3.x = 0.0f + half_size;
+        p3.y = 0.0f - half_size;
+        p3.z = 0.0f;
+        p4.x = 0.0f - half_size;
+        p4.y = 0.0f + half_size;
+        p4.z = 0.0f;
+        // Add points to marker
+        x_marker.points.push_back(p1);
+        x_marker.points.push_back(p2);
+        x_marker.points.push_back(p3);
+        x_marker.points.push_back(p4);
+        // Set scale
+        x_marker.scale.x = BASE_LINE_WIDTH * 0.5f;
+        // Set color (yellow)
+        x_marker.color.r = 1.0f;
+        x_marker.color.g = 1.0f;
+        x_marker.color.b = 0.0f;
+        x_marker.color.a = BASE_MARKER_ALPHA;
+        // Add marker to array
+        markers.markers.push_back(x_marker);
 
-    void VisualizationFactory::removeTarget(const core::ID& target_id)
-    {
-        // Remove target from set
-        target_ids_.erase(target_id);
-        // Remove metrics
-        curr_target_metrics_.erase(target_id);
-        prev_target_metrics_.erase(target_id);
-        // Remove markers
-        target_markers_.erase(target_id);
-        // Remove subscriber
-        target_info_subs_.erase(target_id);
-        // Remove publishers
-        target_metrics_pubs_.erase(target_id);
-        target_markers_pubs_.erase(target_id);
-    }
-
-    void VisualizationFactory::addCluster(const core::ID& cluster_id)
-    {
-        // Add cluster to set
-        cluster_ids_.insert(cluster_id);
-        // Add metrics
-        curr_cluster_metrics_.insert({ cluster_id, MetricsFactory::createDefaultCluster() });
-        prev_cluster_metrics_.insert({ cluster_id, MetricsFactory::createDefaultCluster() });
-        // Add markers
-        cluster_markers_.insert({ cluster_id, MarkersFactory::createClusterMarkers(transform_tools_->getGlobalFrame(), markers_update_rate_ * 1.1f) });
-        // Add subscriber
-        auto options = rclcpp::SubscriptionOptions();
-        options.callback_group = callback_group_;
-        cluster_info_subs_.insert({ cluster_id, topic_tools_->createClusterInfoSubscriber(cluster_id,
-            [this, cluster_id](const ClusterInfoMsg::SharedPtr msg)
-            {
-                this->clusterInfoCallback(cluster_id, msg);
-            }, options) });
-        // Add publishers
-        cluster_metrics_pubs_.insert({ cluster_id, topic_tools_->createClusterMetricsPublisher(cluster_id) });
-        cluster_markers_pubs_.insert({ cluster_id, topic_tools_->createClusterMarkersPublisher(cluster_id) });
-    }
-
-    void VisualizationFactory::removeCluster(const core::ID& cluster_id)
-    {
-        // Remove cluster from set
-        cluster_ids_.erase(cluster_id);
-        // Remove metrics
-        curr_cluster_metrics_.erase(cluster_id);
-        prev_cluster_metrics_.erase(cluster_id);
-        // Remove markers
-        cluster_markers_.erase(cluster_id);
-        // Remove subscriber
-        cluster_info_subs_.erase(cluster_id);
-        // Remove publishers
-        cluster_metrics_pubs_.erase(cluster_id);
-        cluster_markers_pubs_.erase(cluster_id);
+        // Create marker for cluster boundary (a cyan semi-transparent cylinder)
+        MarkerMsg boundary_marker;
+        boundary_marker.header = RosUtils::createHeader(node_, transform_tools_->getGlobalFrame());
+        boundary_marker.id = 1;
+        boundary_marker.type = MarkerMsg::CYLINDER;
+        boundary_marker.action = MarkerMsg::ADD;
+        boundary_marker.lifetime = rclcpp::Duration::from_seconds(1.0f / update_rate_ * 1.25f);
+        // Set initial pose
+        boundary_marker.pose.position.x = 0.0f;
+        boundary_marker.pose.position.y = 0.0f;
+        boundary_marker.pose.position.z = 0.0f;
+        boundary_marker.pose.orientation.w = 1.0f;
+        // Set initial scale
+        boundary_marker.scale.x = 0.0f; // length
+        boundary_marker.scale.y = 0.0f; // width
+        boundary_marker.scale.z = 0.0f; // height
+        // Set color (cyan, semi-transparent)
+        boundary_marker.color.r = 0.0f;
+        boundary_marker.color.g = 1.0f;
+        boundary_marker.color.b = 1.0f;
+        boundary_marker.color.a = 0.15f;
+        // Add marker to array
+        markers.markers.push_back(boundary_marker);
     }
 
 } // namespace flychams::dashboard

@@ -23,7 +23,8 @@ def generate_launch_description():
         'agent_tracking': 'info',
         # Dashboard nodes
         'gui_manager': 'info',
-        'visualization': 'info',
+        'metrics_factory': 'info',
+        'marker_factory': 'info',
         # Targets nodes
         'target_state': 'info',
         'target_control': 'info'
@@ -39,7 +40,8 @@ def generate_launch_description():
     launch_agent_positioning = LaunchConfiguration('agent_positioning')
     launch_agent_tracking = LaunchConfiguration('agent_tracking')
     launch_gui_manager = LaunchConfiguration('gui_manager')
-    launch_visualization = LaunchConfiguration('visualization')
+    launch_metrics_factory = LaunchConfiguration('metrics_factory')
+    launch_marker_factory = LaunchConfiguration('marker_factory')
     launch_target_state = LaunchConfiguration('target_state')
     launch_target_control = LaunchConfiguration('target_control')
 
@@ -53,7 +55,8 @@ def generate_launch_description():
     log_level_agent_positioning = LaunchConfiguration('log_agent_positioning')
     log_level_agent_tracking = LaunchConfiguration('log_agent_tracking')
     log_level_gui_manager = LaunchConfiguration('log_gui_manager')
-    log_level_visualization = LaunchConfiguration('log_visualization')
+    log_level_metrics_factory = LaunchConfiguration('log_metrics_factory')
+    log_level_marker_factory = LaunchConfiguration('log_marker_factory')
     log_level_target_state = LaunchConfiguration('log_target_state')
     log_level_target_control = LaunchConfiguration('log_target_control')
 
@@ -159,9 +162,14 @@ def generate_launch_description():
         description='Flag to enable/disable the GUI Manager node'))
     
     ld.append(DeclareLaunchArgument(
-        'visualization',
+        'metrics_factory',
         default_value='True',
-        description='Flag to enable/disable the Visualization node'))
+        description='Flag to enable/disable the Metrics Factory node'))
+    
+    ld.append(DeclareLaunchArgument(
+        'marker_factory',
+        default_value='True',
+        description='Flag to enable/disable the Marker Factory node'))
     
     ld.append(DeclareLaunchArgument(
         'target_state',
@@ -215,9 +223,14 @@ def generate_launch_description():
         description='Log level for the GUI Manager node'))
     
     ld.append(DeclareLaunchArgument(
-        'log_visualization',
+        'log_metrics_factory',
         default_value='info',
-        description='Log level for the Visualization node'))
+        description='Log level for the Metrics Factory node'))
+    
+    ld.append(DeclareLaunchArgument(
+        'log_marker_factory',
+        default_value='info',
+        description='Log level for the Marker Factory node'))
     
     ld.append(DeclareLaunchArgument(
         'log_target_state',
