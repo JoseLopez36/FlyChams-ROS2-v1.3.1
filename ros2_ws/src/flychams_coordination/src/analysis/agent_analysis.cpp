@@ -158,7 +158,10 @@ namespace flychams::coordination
         // Process each agent
         for (auto& [agent_id, agent] : agents_)
         {
-            // Get clusters for this agent
+            // Get previous clusters
+            const auto& prev_clusters = agent.clusters.cluster_ids;
+
+            // Get new clusters
             const auto& new_clusters = assigned_clusters[agent_id];
             if (new_clusters.empty())
             {
@@ -167,20 +170,27 @@ namespace flychams::coordination
             }
 
             // Order new clusters consistently
-            agent.clusters.cluster_ids = ensureOrder(agent.clusters.cluster_ids, new_clusters);
+            if (!prev_clusters.empty())
+            {
+                agent.clusters.cluster_ids = ensureOrder(prev_clusters, new_clusters);
+            }
+            else
+            {
+                for (const auto& cluster_id : new_clusters)
+                {
+                    agent.clusters.cluster_ids.push_back(cluster_id);
+                }
+            }
 
-            // Set centers and radii size if not already set
+            // Update cluster geometries
             if (agent.clusters.centers.size() != agent.clusters.cluster_ids.size())
             {
                 agent.clusters.centers.resize(agent.clusters.cluster_ids.size());
                 agent.clusters.radii.resize(agent.clusters.cluster_ids.size());
             }
-
-            // Update cluster geometries
             for (size_t i = 0; i < agent.clusters.cluster_ids.size(); i++)
             {
-                const auto& cluster_id = agent.clusters.cluster_ids[i];
-                const auto& cluster = clusters_[cluster_id];
+                const auto& cluster = clusters_[agent.clusters.cluster_ids[i]];
                 agent.clusters.centers[i] = cluster.center;
                 agent.clusters.radii[i] = cluster.radius;
             }

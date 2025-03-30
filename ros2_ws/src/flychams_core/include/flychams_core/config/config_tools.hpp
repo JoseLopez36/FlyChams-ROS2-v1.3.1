@@ -285,12 +285,16 @@ namespace flychams::core
             params.lambda_max = 1.0f;
             params.lambda_ref = (params.lambda_max + params.lambda_min) / 2.0f; // Middle of the range
 
+            // Get rho
+            params.rho = central_params.rho;
+
             // Print window parameters for debugging
             RCLCPP_INFO(node_->get_logger(), "Window parameters for agent %s, central head %s:", agent_id.c_str(), central_params.id.c_str());
             RCLCPP_INFO(node_->get_logger(), "  Full resolution: %d x %d", params.full_width, params.full_height);
             RCLCPP_INFO(node_->get_logger(), "  Scene resolution: %d x %d", params.scene_width, params.scene_height);
             RCLCPP_INFO(node_->get_logger(), "  Tracking resolution: %d x %d", params.tracking_width, params.tracking_height);
             RCLCPP_INFO(node_->get_logger(), "  Lambda values: min=%.3f, max=%.3f, ref=%.3f", params.lambda_min, params.lambda_max, params.lambda_ref);
+            RCLCPP_INFO(node_->get_logger(), "  Rho: %.6f [m/pix]", params.rho);
 
             return params;
         }
@@ -326,7 +330,49 @@ namespace flychams::core
             params.s_ref = s_ref_pix * camera_params.rho; // [m]
 
             // Print parameters for debugging
-            RCLCPP_INFO(node_->get_logger(), "Projection parameters for agent %s, camera %s:", agent_id.c_str(), camera_params.id.c_str());
+            RCLCPP_INFO(node_->get_logger(), "Projection parameters for agent %s:", agent_id.c_str());
+            RCLCPP_INFO(node_->get_logger(), "  s_min_pix: %.2f [pix]", params.s_min_pix);
+            RCLCPP_INFO(node_->get_logger(), "  s_max_pix: %.2f [pix]", params.s_max_pix);
+            RCLCPP_INFO(node_->get_logger(), "  s_ref_pix: %.2f [pix]", params.s_ref_pix);
+            RCLCPP_INFO(node_->get_logger(), "  s_min: %.6f [m]", params.s_min);
+            RCLCPP_INFO(node_->get_logger(), "  s_max: %.6f [m]", params.s_max);
+            RCLCPP_INFO(node_->get_logger(), "  s_ref: %.6f [m]", params.s_ref);
+
+            return params;
+        }
+
+        const ProjectionParameters getProjectionParameters(const std::string& agent_id, const WindowParameters& window_params) const
+        {
+            ProjectionParameters params;
+
+            // Get tracking config
+            const auto& tracking = getTracking(agent_id);
+
+            // Extract ROI parameters
+            const auto& min_apparent_size = tracking.min_target_size;
+            const auto& max_apparent_size = tracking.max_target_size;
+            const auto& ref_apparent_size = tracking.ref_target_size;
+            float sensor_half_size = static_cast<float>(std::min(window_params.tracking_width, window_params.tracking_height)) / 2.0f;
+
+            // Minimum admissible apparent size of the object in the image (in pixels)
+            float s_min_pix = sensor_half_size * min_apparent_size;
+            params.s_min_pix = s_min_pix; // [pix]
+
+            // Maximum admissible apparent size of the object in the image (in pixels)
+            float s_max_pix = sensor_half_size * max_apparent_size;
+            params.s_max_pix = s_max_pix; // [pix]
+
+            // Reference apparent size of the object in the image (in pixels)
+            float s_ref_pix = sensor_half_size * ref_apparent_size; // [pix]
+            params.s_ref_pix = s_ref_pix; // [pix]
+
+            // Conversion to metric distances on the sensor surface
+            params.s_max = s_max_pix * window_params.rho; // [m]
+            params.s_min = s_min_pix * window_params.rho; // [m]
+            params.s_ref = s_ref_pix * window_params.rho; // [m]
+
+            // Print parameters for debugging
+            RCLCPP_INFO(node_->get_logger(), "Projection parameters for agent %s:", agent_id.c_str());
             RCLCPP_INFO(node_->get_logger(), "  s_min_pix: %.2f [pix]", params.s_min_pix);
             RCLCPP_INFO(node_->get_logger(), "  s_max_pix: %.2f [pix]", params.s_max_pix);
             RCLCPP_INFO(node_->get_logger(), "  s_ref_pix: %.2f [pix]", params.s_ref_pix);
@@ -346,7 +392,7 @@ namespace flychams::core
 
             // Get central head parameters
             const auto& central_head = getCentralHead(agent_id);
-            const auto& central_params = getCameraParameters(agent_id, central_head->id);
+            params.central_params = getCameraParameters(agent_id, central_head->id);
 
             // Proceed based on tracking mode
             params.mode = tracking.mode;
@@ -373,9 +419,6 @@ namespace flychams::core
 
             case TrackingMode::MultiWindowTracking:
             {
-                // Get central head
-                const auto& central_head = getCentralHead(agent_id);
-
                 // Get number of tracking windows
                 params.n = tracking.num_windows;
 
@@ -384,8 +427,8 @@ namespace flychams::core
                 params.projection_params.resize(params.n);
                 for (int i = 0; i < params.n; i++)
                 {
-                    params.window_params[i] = getWindowParameters(agent_id, central_params);
-                    params.projection_params[i] = getProjectionParameters(agent_id, central_params);
+                    params.window_params[i] = getWindowParameters(agent_id, params.central_params);
+                    params.projection_params[i] = getProjectionParameters(agent_id, params.window_params[i]);
                 }
                 break;
             }

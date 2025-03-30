@@ -364,6 +364,8 @@ namespace flychams::core
         // Tracking resolution (pix)
         int tracking_width;
         int tracking_height;
+        // Regularized pixel size (m/pix)
+        float rho;
     };
 
     /**

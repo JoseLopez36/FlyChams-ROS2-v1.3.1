@@ -12,10 +12,10 @@ target_clustering: [true, 'error']
 cluster_analysis: [true, 'error']
 
 # Coordination nodes
-agent_assignment: [false, 'info']
-agent_analysis: [false, 'info']
-agent_positioning: [false, 'info']
-agent_tracking: [false, 'info']
+agent_assignment: [true, 'error']
+agent_analysis: [true, 'error']
+agent_positioning: [true, 'error']
+agent_tracking: [true, 'error']
 
 # Targets nodes
 target_state: [true, 'error']

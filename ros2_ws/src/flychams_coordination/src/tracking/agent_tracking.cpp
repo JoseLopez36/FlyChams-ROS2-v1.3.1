@@ -134,17 +134,21 @@ namespace flychams::coordination
         switch (tracking_params_.mode)
         {
         case TrackingMode::MultiCameraTracking:
+            // Compute tracking setpoints
             computeMultiCamera(tab_P, tab_r, agent_.head_setpoints);
+
+            // Publish tracking setpoints
+            agent_.head_setpoints_pub->publish(agent_.head_setpoints);
             break;
 
         case TrackingMode::MultiWindowTracking:
+            // Compute tracking setpoints
             computeMultiWindow(tab_P, tab_r, agent_.window_setpoints);
+
+            // Publish tracking setpoints
+            agent_.window_setpoints_pub->publish(agent_.window_setpoints);
             break;
         }
-
-        // Publish tracking setpoints
-        agent_.head_setpoints_pub->publish(agent_.head_setpoints);
-        agent_.window_setpoints_pub->publish(agent_.window_setpoints);
     }
 
     // ════════════════════════════════════════════════════════════════════════════

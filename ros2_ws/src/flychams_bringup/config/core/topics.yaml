@@ -6,9 +6,9 @@
       metrics: "dashboard/global/metrics"                           # GlobalMetrics.msg (custom)
     # Agent topics
     agent_topics:
-      status: "control/AGENTID/state/status"                        # AgentStatus.msg (custom)
-      position: "control/AGENTID/state/position"                    # PointStamped.msg
-      clusters: "coordination/AGENTID/state/clusters"               # AgentClusters.msg (custom)
+      status: "control/AGENTID/status"                              # AgentStatus.msg (custom)
+      position: "control/AGENTID/position"                          # PointStamped.msg
+      clusters: "coordination/AGENTID/clusters"                     # AgentClusters.msg (custom)
       position_setpoint: "coordination/AGENTID/setpoint/position"   # PointStamped.msg
       head_setpoints: "coordination/AGENTID/setpoint/head"          # AgentHeadSetpoints.msg (custom)
       window_setpoints: "coordination/AGENTID/setpoint/window"      # AgentWindowSetpoints.msg (custom)

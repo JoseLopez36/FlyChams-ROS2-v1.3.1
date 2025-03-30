@@ -79,6 +79,11 @@ namespace flychams::perception
 		{
 			// Perform clustering with base K-means
 			curr_assignments = computeInitialAssignments(tab_P, n, K);
+
+			// Initialize previous assignments
+			prev_assignments_.resize(curr_assignments.size());
+
+			// Set first update flag to false
 			first_update_ = false;
 		}
 		else
@@ -93,14 +98,14 @@ namespace flychams::perception
 			PointMatrix prev_centroids = computeCentroids(tab_P, prev_assignments_, n, K);
 
 			// 3. Ensure consistency in cluster numbering
-			curr_assignments = reorderCentroidsConsistently(curr_centroids, prev_centroids, prev_assignments_, n, K);
+			curr_assignments = reorderCentroidsConsistently(prev_centroids, curr_centroids, curr_assignments, n, K);
+			curr_centroids = computeCentroids(tab_P, curr_assignments, n, K); // We need to recompute the centroids after reordering
 
 			// 4. Ensure persistence of centroids
-			curr_assignments = ensureClusterPersistence(tab_P, curr_assignments, curr_centroids, prev_assignments_, n, K, dt);
+			curr_assignments = ensureClusterPersistence(tab_P, prev_assignments_, curr_assignments, curr_centroids, n, K, dt);
 		}
 
 		// Update previous assignments
-		prev_assignments_.resize(curr_assignments.size());
 		prev_assignments_ = curr_assignments;
 
 		// Return assignments
@@ -296,10 +301,10 @@ namespace flychams::perception
 	// CONSISTENT CLUSTERING: Compute consistent centroids
 	// ════════════════════════════════════════════════════════════════════════════
 
-	KMeansMod::IndexVector KMeansMod::reorderCentroidsConsistently(const PointMatrix& curr_centroids, const PointMatrix& prev_centroids, const IndexVector& prev_assignments, int n, int K)
+	KMeansMod::IndexVector KMeansMod::reorderCentroidsConsistently(const PointMatrix& prev_centroids, const PointMatrix& curr_centroids, const IndexVector& assignments, int n, int K)
 	{
 		// Function that reorders the centroids to ensure consistency in cluster numbering.
-		IndexVector assignments(n);
+		IndexVector reordered_assignments(n);
 
 		// Ensure consistency in cluster numbering
 		IndexVector associations = associateCentroids(prev_centroids, curr_centroids, K);
@@ -307,10 +312,19 @@ namespace flychams::perception
 		// Update point assignments based on reordered centroids
 		for (int i = 0; i < n; i++)
 		{
-			assignments(i) = associations(prev_assignments(i));
+			int new_index = 0;
+			for (int j = 0; j < n; j++)
+			{
+				if (associations(j) == assignments(i))
+				{
+					new_index = j;
+					break;
+				}
+			}
+			reordered_assignments(i) = new_index;
 		}
 
-		return assignments;
+		return reordered_assignments;
 	}
 
 	KMeansMod::IndexVector KMeansMod::associateCentroids(const PointMatrix& prev_centroids, const PointMatrix& curr_centroids, int K)
@@ -318,7 +332,7 @@ namespace flychams::perception
 		IndexVector associations(K);
 
 		// Calculate the distance matrix between elements of both groups
-		MatrixXr dist_matrix = computeDistMatrixTwoGroups(prev_centroids, curr_centroids, K);
+		MatrixXr dist_matrix = computeDistanceMatrix(prev_centroids, curr_centroids, K);
 
 		// Hungarian algorithm
 		// Convert the Eigen distance matrix to a vector of vectors for the Hungarian Algorithm
@@ -345,7 +359,7 @@ namespace flychams::perception
 		return associations;
 	}
 
-	MatrixXr KMeansMod::computeDistMatrixTwoGroups(const PointMatrix& prev_centroids, const PointMatrix& curr_centroids, int K)
+	MatrixXr KMeansMod::computeDistanceMatrix(const PointMatrix& prev_centroids, const PointMatrix& curr_centroids, int K)
 	{
 		// Function that provides the distance matrix between points of two groups.
 		// Unlike 'ComputeDistMatrix()', which calculated distances between all points in a single set
@@ -366,7 +380,7 @@ namespace flychams::perception
 	// PERSISTENCE: Ensure persistence of centroids
 	// ════════════════════════════════════════════════════════════════════════════
 
-	KMeansMod::IndexVector KMeansMod::ensureClusterPersistence(const PointMatrix& tab_P, const IndexVector& curr_assignments, const PointMatrix& curr_centroids, const IndexVector& prev_assignments, int n, int K, float dt)
+	KMeansMod::IndexVector KMeansMod::ensureClusterPersistence(const PointMatrix& tab_P, const IndexVector& prev_assignments, const IndexVector& curr_assignments, const PointMatrix& curr_centroids, int n, int K, float dt)
 	{
 		// Function that ensures the persistence of centroids over time
 		IndexVector assignments(n);

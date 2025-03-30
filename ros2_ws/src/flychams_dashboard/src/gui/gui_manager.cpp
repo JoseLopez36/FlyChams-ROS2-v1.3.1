@@ -98,12 +98,15 @@ namespace flychams::dashboard
             string_color.b = 1.0f;
             string_color.a = 0.5f;
             const float string_scale = 128.0f;
+            PointMsg start_position;
+            start_position.x = HUGE_VALF;
+            start_position.y = HUGE_VALF;
 
-            central_draw_cmds_.rectangle_corners.push_back(PointMsg());
+            central_draw_cmds_.rectangle_corners.push_back(start_position);
             central_draw_cmds_.rectangle_sizes.push_back(PointMsg());
             central_draw_cmds_.rectangle_color = rectangle_color;
             central_draw_cmds_.rectangle_thickness = rectangle_thickness;
-            central_draw_cmds_.string_positions.push_back(PointMsg());
+            central_draw_cmds_.string_positions.push_back(start_position);
             central_draw_cmds_.string_texts.push_back("TW" + std::to_string(i));
             central_draw_cmds_.string_color = string_color;
             central_draw_cmds_.string_scale = string_scale;
@@ -172,13 +175,11 @@ namespace flychams::dashboard
         case GuiMode::RESET:
             // In this mode, we reset the windows
             // First, reset operator windows
-            RCLCPP_INFO(node_->get_logger(), "GUI manager: Resetting operator windows for agent %s", agent_id_.c_str());
+            RCLCPP_INFO(node_->get_logger(), "GUI manager: Resetting windows for agent %s", agent_id_.c_str());
             resetWindows(operator_window_cmds_);
             // Then, set simulation windows
-            RCLCPP_INFO(node_->get_logger(), "GUI manager: Setting simulation windows for agent %s", agent_id_.c_str());
             setWindows(simulation_window_cmds_);
             // Finally, set mode to TRACKING
-            RCLCPP_INFO(node_->get_logger(), "GUI manager: Setting mode to TRACKING for agent %s", agent_id_.c_str());
             gui_mode_ = GuiMode::TRACKING;
             break;
 
@@ -241,7 +242,7 @@ namespace flychams::dashboard
             window_cmds.crop_x, window_cmds.crop_y,
             window_cmds.crop_w, window_cmds.crop_h);
         // Delay to ensure GUI is updated
-        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 
     void GuiManager::resetWindows(const WindowCmds& window_cmds)
@@ -256,7 +257,7 @@ namespace flychams::dashboard
             std::vector<int>(n, 0),
             std::vector<int>(n, 0));
         // Delay to ensure GUI is updated
-        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
 
     void GuiManager::drawWindow(const DrawCmds& draw_cmds)
@@ -266,13 +267,13 @@ namespace flychams::dashboard
             draw_cmds.rectangle_corners, draw_cmds.rectangle_sizes,
             draw_cmds.rectangle_color, draw_cmds.rectangle_thickness);
         // Delay to ensure GUI is updated
-        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
         // Send string draw commands to the window
         framework_tools_->setWindowStrings(draw_cmds.window_id,
             draw_cmds.string_texts, draw_cmds.string_positions,
             draw_cmds.string_color, draw_cmds.string_scale);
         // Delay to ensure GUI is updated
-        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 
     void GuiManager::updateHeadSetpoints(const AgentHeadSetpointsMsg& setpoints)
@@ -280,12 +281,12 @@ namespace flychams::dashboard
         for (int i = 0; i < setpoints.head_ids.size(); i++)
         {
             // Set camera ID as head ID
-            operator_window_cmds_.camera_ids[i] = setpoints.head_ids[i];
+            operator_window_cmds_.camera_ids[i + 1] = setpoints.head_ids[i];
             // No crop
-            operator_window_cmds_.crop_x[i] = 0;
-            operator_window_cmds_.crop_y[i] = 0;
-            operator_window_cmds_.crop_w[i] = 0;
-            operator_window_cmds_.crop_h[i] = 0;
+            operator_window_cmds_.crop_x[i + 1] = 0;
+            operator_window_cmds_.crop_y[i + 1] = 0;
+            operator_window_cmds_.crop_w[i + 1] = 0;
+            operator_window_cmds_.crop_h[i + 1] = 0;
         }
     }
 
@@ -298,16 +299,16 @@ namespace flychams::dashboard
             // Check if crop is out of bounds. If so, set empty image and skip this window
             if (crop.is_out_of_bounds)
             {
-                operator_window_cmds_.camera_ids[i] = "";
+                operator_window_cmds_.camera_ids[i + 1] = "";
                 continue;
             }
             // Set camera ID as central head ID
-            operator_window_cmds_.camera_ids[i] = operator_window_cmds_.camera_ids[0];
+            operator_window_cmds_.camera_ids[i + 1] = operator_window_cmds_.camera_ids[0];
             // Update crop
-            operator_window_cmds_.crop_x[i] = crop.x;
-            operator_window_cmds_.crop_y[i] = crop.y;
-            operator_window_cmds_.crop_w[i] = crop.w;
-            operator_window_cmds_.crop_h[i] = crop.h;
+            operator_window_cmds_.crop_x[i + 1] = crop.x;
+            operator_window_cmds_.crop_y[i + 1] = crop.y;
+            operator_window_cmds_.crop_w[i + 1] = crop.w;
+            operator_window_cmds_.crop_h[i + 1] = crop.h;
             // Update draw rectangles
             central_draw_cmds_.rectangle_corners[i].x = crop.x;
             central_draw_cmds_.rectangle_corners[i].y = crop.y;

@@ -65,12 +65,12 @@ namespace flychams::perception
 		IndexVector assignClusters(const PointMatrix& tab_P, const PointMatrix& centroids, int n, int K);
 
 		// Consistent clustering implementation. Consistent centroids
-		IndexVector reorderCentroidsConsistently(const PointMatrix& prev_centroids, const PointMatrix& curr_centroids, const IndexVector& prev_assignments, int n, int K);
+		IndexVector reorderCentroidsConsistently(const PointMatrix& prev_centroids, const PointMatrix& curr_centroids, const IndexVector& assignments, int n, int K);
 		IndexVector associateCentroids(const PointMatrix& prev_centroids, const PointMatrix& curr_centroids, int K);
-		core::MatrixXr computeDistMatrixTwoGroups(const PointMatrix& prev_centroids, const PointMatrix& curr_centroids, int K);
+		core::MatrixXr computeDistanceMatrix(const PointMatrix& prev_centroids, const PointMatrix& curr_centroids, int K);
 
 		// Clustering persistence implementation. Cluster persistence
-		IndexVector ensureClusterPersistence(const PointMatrix& tab_P, const IndexVector& curr_assignments, const PointMatrix& curr_centroids, const IndexVector& prev_assignments, int n, int K, float dt);
+		IndexVector ensureClusterPersistence(const PointMatrix& tab_P, const IndexVector& prev_assignments, const IndexVector& curr_assignments, const PointMatrix& curr_centroids, int n, int K, float dt);
 		core::Vector3r calculateCentroidWithInclusion(const PointMatrix& tab_P, const IndexVector& assignments, int cluster_idx, int point_idx);
 	};
 

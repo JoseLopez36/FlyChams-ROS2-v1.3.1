@@ -187,6 +187,9 @@ namespace flychams::coordination
 
             // Publish assignment
             clusters_[cluster_id].assignment_pub->publish(assignment_msg);
+
+            // Log assignment
+            RCLCPP_INFO(node_->get_logger(), "Agent assignment: Cluster %s assigned to agent %s", cluster_id.c_str(), agent_id.c_str());
         }
     }
 
