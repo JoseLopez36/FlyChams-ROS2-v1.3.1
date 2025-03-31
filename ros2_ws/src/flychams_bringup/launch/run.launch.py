@@ -56,17 +56,11 @@ def generate_launch_description():
         'package',
         'coordination.yaml'
     ])
-    dashboard_path = PathJoinSubstitution([
+    simulation_path = PathJoinSubstitution([
         FindPackageShare('flychams_bringup'),
         'config',
         'package',
-        'dashboard.yaml'
-    ])
-    targets_path = PathJoinSubstitution([
-        FindPackageShare('flychams_bringup'),
-        'config',
-        'package',
-        'targets.yaml'
+        'simulation.yaml'
     ])
 
     # Set environment variable to control ROS logger output
@@ -86,6 +80,7 @@ def generate_launch_description():
     # Set default values if not present in config
     nodes = {
         # Control nodes
+        'drone_state': launch.get('drone_state', [True, 'info']),
         'drone_control': launch.get('drone_control', [True, 'info']),
         'head_control': launch.get('head_control', [True, 'info']),
         # Perception nodes
@@ -96,17 +91,36 @@ def generate_launch_description():
         'agent_analysis': launch.get('agent_analysis', [True, 'info']),
         'agent_positioning': launch.get('agent_positioning', [True, 'info']),
         'agent_tracking': launch.get('agent_tracking', [True, 'info']),
-        # Targets nodes
-        'target_state': launch.get('target_state', [True, 'info']),
-        'target_control': launch.get('target_control', [True, 'info']),
-        # Dashboard nodes
+        # Simulation nodes
         'gui_manager': launch.get('gui_manager', [True, 'info']),
         'metrics_factory': launch.get('metrics_factory', [True, 'info']),
-        'marker_factory': launch.get('marker_factory', [True, 'info'])
+        'marker_factory': launch.get('marker_factory', [True, 'info']),
+        'target_state': launch.get('target_state', [True, 'info']),
+        'target_control': launch.get('target_control', [True, 'info'])
     }
 
     # ============= CONTROL NODES =============
-    # Conditionally add Drone Controller node
+    # Conditionally add Drone State node
+    if nodes['drone_state'][0]:
+        ld.append(
+            Node(
+                package='flychams_control',
+                executable='drone_state_node',
+                name='drone_state_node',
+                output='screen',
+                namespace='flychams',
+                arguments=['--ros-args', '--log-level', nodes['drone_state'][1]],
+                parameters=[
+                    system_path, 
+                    topics_path, 
+                    frames_path, 
+                    control_path,
+                    {'use_sim_time': True}
+                ]
+            )
+        )
+        
+    # Conditionally add Drone Control node
     if nodes['drone_control'][0]:
         ld.append(
             Node(
@@ -126,7 +140,7 @@ def generate_launch_description():
             )
         )
 
-    # Conditionally add Head Controller node
+    # Conditionally add Head Control node
     if nodes['head_control'][0]:
         ld.append(
             Node(
@@ -268,12 +282,12 @@ def generate_launch_description():
             )
         )
 
-    # ============= DASHBOARD NODES =============
+    # ============= SIMULATION NODES =============
     # Conditionally add GUI Manager node
     if nodes['gui_manager'][0]:
         ld.append(
             Node(
-                package='flychams_dashboard',
+                package='flychams_simulation',
                 executable='gui_manager_node',
                 name='gui_manager_node',
                 output='screen',
@@ -283,7 +297,7 @@ def generate_launch_description():
                     system_path, 
                     topics_path, 
                     frames_path, 
-                    dashboard_path,
+                    simulation_path,
                     {'use_sim_time': True}
                 ]
             )
@@ -293,7 +307,7 @@ def generate_launch_description():
     if nodes['metrics_factory'][0]:
         ld.append(
             Node(
-                package='flychams_dashboard',
+                package='flychams_simulation',
                 executable='metrics_factory_node',
                 name='metrics_factory_node',
                 output='screen',
@@ -303,7 +317,7 @@ def generate_launch_description():
                     system_path, 
                     topics_path, 
                     frames_path, 
-                    dashboard_path,
+                    simulation_path,
                     {'use_sim_time': True}
                 ]
             )
@@ -313,7 +327,7 @@ def generate_launch_description():
     if nodes['marker_factory'][0]:
         ld.append(
             Node(
-                package='flychams_dashboard',
+                package='flychams_simulation',
                 executable='marker_factory_node',
                 name='marker_factory_node',
                 output='screen',
@@ -323,18 +337,17 @@ def generate_launch_description():
                     system_path, 
                     topics_path, 
                     frames_path, 
-                    dashboard_path,
+                    simulation_path,
                     {'use_sim_time': True}
                 ]
             )
         )
 
-    # ============= TARGETS NODES =============
     # Conditionally add Target State node
     if nodes['target_state'][0]:
         ld.append(
             Node(
-                package='flychams_targets',
+                package='flychams_simulation',
                 executable='target_state_node',
                 name='target_state_node',
                 output='screen',
@@ -344,7 +357,7 @@ def generate_launch_description():
                     system_path, 
                     topics_path, 
                     frames_path, 
-                    targets_path,
+                    simulation_path,
                     {'use_sim_time': True}
                 ]
             )
@@ -354,7 +367,7 @@ def generate_launch_description():
     if nodes['target_control'][0]:
         ld.append(
             Node(
-                package='flychams_targets',
+                package='flychams_simulation',
                 executable='target_control_node',
                 name='target_control_node',
                 output='screen',
@@ -364,7 +377,7 @@ def generate_launch_description():
                     system_path, 
                     topics_path, 
                     frames_path, 
-                    targets_path,
+                    simulation_path,
                     {'use_sim_time': True}
                 ]
             )

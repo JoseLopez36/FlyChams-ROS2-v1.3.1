@@ -33,6 +33,29 @@ namespace flychams::control
 
     public: // Types
         using SharedPtr = std::shared_ptr<DroneState>;
+        struct Agent
+        {
+            // Odometry data
+            core::OdometryMsg odom;
+            bool has_odom;
+            // Status data
+            core::AgentStatus status;
+            // Status message
+            core::AgentStatusMsg status_msg;
+            // Position message
+            core::PointStampedMsg position_msg;
+            // Subscriber
+            core::SubscriberPtr<core::OdometryMsg> odom_sub;
+            // Publishers
+            core::PublisherPtr<core::AgentStatusMsg> status_pub;
+            core::PublisherPtr<core::PointStampedMsg> position_pub;
+            // Constructor
+            Agent()
+                : odom(), has_odom(false), status(), status_msg(), position_msg(), odom_sub(),
+                status_pub(), position_pub()
+            {
+            }
+        };
 
     private: // Parameters
         core::ID agent_id_;
@@ -50,21 +73,15 @@ namespace flychams::control
         float cmd_timeout_;
 
     private: // Data
-        // Current status
-        core::AgentStatus curr_status_;
-        float status_duration_;
-        // Current position
-        core::PointMsg curr_position_;
-        bool has_position_;
-        // Messages
-        core::AgentStatusMsg status_msg_;
-        core::PointStampedMsg position_msg_;
+        // Agent
+        Agent agent_;
         // Time step
+        float status_duration_;
         core::Time last_update_time_;
 
     public: // Public methods
         // Status getter
-        const core::AgentStatus getStatus() const { return curr_status_; }
+        core::AgentStatus getStatus() const { return agent_.status; }
         // Status transition requests
         bool requestDisarm();
         bool requestArm();
@@ -78,10 +95,10 @@ namespace flychams::control
 
     private: // State management
         void update();
+
+    private: // State methods
         void setStatus(const core::AgentStatus& new_status);
         bool isValid(const core::AgentStatus& from, const core::AgentStatus& to) const;
-
-    private: // State handlers
         void handleIdle();
         void handleDisarmed();
         void handleArmed();
@@ -94,14 +111,7 @@ namespace flychams::control
         void handleLanded();
         void handleError();
 
-    private:
-        // Callback group
-        core::CallbackGroupPtr callback_group_;
-        // Subscriber
-        core::SubscriberPtr<core::OdometryMsg> odom_sub_;
-        // Publishers
-        core::PublisherPtr<core::AgentStatusMsg> status_pub_;
-        core::PublisherPtr<core::PointStampedMsg> position_pub_;
+    private: // ROS components
         // Timer
         core::TimerPtr update_timer_;
     };

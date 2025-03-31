@@ -38,7 +38,6 @@ namespace flychams::bringup
 
 	public: // Methods
 		const core::IDs& getClusters() const { return clusters_; }
-		void spawnClusters();
 	};
 
 } // namespace flychams::bringup

@@ -4,6 +4,7 @@
 # Log levels: debug, info, warn, error, fatal
 
 # Control nodes
+drone_state: [true, 'error']
 drone_control: [true, 'error']
 head_control: [true, 'error']
 
@@ -17,11 +18,9 @@ agent_analysis: [true, 'error']
 agent_positioning: [true, 'error']
 agent_tracking: [true, 'error']
 
-# Targets nodes
-target_state: [true, 'error']
-target_control: [true, 'error']
-
-# Dashboard nodes
+# Simulation nodes
 gui_manager: [true, 'error']
 metrics_factory: [true, 'error']
 marker_factory: [true, 'error']
+target_state: [true, 'error']
+target_control: [true, 'error']

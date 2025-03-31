@@ -49,6 +49,7 @@ Setup nodes are responsible for initializing the system and preparing it for run
 Runtime nodes are launched by the `run.launch.py` file and perform the core functionality of the system:
 
 1. **Control Nodes** (from flychams_control package):
+   - `drone_state:` Manages the state of the drone
    - `drone_control:` Controls the movement of aerial agents
    - `head_control:` Controls the heads of the agents
 
@@ -62,14 +63,12 @@ Runtime nodes are launched by the `run.launch.py` file and perform the core func
    - `agent_positioning:` Determines optimal agent positions
    - `agent_tracking:` Manages tracking of clusters by agents
 
-4. **Target Nodes** (from flychams_targets package):
-   - `target_state:` Manages target state (for debugging)
-   - `target_control:` Manages target movement and behavior
-
-5. **Dashboard Nodes** (from flychams_dashboard package):
+4. **Simulation Nodes** (from flychams_simulation package):
    - `gui_manager:` Provides user interface for system monitoring and control
    - `metrics_factory:` Creates system metrics for plotting (e.g. in PlotJuggler)
    - `marker_factory:` Creates RViz2 markers for visualization
+   - `target_state:` Manages target state (ground truth) in simulation
+   - `target_control:` Manages target movement and behavior in simulation
 
 ## Usage
 
@@ -115,6 +114,7 @@ ros2 launch flychams_bringup run.launch.py agent_tracking:=False
 Configuration files are stored in the `config` directory and organized by category:
 
 - `core/` - Core system configuration
+  - `launch.yaml` - Launch configuration for the different nodes
   - `system.yaml` - General simulation parameters (e.g. simulation speed, paths to configuration files, etc.)
   - `topics.yaml` - Topic naming configuration
   - `frames.yaml` - Frame ID configuration
@@ -123,7 +123,6 @@ Configuration files are stored in the `config` directory and organized by catego
   - `control/` - Control nodes configuration
   - `perception/` - Perception nodes configuration
   - `coordination/` - Coordination nodes configuration
-  - `targets/` - Target nodes configuration
-  - `dashboard/` - Dashboard nodes configuration
+  - `simulation/` - Simulation nodes configuration
 
 You can customize these files to change system behavior without modifying code.

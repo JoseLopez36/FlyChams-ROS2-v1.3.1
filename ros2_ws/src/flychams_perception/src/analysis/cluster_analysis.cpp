@@ -115,9 +115,6 @@ namespace flychams::perception
 		}
 
 		// Iterate over all clusters
-		std::vector<core::ID> cluster_ids;
-		std::vector<core::PointMsg> cluster_centers;
-		std::vector<float> cluster_radii;
 		for (auto& [cluster_id, cluster] : clusters_)
 		{
 			// Assign targets to each cluster
@@ -133,15 +130,7 @@ namespace flychams::perception
 
 			// Publish cluster geometry
 			cluster.geometry_pub->publish(cluster.geometry);
-
-			// Add cluster to update vector
-			cluster_ids.push_back(cluster_id);
-			cluster_centers.push_back(cluster.geometry.center);
-			cluster_radii.push_back(cluster.geometry.radius);
 		}
-
-		// Update clusters in simulation
-		framework_tools_->updateClusterGroup(cluster_ids, cluster_centers, cluster_radii);
 	}
 
 	// ════════════════════════════════════════════════════════════════════════════

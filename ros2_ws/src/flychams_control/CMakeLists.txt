@@ -13,8 +13,8 @@ find_package(flychams_core REQUIRED)
 
 # Create control library
 set(CONTROL_SRC
-  src/drone/drone_motion.cpp
   src/drone/drone_state.cpp
+  src/drone/drone_control.cpp
   src/head/head_control.cpp
 )
 add_library(${PROJECT_NAME} SHARED ${CONTROL_SRC})
@@ -32,6 +32,11 @@ ament_target_dependencies(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME}
   rclcpp::rclcpp
 )
+
+# Create executable for drone state node
+add_executable(drone_state_node src/drone_state_node.cpp)
+target_link_libraries(drone_state_node ${PROJECT_NAME})
+ament_target_dependencies(drone_state_node rclcpp flychams_core)
 
 # Create executable for drone control node
 add_executable(drone_control_node src/drone_control_node.cpp)
@@ -52,7 +57,7 @@ install(TARGETS ${PROJECT_NAME}
   INCLUDES DESTINATION include
 )
 
-install(TARGETS drone_control_node head_control_node
+install(TARGETS drone_state_node drone_control_node head_control_node
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 

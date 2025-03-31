@@ -38,7 +38,6 @@ namespace flychams::bringup
 
 	public: // Methods
 		const core::IDs& getTargets() const { return targets_; }
-		void spawnTargets();
 	};
 
 } // namespace flychams::bringup

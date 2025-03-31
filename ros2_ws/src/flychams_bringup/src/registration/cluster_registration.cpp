@@ -41,43 +41,4 @@ namespace flychams::bringup
 		clusters_.clear();
 	}
 
-	// ════════════════════════════════════════════════════════════════════════════
-	// METHODS
-	// ════════════════════════════════════════════════════════════════════════════
-
-	void ClusterRegistration::spawnClusters()
-	{
-		// Get spawn parameters
-		std::vector<PointMsg> centers;
-		std::vector<float> radii;
-		std::vector<ColorMsg> highlight_colors;
-		int cluster_index = 0;
-		for (const auto& cluster_id : clusters_)
-		{
-			// Position
-			PointMsg center;
-			center.x = -500.0f - 10.0f * cluster_index; // Position away from origin
-			center.y = -500.0f - 10.0f * cluster_index;
-			center.z = 10.0f;
-			centers.push_back(center);
-
-			// Radius
-			radii.push_back(1.0f);
-
-			// Highlight color
-			ColorMsg highlight_color;
-			highlight_color.r = 0.0f;
-			highlight_color.g = 1.0f;
-			highlight_color.b = 1.0f;
-			highlight_color.a = 0.005f;
-			highlight_colors.push_back(highlight_color);
-
-			// Increment cluster index
-			cluster_index++;
-		}
-
-		// Add targets to simulation
-		framework_tools_->addClusterGroup(clusters_, centers, radii, true, highlight_colors);
-	}
-
 } // namespace flychams::bringup

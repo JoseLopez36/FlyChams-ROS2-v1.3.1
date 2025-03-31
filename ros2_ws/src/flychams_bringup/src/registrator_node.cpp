@@ -85,19 +85,6 @@ public: // Constructor/Destructor
             registerElement(target_id, ElementType::Target);
         for (const auto& cluster_id : clusters_)
             registerElement(cluster_id, ElementType::Cluster);
-
-        // Wait 100 ms to ensure external tools are initialized
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-        // Destroy existing targets and clusters
-        framework_tools_->removeAllTargets();
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        framework_tools_->removeAllClusters();
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
-        // Spawn targets and clusters
-        target_registration_->spawnTargets();
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
-        cluster_registration_->spawnClusters();
     }
 
     void onShutdown() override
