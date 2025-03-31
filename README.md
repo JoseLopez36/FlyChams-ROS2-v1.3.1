@@ -30,8 +30,7 @@ The project leverages:
 | `flychams_control`      | Control algorithms for aerial agents            |
 | `flychams_perception`   | Perception algorithms for clustering targets    |
 | `flychams_coordination` | Coordination algorithms for multi-agent systems |
-| `flychams_targets`      | Target management and trajectory control        |
-| `flychams_dashboard`    | Visualization and monitoring tools              |
+| `flychams_simulation`   | Manager for simulation framework                |
 | `flychams_interfaces`   | Custom message and service for FlyChams         |
 | `airsim_wrapper`        | ROS2 interface to the AirSim simulator          |
 | `airsim_interfaces`     | Custom message and service for AirSim           |
@@ -236,16 +235,15 @@ ros2 launch flychams_bringup rosbag.launch.py
 
 The system is mainly configured using an Excel spreadsheet (`Configuration.xlsx`). This file includes:
 
-1. **Missions** - General mission characteristics
-2. **Simulations** - Simulation environment details
-3. **Maps** - Map definitions
-4. **Targets** - Target definitions and trajectories
-5. **Agents** - Agent configurations
-6. **AgentHeads** - Head (Gimbal/Camera) specifications
-7. **DroneModels** - UAV model specifications
-8. **GimbalModels** - Gimbal model specifications
-9. **GimbalLinks** - Gimbal link specifications
-10. **CameraModels** - Camera model specifications
+1. **Mission** - General mission characteristics and selection
+2. **Environment** - Environment definitions
+3. **Target** - Target definitions and trajectories
+4. **Agent** - Agent configurations
+5. **Tracking** - Tracking system settings
+6. **Head** - Head (Gimbal/Camera) specifications
+7. **Drone** - UAV model specifications
+8. **Gimbal** - Gimbal model specifications
+9. **Camera** - Camera model specifications
 
 ## Directory Structure
 
@@ -261,8 +259,7 @@ FlyChams-ROS2/
 │       ├── flychams_control/       # Agent control
 │       ├── flychams_perception/    # Target perception
 │       ├── flychams_coordination/  # Multi-agent coordination
-│       ├── flychams_targets/       # Target management
-│       ├── flychams_dashboard/     # Visualization and monitoring
+│       ├── flychams_simulation/    # Simulation manager
 │       ├── flychams_interfaces/    # Custom message and service for FlyChams
 │       ├── airsim_interfaces/      # Custom message and service for AirSim wrapper
 │       └── airsim_wrapper/         # ROS2 AirSim wrapper
