@@ -318,7 +318,7 @@ namespace flychams::core
             return params;
         }
 
-        const WindowParameters getCentralWindowParameters(const std::string& agent_id, const CameraParameters& central_params) const
+        const WindowParameters getCentralWindowParameters(const std::string& agent_id, const float& lambda, const CameraParameters& central_params) const
         {
             WindowParameters params;
 
@@ -334,9 +334,9 @@ namespace flychams::core
             params.tracking_height = params.full_height;
 
             // Calculate window parameters
-            params.lambda_min = 0.0f;
-            params.lambda_max = 1.0f;
-            params.lambda_ref = 1.0f;
+            params.lambda_min = lambda;
+            params.lambda_max = lambda;
+            params.lambda_ref = lambda;
 
             // Get rho
             params.rho = central_params.rho;
@@ -445,7 +445,7 @@ namespace flychams::core
             // Get central head parameters
             const auto& central_head = getCentralHead(agent_id);
             params.central_camera_params = getCameraParameters(agent_id, central_head->id);
-            params.central_window_params = getCentralWindowParameters(agent_id, params.central_camera_params);
+            params.central_window_params = getCentralWindowParameters(agent_id, 0.167f, params.central_camera_params);
             params.central_projection_params = getProjectionParameters(agent_id, params.central_window_params);
 
             // Proceed based on tracking mode
