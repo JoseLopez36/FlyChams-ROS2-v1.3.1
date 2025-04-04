@@ -218,7 +218,7 @@ namespace flychams::core
         // Helper method: Populate cameras
         static void populateInternalCameras(const ID& agent_id, const MissionConfigPtr& config_ptr, nlohmann::ordered_json& cameras)
         {
-            for (const auto& [head_id, head_ptr] : config_ptr->agent_team[agent_id]->head_payload)
+            for (const auto& [head_id, head_ptr] : config_ptr->agent_team[agent_id]->head_set)
             {
                 // Get relevant config
                 const auto& gimbal = head_ptr->gimbal;

@@ -176,28 +176,28 @@ namespace flychams::core
     // AGENT TYPES: Agent-related configuration types
     // ════════════════════════════════════════════════════════════════
 
-    struct TrackingConfig
+    struct WindowConfig
     {
         // Identifiers
         ID id;
         Name name;
+        ID window_set_id;
 
         // Internal config
-        TrackingMode mode;
-        float min_target_size;
-        float max_target_size;
-        float ref_target_size;
-        int num_windows;
-        Vector2i scene_resolution;
-        Vector2i tracking_resolution;
+        float min_lambda;
+        float max_lambda;
+        float ref_lambda;
+        Vector2i resolution;
     };
+    using WindowConfigPtr = std::shared_ptr<WindowConfig>;
+    using WindowSetConfig = std::unordered_map<ID, WindowConfigPtr>;
 
     struct HeadConfig
     {
         // Identifiers
         ID id;
         Name name;
-        ID head_payload_id;
+        ID head_set_id;
 
         // Internal config
         ID gimbal_id;
@@ -214,7 +214,20 @@ namespace flychams::core
         CameraConfig camera;
     };
     using HeadConfigPtr = std::shared_ptr<HeadConfig>;
-    using HeadPayloadConfig = std::unordered_map<ID, HeadConfigPtr>;
+    using HeadSetConfig = std::unordered_map<ID, HeadConfigPtr>;
+
+    struct TrackingConfig
+    {
+        // Identifiers
+        ID id;
+        Name name;
+
+        // Internal config
+        TrackingMode mode;
+        float min_target_size;
+        float max_target_size;
+        float ref_target_size;
+    };
 
     struct AgentConfig
     {
@@ -225,7 +238,8 @@ namespace flychams::core
 
         // Internal config
         ID tracking_id;
-        ID head_payload_id;
+        ID head_set_id;
+        ID window_set_id;
         ID drone_id;
         Vector3r position;
         Vector3r orientation;
@@ -235,8 +249,9 @@ namespace flychams::core
 
         // External config
         DroneConfig drone;
-        HeadPayloadConfig head_payload;
         TrackingConfig tracking;
+        HeadSetConfig head_set;
+        WindowSetConfig window_set;
     };
     using AgentConfigPtr = std::shared_ptr<AgentConfig>;
     using AgentTeamConfig = std::unordered_map<ID, AgentConfigPtr>;

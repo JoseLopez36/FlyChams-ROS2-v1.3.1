@@ -22,7 +22,7 @@ namespace flychams::coordination
 
         // Initialize head setpoint message
         agent_.head_setpoints.header = RosUtils::createHeader(node_, transform_tools_->getGlobalFrame());
-        for (const auto& camera : tracking_params_.camera_params)
+        for (const auto& camera : tracking_params_.tracking_camera_params)
         {
             agent_.head_setpoints.head_ids.push_back(camera.id);
             agent_.head_setpoints.focal_setpoints.push_back(0.0f);
@@ -32,8 +32,8 @@ namespace flychams::coordination
 
         // Initialize window setpoint message
         agent_.window_setpoints.header = RosUtils::createHeader(node_, transform_tools_->getGlobalFrame());
-        agent_.window_setpoints.camera_id = tracking_params_.central_params.id;
-        for (const auto& window : tracking_params_.window_params)
+        agent_.window_setpoints.camera_id = tracking_params_.central_camera_params.id;
+        for (const auto& window : tracking_params_.tracking_window_params)
         {
             agent_.window_setpoints.crop_setpoints.push_back(CropMsg());
             agent_.window_setpoints.resolution_factors.push_back(0.0f);
@@ -163,8 +163,8 @@ namespace flychams::coordination
         for (int i = 0; i < tracking_params_.n; i++)
         {
             // Get camera parameters
-            const auto& camera_params = tracking_params_.camera_params[i];
-            const auto& projection_params = tracking_params_.projection_params[i];
+            const auto& camera_params = tracking_params_.tracking_camera_params[i];
+            const auto& projection_params = tracking_params_.tracking_projection_params[i];
 
             // Get target position and interest radius
             const auto& z = tab_P.col(i);
@@ -190,7 +190,7 @@ namespace flychams::coordination
     void AgentTracking::computeMultiWindow(const Matrix3Xr& tab_P, const RowVectorXr& tab_r, AgentWindowSetpointsMsg& setpoints)
     {
         // Get central camera parameters
-        const auto& central_params = tracking_params_.central_params;
+        const auto& central_params = tracking_params_.central_camera_params;
 
         // Get the transform between world and central camera optical frame
         const std::string& world_frame = transform_tools_->getGlobalFrame();
@@ -202,8 +202,8 @@ namespace flychams::coordination
         for (int i = 0; i < tracking_params_.n; i++)
         {
             // Get window and central camera parameters
-            const auto& window_params = tracking_params_.window_params[i];
-            const auto& projection_params = tracking_params_.projection_params[i];
+            const auto& window_params = tracking_params_.tracking_window_params[i];
+            const auto& projection_params = tracking_params_.tracking_projection_params[i];
 
             // Get target position and interest radius
             const auto& z = tab_P.col(i);

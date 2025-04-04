@@ -336,11 +336,13 @@ namespace flychams::core
 
 						agent->tracking_id = getCellValue<std::string>(row.findCell(4));
 
-						agent->head_payload_id = getCellValue<std::string>(row.findCell(5));
+						agent->head_set_id = getCellValue<std::string>(row.findCell(5));
 
-						agent->drone_id = getCellValue<std::string>(row.findCell(6));
+						agent->window_set_id = getCellValue<std::string>(row.findCell(6));
 
-						auto position_str = getCellValue<std::string>(row.findCell(7));
+						agent->drone_id = getCellValue<std::string>(row.findCell(7));
+
+						auto position_str = getCellValue<std::string>(row.findCell(8));
 						auto position_vec = parseVector<float>(position_str, 3, ',');
 						if (position_vec.size() >= 3)
 						{
@@ -349,7 +351,7 @@ namespace flychams::core
 							agent->position(2) = position_vec[2];
 						}
 
-						auto orientation_str = getCellValue<std::string>(row.findCell(8));
+						auto orientation_str = getCellValue<std::string>(row.findCell(9));
 						auto orientation_vec = parseVector<float>(orientation_str, 3, ',');
 						if (orientation_vec.size() >= 3)
 						{
@@ -358,20 +360,23 @@ namespace flychams::core
 							agent->orientation(2) = MathUtils::degToRad(orientation_vec[2]);
 						}
 
-						agent->max_altitude = getCellValue<float>(row.findCell(9));
+						agent->max_altitude = getCellValue<float>(row.findCell(10));
 
-						agent->safety_radius = getCellValue<float>(row.findCell(10));
+						agent->safety_radius = getCellValue<float>(row.findCell(11));
 
-						agent->battery_capacity = getCellValue<float>(row.findCell(11));
+						agent->battery_capacity = getCellValue<float>(row.findCell(12));
 
 						// Parse tracking
 						parseTracking(book, agent);
 
+						// Parse head set
+						parseHeadSet(book, agent);
+
+						// Parse window set
+						parseWindowSet(book, agent);
+
 						// Parse drone model
 						parseDroneModel(book, agent);
-
-						// Parse head payload
-						parseHeadPayload(book, agent);
 
 						// Store setting
 						config_ptr->agent_team.insert({ agent->id, agent });
@@ -426,24 +431,6 @@ namespace flychams::core
 
 						tracking.ref_target_size = getCellValue<float>(row.findCell(6));
 
-						tracking.num_windows = getCellValue<int>(row.findCell(7));
-
-						auto scene_resolution_str = getCellValue<std::string>(row.findCell(8));
-						auto scene_resolution_vec = parseVector<int>(scene_resolution_str, 2, 'x');
-						if (scene_resolution_vec.size() >= 2)
-						{
-							tracking.scene_resolution(0) = scene_resolution_vec[0];
-							tracking.scene_resolution(1) = scene_resolution_vec[1];
-						}
-
-						auto tracking_resolution_str = getCellValue<std::string>(row.findCell(9));
-						auto tracking_resolution_vec = parseVector<int>(tracking_resolution_str, 2, 'x');
-						if (tracking_resolution_vec.size() >= 2)
-						{
-							tracking.tracking_resolution(0) = tracking_resolution_vec[0];
-							tracking.tracking_resolution(1) = tracking_resolution_vec[1];
-						}
-
 						// Only first found tracking is loaded
 						agent_ptr->tracking = tracking;
 						return;
@@ -456,7 +443,7 @@ namespace flychams::core
 			}
 		}
 
-		static void parseHeadPayload(OpenXLSX::XLWorkbook& book, AgentConfigPtr agent_ptr)
+		static void parseHeadSet(OpenXLSX::XLWorkbook& book, AgentConfigPtr agent_ptr)
 		{
 			// Open Head sheet
 			auto sheet = book.worksheet("Head");
@@ -472,12 +459,12 @@ namespace flychams::core
 				{
 					// Verify row is not empty
 					if (isCellEmpty(row.findCell(1)))
-						return; // Return filled head payload
+						return; // Return filled head set
 
-					// Read foreign key and verify if the head belongs to the payload selected
+					// Read foreign key and verify if the head belongs to the head set selected
 					std::string FK = getCellValue<std::string>(row.findCell(3));
 
-					if (FK == agent_ptr->head_payload_id)
+					if (FK == agent_ptr->head_set_id)
 					{
 						// Create instance
 						HeadConfigPtr head = std::make_shared<HeadConfig>();
@@ -487,7 +474,7 @@ namespace flychams::core
 
 						head->name = getCellValue<std::string>(row.findCell(2));
 
-						head->head_payload_id = FK;
+						head->head_set_id = FK;
 
 						head->gimbal_id = getCellValue<std::string>(row.findCell(4));
 
@@ -527,12 +514,70 @@ namespace flychams::core
 						parseCameraModel(book, head);
 
 						// Store setting
-						agent_ptr->head_payload.insert({ head->id, head });
+						agent_ptr->head_set.insert({ head->id, head });
 					}
 				}
 				catch (const std::exception& e)
 				{
 					throw std::runtime_error("Error loading head config at row " + std::to_string(row.rowNumber()) + ": " + e.what());
+				}
+			}
+		}
+
+		static void parseWindowSet(OpenXLSX::XLWorkbook& book, AgentConfigPtr agent_ptr)
+		{
+			// Open Window sheet
+			auto sheet = book.worksheet("Window");
+
+			// Iterate through data rows
+			for (auto& row : sheet.rows())
+			{
+				// Skip first two header rows
+				if (row.rowNumber() < 3)
+					continue;
+
+				try
+				{
+					// Verify row is not empty
+					if (isCellEmpty(row.findCell(1)))
+						return; // Return filled window set
+
+					// Read foreign key and verify if the window belongs to the window set selected
+					std::string FK = getCellValue<std::string>(row.findCell(3));
+
+					if (FK == agent_ptr->window_set_id)
+					{
+						// Create instance
+						WindowConfigPtr window = std::make_shared<WindowConfig>();
+
+						// Populate fields
+						window->id = getCellValue<std::string>(row.findCell(1));
+
+						window->name = getCellValue<std::string>(row.findCell(2));
+
+						window->window_set_id = FK;
+
+						window->min_lambda = getCellValue<float>(row.findCell(4));
+
+						window->max_lambda = getCellValue<float>(row.findCell(5));
+
+						window->ref_lambda = getCellValue<float>(row.findCell(6));
+
+						auto resolution_str = getCellValue<std::string>(row.findCell(7));
+						auto resolution_vec = parseVector<int>(resolution_str, 2, 'x');
+						if (resolution_vec.size() >= 2)
+						{
+							window->resolution(0) = resolution_vec[0];
+							window->resolution(1) = resolution_vec[1];
+						}
+
+						// Store setting
+						agent_ptr->window_set.insert({ window->id, window });
+					}
+				}
+				catch (const std::exception& e)
+				{
+					throw std::runtime_error("Error loading window config at row " + std::to_string(row.rowNumber()) + ": " + e.what());
 				}
 			}
 		}

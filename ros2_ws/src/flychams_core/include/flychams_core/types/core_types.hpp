@@ -351,6 +351,8 @@ namespace flychams::core
      */
     struct WindowParameters
     {
+        // Window ID
+        std::string id;
         // Resolution factors (0-1)
         float lambda_min;
         float lambda_max;
@@ -358,9 +360,6 @@ namespace flychams::core
         // Full resolution (pix)
         int full_width;
         int full_height;
-        // Scene resolution (pix)
-        int scene_width;
-        int scene_height;
         // Tracking resolution (pix)
         int tracking_width;
         int tracking_height;
@@ -389,11 +388,13 @@ namespace flychams::core
     struct TrackingParameters
     {
         TrackingMode mode;
-        int n;                                               // Number of tracking heads or windows
-        CameraParameters central_params;                     // Camera parameters for central head
-        std::vector<CameraParameters> camera_params;         // Camera parameters for each tracking head
-        std::vector<WindowParameters> window_params;         // Window parameters for each tracking window
-        std::vector<ProjectionParameters> projection_params; // Projection parameters for each tracking head or window
+        int n;                                                          // Number of tracking heads or windows
+        CameraParameters central_camera_params;                         // Camera parameters for central head
+        WindowParameters central_window_params;                         // Window parameters for central head
+        ProjectionParameters central_projection_params;                 // Projection parameters for central head
+        std::vector<CameraParameters> tracking_camera_params;           // Camera parameters for each tracking head
+        std::vector<WindowParameters> tracking_window_params;           // Window parameters for each tracking window
+        std::vector<ProjectionParameters> tracking_projection_params;   // Projection parameters for each tracking head or window
     };
 
     /**

@@ -147,8 +147,8 @@ namespace flychams::coordination
             for (int i = 0; i < data_struct->params.n; i++)
             {
                 J1 += calculateCameraJ1(data_struct->tab_P.col(i), data_struct->tab_r(i), xVec,
-                    data_struct->params.camera_params[i],
-                    data_struct->params.projection_params[i]);
+                    data_struct->params.tracking_camera_params[i],
+                    data_struct->params.tracking_projection_params[i]);
             }
             break;
 
@@ -156,15 +156,28 @@ namespace flychams::coordination
             for (int i = 0; i < data_struct->params.n; i++)
             {
                 J1 += calculateWindowJ1(data_struct->tab_P.col(i), data_struct->tab_r(i), xVec,
-                    data_struct->params.central_params,
-                    data_struct->params.window_params[i],
-                    data_struct->params.projection_params[i]);
+                    data_struct->params.central_camera_params,
+                    data_struct->params.tracking_window_params[i],
+                    data_struct->params.tracking_projection_params[i]);
             }
             break;
 
         default:
             throw std::invalid_argument("Invalid tracking mode");
         }
+
+        // Account for the central window cost to ensure targets are inside the bounds of the central window
+        // We use the mean of the centers and the largest possible radius
+        Vector3r z_mean = data_struct->tab_P.rowwise().mean();
+        float r_max = 0.0f;
+        for (int i = 0; i < data_struct->params.n; i++)
+        {
+            r_max = std::max(r_max, (z_mean - data_struct->tab_P.col(i)).norm() + data_struct->tab_r(i));
+        }
+        J1 += calculateWindowJ1(z_mean, r_max, xVec,
+            data_struct->params.central_camera_params,
+            data_struct->params.central_window_params,
+            data_struct->params.central_projection_params);
 
         // Return the value of J1
         return static_cast<double>(J1);
@@ -184,8 +197,8 @@ namespace flychams::coordination
             for (int i = 0; i < data_struct->params.n; i++)
             {
                 J2 += calculateCameraJ2(data_struct->tab_P.col(i), data_struct->tab_r(i), xVec, data_struct->xHat,
-                    data_struct->params.camera_params[i],
-                    data_struct->params.projection_params[i]);
+                    data_struct->params.tracking_camera_params[i],
+                    data_struct->params.tracking_projection_params[i]);
             }
             break;
 
@@ -193,15 +206,28 @@ namespace flychams::coordination
             for (int i = 0; i < data_struct->params.n; i++)
             {
                 J2 += calculateWindowJ2(data_struct->tab_P.col(i), data_struct->tab_r(i), xVec, data_struct->xHat,
-                    data_struct->params.central_params,
-                    data_struct->params.window_params[i],
-                    data_struct->params.projection_params[i]);
+                    data_struct->params.central_camera_params,
+                    data_struct->params.tracking_window_params[i],
+                    data_struct->params.tracking_projection_params[i]);
             }
             break;
 
         default:
             throw std::invalid_argument("Invalid tracking mode");
         }
+
+        // Account for the central window cost to ensure targets are inside the bounds of the central window
+        // We use the mean of the centers and the largest possible radius
+        Vector3r z_mean = data_struct->tab_P.rowwise().mean();
+        float r_max = 0.0f;
+        for (int i = 0; i < data_struct->params.n; i++)
+        {
+            r_max = std::max(r_max, (z_mean - data_struct->tab_P.col(i)).norm() + data_struct->tab_r(i));
+        }
+        J2 += calculateWindowJ2(z_mean, r_max, xVec, data_struct->xHat,
+            data_struct->params.central_camera_params,
+            data_struct->params.central_window_params,
+            data_struct->params.central_projection_params);
 
         // Return the value of J2
         return static_cast<double>(J2);
