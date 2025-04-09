@@ -307,7 +307,7 @@ namespace flychams::simulation
         x_marker.pose.position.z = 0.0f;
         x_marker.pose.orientation.w = 1.0f;
         // Create the X shape using line segments
-        float half_size = BASE_MARKER_SIZE * 0.5f;
+        float half_size = BASE_MARKER_SIZE * 0.3f;
         PointMsg p1, p2, p3, p4;
         // First line of X (top-left to bottom-right)
         p1.x = 0.0f - half_size;
@@ -334,7 +334,7 @@ namespace flychams::simulation
         x_marker.color.r = 1.0f;
         x_marker.color.g = 1.0f;
         x_marker.color.b = 0.0f;
-        x_marker.color.a = BASE_MARKER_ALPHA;
+        x_marker.color.a = 0.35f;
         // Add marker to array
         markers.markers.push_back(x_marker);
 

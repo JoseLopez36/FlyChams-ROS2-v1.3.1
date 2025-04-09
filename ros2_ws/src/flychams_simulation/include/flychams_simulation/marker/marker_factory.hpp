@@ -80,8 +80,8 @@ namespace flychams::simulation
     private: // Parameters
         float update_rate_;
         // Marker constants
-        static constexpr float BASE_MARKER_SIZE = 3.5f;
-        static constexpr float BASE_LINE_WIDTH = 0.8f;
+        static constexpr float BASE_MARKER_SIZE = 2.5f;
+        static constexpr float BASE_LINE_WIDTH = 0.6f;
         static constexpr float BASE_MARKER_ALPHA = 0.8f;
 
     private: // Data
