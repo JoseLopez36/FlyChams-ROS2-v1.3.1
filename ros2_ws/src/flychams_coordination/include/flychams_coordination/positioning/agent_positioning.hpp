@@ -67,10 +67,11 @@ namespace flychams::coordination
     private: // Parameters
         core::ID agent_id_;
         float update_rate_;
-        // Positioning parameters
+        // Cost parameters
         float min_height_;
         float max_height_;
-        core::TrackingParameters tracking_params_;
+        PositionSolver::CostParameters central_cost_params_;
+        std::vector<PositionSolver::CostParameters> tracking_cost_params_;
 
     private: // Data
         // Agent
@@ -85,6 +86,10 @@ namespace flychams::coordination
 
     private: // Positioning management
         void update();
+
+    private: // Positioning methods
+        PositionSolver::CostParameters createCentralCostParameters(const core::TrackingParameters& tracking_params);
+        std::vector<PositionSolver::CostParameters> createTrackingCostParameters(const core::TrackingParameters& tracking_params);
 
     private: // ROS components
         // Timer

@@ -168,11 +168,11 @@
                     "CameraVisible": true
                 },
                 "SCENARIOCAM": {
-                    "X": -70.0,
-                    "Y": 70.0,
-                    "Z": -60.0,
+                    "X": -80.0,
+                    "Y": 80.0,
+                    "Z": -70.0,
                     "Roll": 0.0,
-                    "Pitch": -20.0,
+                    "Pitch": -15.0,
                     "Yaw": -45.0,
                     "External": true
                 },

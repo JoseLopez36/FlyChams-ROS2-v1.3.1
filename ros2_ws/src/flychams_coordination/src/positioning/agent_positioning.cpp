@@ -37,9 +37,11 @@ namespace flychams::coordination
         // Get positioning parameters
         const auto& config_ptr = config_tools_->getConfig();
         const auto& agent_ptr = config_tools_->getAgent(agent_id_);
+        const auto& tracking_params = config_tools_->getTrackingParameters(agent_id_);
         min_height_ = config_ptr->altitude_constraint(0);
         max_height_ = std::min(config_ptr->altitude_constraint(1), agent_ptr->max_altitude);
-        tracking_params_ = config_tools_->getTrackingParameters(agent_id_);
+        central_cost_params_ = createCentralCostParameters(tracking_params);
+        tracking_cost_params_ = createTrackingCostParameters(tracking_params);
 
         // Create subscribers for agent status, position and clusters
         agent_.status_sub = topic_tools_->createAgentStatusSubscriber(agent_id_,
@@ -128,12 +130,107 @@ namespace flychams::coordination
         }
 
         // Solve agent positioning
-        Vector3r optimal_position = solver_.run(tab_P, tab_r, x0, min_height_, max_height_, tracking_params_);
+        Vector3r optimal_position = solver_.run(tab_P, tab_r, x0, min_height_, max_height_, central_cost_params_, tracking_cost_params_);
 
         // Publish position
         agent_.setpoint.header.stamp = RosUtils::now(node_);
         RosUtils::toMsg(optimal_position, agent_.setpoint.point);
         agent_.setpoint_pub->publish(agent_.setpoint);
+    }
+
+    // ════════════════════════════════════════════════════════════════════════════
+    // POSITIONING: Positioning methods
+    // ════════════════════════════════════════════════════════════════════════════
+
+    PositionSolver::CostParameters AgentPositioning::createCentralCostParameters(const TrackingParameters& tracking_params)
+    {
+        PositionSolver::CostParameters params;
+
+        // Tracking mode
+        params.mode = tracking_params.mode;
+
+        // Camera parameters
+        params.f_min = tracking_params.central_head_params.f_min;
+        params.f_max = tracking_params.central_head_params.f_max;
+        params.f_ref = tracking_params.central_head_params.f_ref;
+
+        // Window parameters
+        params.lambda_min = tracking_params.central_window_params.lambda_min;
+        params.lambda_max = tracking_params.central_window_params.lambda_max;
+        params.lambda_ref = tracking_params.central_window_params.lambda_ref;
+        params.central_f = tracking_params.central_head_params.f_ref;
+
+        // Projection parameters
+        params.s_min = tracking_params.central_window_params.s_min;
+        params.s_max = tracking_params.central_window_params.s_max;
+        params.s_ref = tracking_params.central_window_params.s_ref;
+
+        // Cost function weights
+        // Psi
+        params.tau0 = 0.0f;
+        params.tau1 = 0.0f;
+        params.tau2 = 10.0f;
+        // Lambda
+        params.sigma0 = 0.0f;
+        params.sigma1 = 0.0f;
+        params.sigma2 = 10.0f;
+        // Gamma
+        params.mu = 0.0f;
+        params.nu = 0.0f;
+
+        return params;
+    }
+
+    std::vector<PositionSolver::CostParameters> AgentPositioning::createTrackingCostParameters(const TrackingParameters& tracking_params)
+    {
+        std::vector<PositionSolver::CostParameters> params_vector;
+        for (size_t i = 0; i < tracking_params.n; i++)
+        {
+            PositionSolver::CostParameters params;
+
+            // Tracking mode
+            params.mode = tracking_params.mode;
+
+            // Camera parameters
+            if (params.mode == TrackingMode::MultiCamera)
+            {
+                params.f_min = tracking_params.tracking_head_params[i].f_min;
+                params.f_max = tracking_params.tracking_head_params[i].f_max;
+                params.f_ref = tracking_params.tracking_head_params[i].f_ref;
+                params.s_min = tracking_params.tracking_head_params[i].s_min;
+                params.s_max = tracking_params.tracking_head_params[i].s_max;
+                params.s_ref = tracking_params.tracking_head_params[i].s_ref;
+            }
+
+            // Window parameters
+            if (params.mode == TrackingMode::MultiWindow)
+            {
+                params.central_f = tracking_params.central_head_params.f_ref;
+                params.lambda_min = tracking_params.tracking_window_params[i].lambda_min;
+                params.lambda_max = tracking_params.tracking_window_params[i].lambda_max;
+                params.lambda_ref = tracking_params.tracking_window_params[i].lambda_ref;
+                params.s_min = tracking_params.tracking_window_params[i].s_min;
+                params.s_max = tracking_params.tracking_window_params[i].s_max;
+                params.s_ref = tracking_params.tracking_window_params[i].s_ref;
+            }
+
+            // Cost function weights
+            // Psi
+            params.tau0 = 1.0f;
+            params.tau1 = 2.0f;
+            params.tau2 = 10.0f;
+            // Lambda
+            params.sigma0 = 1.0f;
+            params.sigma1 = 2.0f;
+            params.sigma2 = 10.0f;
+            // Gamma
+            params.mu = 1.0f;
+            params.nu = 1.0f;
+
+            params_vector.push_back(params);
+        }
+
+        return params_vector;
     }
 
 } // namespace flychams::coordination

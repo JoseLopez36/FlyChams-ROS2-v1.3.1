@@ -22,9 +22,9 @@ namespace flychams::coordination
 
         // Initialize head setpoint message
         agent_.head_setpoints.header = RosUtils::createHeader(node_, transform_tools_->getGlobalFrame());
-        for (const auto& camera : tracking_params_.tracking_camera_params)
+        for (const auto& head : tracking_params_.tracking_head_params)
         {
-            agent_.head_setpoints.head_ids.push_back(camera.id);
+            agent_.head_setpoints.head_ids.push_back(head.id);
             agent_.head_setpoints.focal_setpoints.push_back(0.0f);
             agent_.head_setpoints.rpy_setpoints.push_back(Vector3Msg());
             agent_.head_setpoints.projected_sizes.push_back(0.0f);
@@ -32,7 +32,7 @@ namespace flychams::coordination
 
         // Initialize window setpoint message
         agent_.window_setpoints.header = RosUtils::createHeader(node_, transform_tools_->getGlobalFrame());
-        agent_.window_setpoints.camera_id = tracking_params_.central_camera_params.id;
+        agent_.window_setpoints.camera_id = tracking_params_.central_head_params.id;
         for (const auto& window : tracking_params_.tracking_window_params)
         {
             agent_.window_setpoints.crop_setpoints.push_back(CropMsg());
@@ -136,7 +136,7 @@ namespace flychams::coordination
         // Solve tracking
         switch (tracking_params_.mode)
         {
-        case TrackingMode::MultiCameraTracking:
+        case TrackingMode::MultiCamera:
             // Compute tracking setpoints
             computeMultiCamera(tab_P, tab_r, agent_.head_setpoints);
 
@@ -144,7 +144,7 @@ namespace flychams::coordination
             agent_.head_setpoints_pub->publish(agent_.head_setpoints);
             break;
 
-        case TrackingMode::MultiWindowTracking:
+        case TrackingMode::MultiWindow:
             // Compute tracking setpoints
             computeMultiWindow(tab_P, tab_r, agent_.window_setpoints);
 
@@ -163,22 +163,20 @@ namespace flychams::coordination
         for (int i = 0; i < tracking_params_.n; i++)
         {
             // Get camera parameters
-            const auto& camera_params = tracking_params_.tracking_camera_params[i];
-            const auto& projection_params = tracking_params_.tracking_projection_params[i];
+            const auto& head_params = tracking_params_.tracking_head_params[i];
 
             // Get target position and interest radius
             const auto& z = tab_P.col(i);
             const auto& r = tab_r(i);
 
-            // Get the transform between world and camera optical frame
+            // Get the transform between world and head optical frame
             const std::string& world_frame = transform_tools_->getGlobalFrame();
-            const std::string& optical_frame = transform_tools_->getCameraOpticalFrame(agent_id_, camera_params.id);
+            const std::string& optical_frame = transform_tools_->getCameraOpticalFrame(agent_id_, head_params.id);
             const TransformMsg& world_to_optical = transform_tools_->getTransform(world_frame, optical_frame);
             const Matrix4r& T = RosUtils::fromMsg(world_to_optical);
 
-            // Solve tracking for this camera
-            float s_proj_pix;
-            const auto& [focal, rpy] = solvers_[i].runCamera(z, r, T, camera_params, projection_params, s_proj_pix);
+            // Solve tracking for this head
+            const auto& [focal, rpy, s_proj_pix] = solvers_[i].runCamera(z, r, T, head_params);
 
             // Update tracking setpoint
             RosUtils::toMsg(rpy, setpoints.rpy_setpoints[i]);
@@ -190,7 +188,7 @@ namespace flychams::coordination
     void AgentTracking::computeMultiWindow(const Matrix3Xr& tab_P, const RowVectorXr& tab_r, AgentWindowSetpointsMsg& setpoints)
     {
         // Get central camera parameters
-        const auto& central_params = tracking_params_.central_camera_params;
+        const auto& central_params = tracking_params_.central_head_params;
 
         // Get the transform between world and central camera optical frame
         const std::string& world_frame = transform_tools_->getGlobalFrame();
@@ -201,17 +199,15 @@ namespace flychams::coordination
         // Update tracking setpoints
         for (int i = 0; i < tracking_params_.n; i++)
         {
-            // Get window and central camera parameters
+            // Get window parameters
             const auto& window_params = tracking_params_.tracking_window_params[i];
-            const auto& projection_params = tracking_params_.tracking_projection_params[i];
 
             // Get target position and interest radius
             const auto& z = tab_P.col(i);
             const auto& r = tab_r(i);
 
             // Solve tracking for this window
-            float lambda, s_proj_pix;
-            const auto& [size, corner] = solvers_[i].runWindow(z, r, T, central_params, window_params, projection_params, lambda, s_proj_pix);
+            const auto& [size, corner, lambda, s_proj_pix] = solvers_[i].runWindow(z, r, T, central_params, window_params);
 
             // Check if crop is out of bounds (i.e. if the crop is completely outside the image)
             bool is_out_of_bounds =

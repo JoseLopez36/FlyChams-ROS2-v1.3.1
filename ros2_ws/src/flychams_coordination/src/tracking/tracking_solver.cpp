@@ -14,21 +14,21 @@ namespace flychams::coordination
         data_ = Data();
     }
 
-    std::pair<float, Vector3r> TrackingSolver::runCamera(const Vector3r& z, const float& r, const Matrix4r& T, const CameraParameters& camera_params, const ProjectionParameters& projection_params, float& s_proj_pix)
+    std::tuple<float, Vector3r, float> TrackingSolver::runCamera(const Vector3r& z, const float& r, const Matrix4r& T, const HeadParameters& head_params)
     {
         // Args:
         // z: Target position in world frame (m)
         // r: Equivalent radius of the target's area of interest (m)
         // T: Camera pose in world frame
-        // camera_params: Camera parameters
-        // projection_params: Projection parameters
+        // head_params: Head parameters
 
         // Extract camera position and orientation
         const Vector3r x = T.block<3, 1>(0, 3);
         const Matrix3r R = T.block<3, 3>(0, 0);
 
         // Compute focal length
-        data_.focal = computeCameraFocal(z, r, x, camera_params, projection_params, s_proj_pix);
+        const auto [focal, s_proj_pix] = computeCameraFocal(z, r, x, head_params);
+        data_.focal = focal;
 
         // Compute camera orientation
         if (data_.is_first_update)
@@ -41,18 +41,18 @@ namespace flychams::coordination
             data_.rpy = computeCameraOrientation(z, x, R, data_.rpy, false);
         }
 
-        // Return focal length and orientation
-        return std::make_pair(data_.focal, data_.rpy);
+        // Return focal length, orientation and projected size
+        return std::make_tuple(focal, data_.rpy, s_proj_pix);
     }
 
-    std::pair<Vector2i, Vector2i> TrackingSolver::runWindow(const Vector3r& z, const float& r, const Matrix4r& T, const CameraParameters& central_params, const WindowParameters& window_params, const ProjectionParameters& projection_params, float& lambda, float& s_proj_pix)
+    std::tuple<Vector2i, Vector2i, float, float> TrackingSolver::runWindow(const Vector3r& z, const float& r, const Matrix4r& T, const HeadParameters& central_params, const WindowParameters& window_params)
     {
         // Args:
         // z: Target position in world frame (m)
         // r: Equivalent radius of the target's area of interest (m)
         // T: Source camera pose in world frame
+        // central_params: Central head parameters
         // window_params: Window parameters
-        // projection_params: Projection parameters
 
         // Extract camera position
         const Vector3r x = T.block<3, 1>(0, 3);
@@ -62,34 +62,32 @@ namespace flychams::coordination
         p(0) = central_params.width - p(0); // Flip x-axis (TODO: Check why this is needed)
 
         // Compute window size
-        const Vector2i size = computeWindowSize(z, r, x, central_params, window_params, projection_params, lambda, s_proj_pix);
+        const auto [size, lambda, s_proj_pix] = computeWindowSize(z, r, x, central_params, window_params);
 
         // Compute window corner
         const Vector2i corner = computeWindowCorner(p, size);
 
-        // Return window size and corner
-        return std::make_pair(size, corner);
+        // Return window size, corner, resolution factor and projected size
+        return std::make_tuple(size, corner, lambda, s_proj_pix);
     }
 
     // ════════════════════════════════════════════════════════════════════════════
     // IMPLEMENTATION: MultiCamera tracking methods
     // ════════════════════════════════════════════════════════════════════════════
 
-    float TrackingSolver::computeCameraFocal(const Vector3r& z, const float& r, const Vector3r& x, const CameraParameters& camera_params, const ProjectionParameters& projection_params, float& s_proj_pix)
+    std::pair<float, float> TrackingSolver::computeCameraFocal(const Vector3r& z, const float& r, const Vector3r& x, const HeadParameters& head_params)
     {
         // Args:
         // z: Target position in world frame (m)
         // r: Equivalent radius of the target's area of interest (m)
         // x: Camera position in world frame (m)
-        // camera_params: Camera parameters
-        // projection_params: Projection parameters
-        // s_proj_pix: Projected size (pix)
+        // head_params: Head parameters
 
         // Extract parameters
-        const auto& f_min = camera_params.f_min;
-        const auto& f_max = camera_params.f_max;
-        const auto& rho = camera_params.rho;
-        const auto& s_ref = projection_params.s_ref;
+        const auto& f_min = head_params.f_min;
+        const auto& f_max = head_params.f_max;
+        const auto& rho = head_params.rho;
+        const auto& s_ref = head_params.s_ref;
 
         // Compute distance between target and camera
         float d = (x - z).norm();
@@ -101,9 +99,10 @@ namespace flychams::coordination
         f = std::max(std::min(f, f_max), f_min);
 
         // Compute actual projected size after clamping
-        s_proj_pix = (r * f) / (d * rho);
+        float s_proj_pix = (r * f) / (d * rho);
 
-        return f;
+        // Return focal length and projected size
+        return std::make_pair(f, s_proj_pix);
     }
 
     Vector3r TrackingSolver::computeCameraOrientation(const Vector3r& z, const Vector3r& x, const Matrix3r& R, const Vector3r& prev_rpy, const bool& is_first_update)
@@ -189,16 +188,14 @@ namespace flychams::coordination
     // IMPLEMENTATION: MultiWindow tracking methods
     // ════════════════════════════════════════════════════════════════════════════
 
-    Vector2i TrackingSolver::computeWindowSize(const Vector3r& z, const float& r, const Vector3r& x, const CameraParameters& central_params, const WindowParameters& window_params, const ProjectionParameters& projection_params, float& lambda, float& s_proj_pix)
+    std::tuple<Vector2i, float, float> TrackingSolver::computeWindowSize(const Vector3r& z, const float& r, const Vector3r& x, const HeadParameters& central_params, const WindowParameters& window_params)
     {
         // Args:
         // z: Target position in world frame (m)
         // r: Equivalent radius of the target's area of interest (m)
         // x: Source camera position in world frame (m)
+        // central_params: Central head parameters
         // window_params: Window parameters
-        // lambda: Resolution factor (0-1)
-        // s_proj_pix: Projected size (pix)
-        // projection_params: Projection parameters
 
         // Extract parameters
         const auto& f = central_params.f_ref;
@@ -207,28 +204,27 @@ namespace flychams::coordination
         const auto& lambda_min = window_params.lambda_min;
         const auto& lambda_max = window_params.lambda_max;
         const auto& rho = window_params.rho;
-        const auto& s_ref = projection_params.s_ref;
+        const auto& s_ref = window_params.s_ref;
 
         // Compute distance between target and camera
         float d = (x - z).norm();
 
         // Attempt to adjust the resolution factor to achieve the desired apparent size of the object
-        lambda = (d * s_ref) / (r * f);
+        float lambda = (d * s_ref) / (r * f);
 
         // Clamp the resolution factor within the camera's resolution limits
         lambda = std::max(std::min(lambda, lambda_max), lambda_min);
 
         // Compute window size using the resolution factor
-        const float width = static_cast<float>(tracking_width) / lambda;
-        const float height = static_cast<float>(tracking_height) / lambda;
+        Vector2i size(0, 0);
+        size(0) = static_cast<int>(std::round(static_cast<float>(tracking_width) / lambda));
+        size(1) = static_cast<int>(std::round(static_cast<float>(tracking_height) / lambda));
 
         // Compute actual projected size after clamping
-        s_proj_pix = (lambda * r * f) / (d * rho);
+        float s_proj_pix = (lambda * r * f) / (d * rho);
 
-        return {
-            static_cast<int>(std::round(width)),
-            static_cast<int>(std::round(height))
-        };
+        // Return window size, resolution factor and projected size
+        return std::make_tuple(size, lambda, s_proj_pix);
     }
 
     Vector2i TrackingSolver::computeWindowCorner(const Vector2r& p, const Vector2i& size)
