@@ -625,6 +625,8 @@ namespace airsim_wrapper
         {
             // Send command to server
             client_reset();
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            client_pause(true);
         }
         catch (rpc::rpc_error& e) {
             std::string msg = e.get_error().as<std::string>();
