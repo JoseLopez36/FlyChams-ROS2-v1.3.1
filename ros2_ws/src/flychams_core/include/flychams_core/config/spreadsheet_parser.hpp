@@ -826,20 +826,20 @@ namespace flychams::core
 							camera.sensor_size(1) = sensor_size_vec[1] / 1000.0f;
 						}
 
-						camera.enable_lens_distortion = getCellValue<bool>(row.findCell(6));
-
-						auto lens_distortion_str = getCellValue<std::string>(row.findCell(7));
-						auto lens_distortion_vec = parseVector<float>(lens_distortion_str, 3, ',');
-						if (lens_distortion_vec.size() >= 3)
+						auto distortion_str = getCellValue<std::string>(row.findCell(6));
+						auto distortion_vec = parseVector<float>(distortion_str, 5, ',');
+						if (distortion_vec.size() >= 5)
 						{
-							camera.lens_distortion.strength = lens_distortion_vec[0];
-							camera.lens_distortion.area_radius = lens_distortion_vec[1];
-							camera.lens_distortion.area_falloff = lens_distortion_vec[2];
+							camera.distortion.K1 = distortion_vec[0];
+							camera.distortion.K2 = distortion_vec[1];
+							camera.distortion.K3 = distortion_vec[2];
+							camera.distortion.P1 = distortion_vec[3];
+							camera.distortion.P2 = distortion_vec[4];
 						}
 
-						camera.enable_sensor_noise = getCellValue<bool>(row.findCell(8));
+						camera.enable_sensor_noise = getCellValue<bool>(row.findCell(7));
 
-						auto sensor_noise_str = getCellValue<std::string>(row.findCell(9));
+						auto sensor_noise_str = getCellValue<std::string>(row.findCell(8));
 						auto sensor_noise_vec = parseVector<float>(sensor_noise_str, 3, ',');
 						if (sensor_noise_vec.size() >= 3)
 						{
@@ -848,11 +848,11 @@ namespace flychams::core
 							camera.sensor_noise.rand_speed = sensor_noise_vec[2];
 						}
 
-						camera.weight = getCellValue<float>(row.findCell(10));
+						camera.weight = getCellValue<float>(row.findCell(9));
 
-						camera.idle_power = getCellValue<float>(row.findCell(11));
+						camera.idle_power = getCellValue<float>(row.findCell(10));
 
-						camera.active_power = getCellValue<float>(row.findCell(12));
+						camera.active_power = getCellValue<float>(row.findCell(11));
 
 						// Only first found camera is loaded
 						head_ptr->camera = camera;

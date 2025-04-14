@@ -223,6 +223,7 @@ namespace flychams::core
                 // Get relevant config
                 const auto& gimbal = head_ptr->gimbal;
                 const auto& camera = head_ptr->camera;
+                const auto& distortion = camera.distortion;
                 const auto& mount_pos = head_ptr->position;
                 const auto& mount_ori = head_ptr->orientation;
 
@@ -235,6 +236,11 @@ namespace flychams::core
                             {"SensorWidth", camera.sensor_size(0)},
                             {"SensorHeight", camera.sensor_size(1)},
                             {"FOV_Degrees", MathUtils::radToDeg(MathUtils::computeFov(head_ptr->ref_focal, camera.sensor_size(0)))},
+                            {"K1", distortion.K1},
+                            {"K2", distortion.K2},
+                            {"K3", distortion.K3},
+                            {"P1", distortion.P1},
+                            {"P2", distortion.P2},
                             {"LumenGIEnable", true},
                             {"LumenReflectionEnable", true},
                             {"LumenFinalQuality", 2},
@@ -263,12 +269,8 @@ namespace flychams::core
                             {"HorzNoiseLinesContrib", 0.0008f},
                             {"HorzNoiseLinesDensityY", 0.0001f},
                             {"HorzNoiseLinesDensityXY", 0.004f},
-                            {"HorzDistortionContrib", 0.0008f},
-                            {"HorzDistortionStrength", camera.lens_distortion.strength},
-                            {"LensDistortionEnable", camera.enable_lens_distortion},
-                            {"LensDistortionAreaFalloff", camera.lens_distortion.area_falloff},
-                            {"LensDistortionAreaRadius", camera.lens_distortion.area_radius},
-                            {"LensDistortionInvert", false}
+                            {"HorzDistortionContrib", 0.0f},
+                            {"HorzDistortionStrength", 0.0f}
                         }
                     }},
                     {"X", mount_pos.x()}, {"Y", -mount_pos.y()}, {"Z", -mount_pos.z()},

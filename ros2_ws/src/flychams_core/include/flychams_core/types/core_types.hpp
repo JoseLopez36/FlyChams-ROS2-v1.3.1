@@ -400,11 +400,13 @@ namespace flychams::core
         float max_speed;
     };
 
-    struct LensDistortion
+    struct Distortion
     {
-        float strength;
-        float area_radius;
-        float area_falloff;
+        float K1;
+        float K2;
+        float K3;
+        float P1;
+        float P2;
     };
 
     struct SensorNoise
