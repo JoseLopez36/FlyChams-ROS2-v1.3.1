@@ -160,6 +160,9 @@ namespace flychams::coordination
 
     void AgentTracking::computeMultiCamera(const Matrix3Xr& tab_P, const RowVectorXr& tab_r, AgentHeadSetpointsMsg& setpoints)
     {
+        // Get global frame
+        const std::string& world_frame = transform_tools_->getGlobalFrame();
+
         for (int i = 0; i < tracking_params_.n; i++)
         {
             // Get camera parameters
@@ -170,7 +173,6 @@ namespace flychams::coordination
             const auto& r = tab_r(i);
 
             // Get the transform between world and head optical frame
-            const std::string& world_frame = transform_tools_->getGlobalFrame();
             const std::string& optical_frame = transform_tools_->getCameraOpticalFrame(agent_id_, head_params.id);
             const TransformMsg& world_to_optical = transform_tools_->getTransform(world_frame, optical_frame);
             const Matrix4r& T = RosUtils::fromMsg(world_to_optical);

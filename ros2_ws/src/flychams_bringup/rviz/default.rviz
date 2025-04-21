@@ -51,13 +51,29 @@ Visualization Manager:
       Enabled: true
       Frame Timeout: 999999986991104
       Frames:
-        AGENT02/HEAD06/body:
+        AGENT01/HEAD01/body:
           Value: false
-        AGENT02/HEAD06/optical:
+        AGENT01/HEAD01/optical:
           Value: false
-        AGENT02/body:
+        AGENT01/HEAD02/body:
+          Value: false
+        AGENT01/HEAD02/optical:
+          Value: false
+        AGENT01/HEAD03/body:
+          Value: false
+        AGENT01/HEAD03/optical:
+          Value: false
+        AGENT01/HEAD04/body:
+          Value: false
+        AGENT01/HEAD04/optical:
+          Value: false
+        AGENT01/HEAD05/body:
+          Value: false
+        AGENT01/HEAD05/optical:
+          Value: false
+        AGENT01/body:
           Value: true
-        AGENT02/local:
+        AGENT01/local:
           Value: false
         All Enabled: false
         world:
@@ -69,11 +85,23 @@ Visualization Manager:
       Show Names: false
       Tree:
         world:
-          AGENT02/local:
-            AGENT02/HEAD06/body:
-              AGENT02/HEAD06/optical:
+          AGENT01/local:
+            AGENT01/HEAD01/body:
+              AGENT01/HEAD01/optical:
                 {}
-            AGENT02/body:
+            AGENT01/HEAD02/body:
+              AGENT01/HEAD02/optical:
+                {}
+            AGENT01/HEAD03/body:
+              AGENT01/HEAD03/optical:
+                {}
+            AGENT01/HEAD04/body:
+              AGENT01/HEAD04/optical:
+                {}
+            AGENT01/HEAD05/body:
+              AGENT01/HEAD05/optical:
+                {}
+            AGENT01/body:
               {}
       Update Interval: 0
       Value: true
@@ -81,13 +109,25 @@ Visualization Manager:
       Enabled: true
       Name: Agent00
       Namespaces:
-        "": true
+        {}
       Topic:
         Depth: 5
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /flychams/dashboard/AGENT02/markers
+      Value: true
+    - Class: rviz_default_plugins/MarkerArray
+      Enabled: true
+      Name: AGENT01
+      Namespaces:
+        "": true
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /flychams/dashboard/AGENT01/markers
       Value: true
     - Class: rviz_default_plugins/MarkerArray
       Enabled: true
@@ -339,7 +379,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 155.17428588867188
+      Distance: 164.77053833007812
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -354,10 +394,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.5397959351539612
+      Pitch: 0.649797260761261
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz_default_plugins)
-      Yaw: 3.833557367324829
+      Yaw: 3.7785394191741943
     Saved:
       - Angle: 0
         Class: rviz_default_plugins/TopDownOrtho

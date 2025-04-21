@@ -147,6 +147,8 @@ namespace flychams::coordination
         // Solve agent positioning
         float J;
         Vector3r optimal_position = solver_->run(tab_P, tab_r, x0, J);
+        RCLCPP_INFO(node_->get_logger(), "Agent positioning: Computed optimal position (J = %.2f): (xOpt = %.2f, %.2f, %.2f)", 
+            J, optimal_position(0), optimal_position(1), optimal_position(2));
         
         // Publish position
         agent_.setpoint.header.stamp = RosUtils::now(node_);
@@ -166,20 +168,27 @@ namespace flychams::coordination
         params.mode = tracking_params.mode;
 
         // Camera parameters
-        params.f_min = tracking_params.central_head_params.f_min;
-        params.f_max = tracking_params.central_head_params.f_max;
-        params.f_ref = tracking_params.central_head_params.f_ref;
+        if (params.mode == TrackingMode::MultiCamera)
+        {
+            params.f_min = tracking_params.central_head_params.f_min;
+            params.f_max = tracking_params.central_head_params.f_max;
+            params.f_ref = tracking_params.central_head_params.f_ref;
+            params.s_min = tracking_params.central_head_params.s_min;
+            params.s_max = tracking_params.central_head_params.s_max;
+            params.s_ref = tracking_params.central_head_params.s_ref;
+        }
 
         // Window parameters
-        params.lambda_min = tracking_params.central_window_params.lambda_min;
-        params.lambda_max = tracking_params.central_window_params.lambda_max;
-        params.lambda_ref = tracking_params.central_window_params.lambda_ref;
-        params.central_f = tracking_params.central_head_params.f_ref;
-
-        // Projection parameters
-        params.s_min = tracking_params.central_window_params.s_min;
-        params.s_max = tracking_params.central_window_params.s_max;
-        params.s_ref = tracking_params.central_window_params.s_ref;
+        if (params.mode == TrackingMode::MultiWindow)
+        {
+            params.central_f = tracking_params.central_head_params.f_ref;
+            params.lambda_min = tracking_params.central_window_params.lambda_min;
+            params.lambda_max = tracking_params.central_window_params.lambda_max;
+            params.lambda_ref = tracking_params.central_window_params.lambda_ref;
+            params.s_min = tracking_params.central_window_params.s_min;
+            params.s_max = tracking_params.central_window_params.s_max;
+            params.s_ref = tracking_params.central_window_params.s_ref;
+        }
 
         // Cost function weights
         // Psi

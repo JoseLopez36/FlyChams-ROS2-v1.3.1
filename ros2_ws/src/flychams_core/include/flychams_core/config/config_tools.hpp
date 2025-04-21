@@ -387,15 +387,14 @@ namespace flychams::core
             // Get tracking mode
             params.mode = tracking.mode;
 
-            // Get central parameters
-            params.central_head_params = getHeadParameters(agent_id, getCentralHead(agent_id)->id);
-            params.central_window_params = getWindowParameters(agent_id, getCentralWindow(agent_id)->id);
-
             // Get tracking parameters based on tracking mode
             switch (params.mode)
             {
             case TrackingMode::MultiCamera:
             {
+                // Get agent central head
+                params.central_head_params = getHeadParameters(agent_id, getCentralHead(agent_id)->id);
+
                 // Get agent tracking heads
                 const auto& tracking_heads = getTrackingHeads(agent_id);
 
@@ -413,6 +412,10 @@ namespace flychams::core
 
             case TrackingMode::MultiWindow:
             {
+                // Get agent central head and window
+                params.central_head_params = getHeadParameters(agent_id, getCentralHead(agent_id)->id);
+                params.central_window_params = getWindowParameters(agent_id, getCentralWindow(agent_id)->id);
+
                 // Get agent tracking windows
                 const auto& tracking_windows = getTrackingWindows(agent_id);
 

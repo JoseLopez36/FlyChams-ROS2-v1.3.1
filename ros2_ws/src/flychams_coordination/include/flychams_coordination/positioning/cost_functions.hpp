@@ -105,8 +105,20 @@ namespace flychams::coordination
             {
                 r_max = std::max(r_max, (z_mean - tab_P.col(i)).norm() + tab_r(i));
             }
-            // Calculate the cost of the central window
-            J += CostFunctions::windowJ1(z_mean, r_max, x, params.central);
+            // Compute the cost of the central window based on tracking mode
+            switch (params.central.mode)
+            {
+            case core::TrackingMode::MultiCamera:
+                J += CostFunctions::cameraJ1(z_mean, r_max, x, params.central);
+                break;
+
+            case core::TrackingMode::MultiWindow:
+                J += CostFunctions::windowJ1(z_mean, r_max, x, params.central);
+                break;
+
+            default:
+                throw std::invalid_argument("Invalid tracking mode");
+            }
 
             // Return the value of J
             return J;
@@ -154,8 +166,20 @@ namespace flychams::coordination
             {
                 r_max = std::max(r_max, (z_mean - tab_P.col(i)).norm() + tab_r(i));
             }
-            // Calculate the cost of the central window
-            J += CostFunctions::windowJ2(z_mean, r_max, x, x_hat, params.central);
+            // Compute the cost of the central window based on tracking mode
+            switch (params.central.mode)
+            {
+            case core::TrackingMode::MultiCamera:
+                J += CostFunctions::cameraJ2(z_mean, r_max, x, x_hat, params.central);
+                break;
+
+            case core::TrackingMode::MultiWindow:
+                J += CostFunctions::windowJ2(z_mean, r_max, x, x_hat, params.central);
+                break;
+
+            default:
+                throw std::invalid_argument("Invalid tracking mode");
+            }
 
             // Return the value of J
             return J;
@@ -211,9 +235,21 @@ namespace flychams::coordination
             {
                 r_max = std::max(r_max, (z_mean - tab_P.col(i)).norm() + tab_r(i));
             }
-            // Calculate the cost of the central window
+            // Compute the cost of the central window based on tracking mode
             core::Vector3r grad_central;
-            J += CostFunctions::windowJ1(z_mean, r_max, x, params.central, grad_central);
+            switch (params.central.mode)
+            {
+            case core::TrackingMode::MultiCamera:
+                J += CostFunctions::cameraJ1(z_mean, r_max, x, params.central, grad_central);
+                break;
+
+            case core::TrackingMode::MultiWindow:
+                J += CostFunctions::windowJ1(z_mean, r_max, x, params.central, grad_central);
+                break;
+
+            default:
+                throw std::invalid_argument("Invalid tracking mode");
+            }
             // Integrate the gradient of the central window
             grad += grad_central;
 
@@ -270,9 +306,21 @@ namespace flychams::coordination
             {
                 r_max = std::max(r_max, (z_mean - tab_P.col(i)).norm() + tab_r(i));
             }
-            // Calculate the cost of the central window
+            // Compute the cost of the central window based on tracking mode
             core::Vector3r grad_central;
-            J += CostFunctions::windowJ2(z_mean, r_max, x, x_hat, params.central, grad_central);
+            switch (params.central.mode)
+            {
+            case core::TrackingMode::MultiCamera:
+                J += CostFunctions::cameraJ2(z_mean, r_max, x, x_hat, params.central, grad_central);
+                break;
+
+            case core::TrackingMode::MultiWindow:
+                J += CostFunctions::windowJ2(z_mean, r_max, x, x_hat, params.central, grad_central);
+                break;
+
+            default:
+                throw std::invalid_argument("Invalid tracking mode");
+            }
             // Integrate the gradient of the central window
             grad += grad_central;
 
