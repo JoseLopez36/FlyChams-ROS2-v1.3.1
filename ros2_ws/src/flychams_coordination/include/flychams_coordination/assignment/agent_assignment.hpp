@@ -85,9 +85,7 @@ namespace flychams::coordination
         float update_rate_;
         // Position solver parameters
         PositionSolver::SolverMode position_solver_mode_;
-        float eps_;
-        float convergence_tolerance_;
-        int max_iterations_;
+        PositionSolver::Parameters position_solver_params_;
 
     private: // Data
         // Agents

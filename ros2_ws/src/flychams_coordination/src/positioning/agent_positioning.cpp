@@ -15,9 +15,17 @@ namespace flychams::coordination
         update_rate_ = RosUtils::getParameterOr<float>(node_, "agent_positioning.positioning_rate", 1.0f);
         // Get solver parameters
         PositionSolver::SolverMode solver_mode = static_cast<PositionSolver::SolverMode>(RosUtils::getParameterOr<uint8_t>(node_, "agent_positioning.solver_mode", 0));
+        // Get generic solver parameters
         float eps = RosUtils::getParameterOr<float>(node_, "agent_positioning.eps", 1.0e-1f);
         float convergence_tolerance = RosUtils::getParameterOr<float>(node_, "agent_positioning.convergence_tolerance", 1.0e-5f);
         int max_iterations = RosUtils::getParameterOr<int>(node_, "agent_positioning.max_iterations", 100);
+        // Get PSO parameters
+        int num_particles = RosUtils::getParameterOr<int>(node_, "agent_positioning.num_particles", 50);
+        float w_max = RosUtils::getParameterOr<float>(node_, "agent_positioning.w_max", 0.4f);
+        float w_min = RosUtils::getParameterOr<float>(node_, "agent_positioning.w_min", 0.1f);
+        float c1 = RosUtils::getParameterOr<float>(node_, "agent_positioning.c1", 1.0f);
+        float c2 = RosUtils::getParameterOr<float>(node_, "agent_positioning.c2", 1.0f);
+        int stagnation_limit = RosUtils::getParameterOr<int>(node_, "agent_positioning.stagnation_limit", 5);
         
         // Initialize data
         agent_ = Agent();
@@ -49,13 +57,23 @@ namespace flychams::coordination
 
         // Create and initialize solver
         solver_ = std::make_shared<PositionSolver>();
+        // Create solver parameters
         PositionSolver::Parameters solver_params;
         solver_params.cost_params = cost_params;
         solver_params.x_min = x_min;
         solver_params.x_max = x_max;
+        // Generic solver parameters
         solver_params.eps = eps;
         solver_params.tol = convergence_tolerance;
         solver_params.max_iter = max_iterations;
+        // PSO parameters
+        solver_params.num_particles = num_particles;
+        solver_params.w_max = w_max;
+        solver_params.w_min = w_min;
+        solver_params.c1 = c1;
+        solver_params.c2 = c2;
+        solver_params.stagnation_limit = stagnation_limit;
+        // Initialize solver
         solver_->init(solver_mode, solver_params);
 
         // Create subscribers for agent status, position and clusters

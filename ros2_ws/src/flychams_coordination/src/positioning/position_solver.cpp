@@ -49,6 +49,26 @@ namespace flychams::coordination
                 break;
             }
 
+            case SolverMode::PSO_ALGORITHM:
+            {
+                // Get PSO Algorithm parameters
+                PSOAlgorithm::Parameters pso_algorithm_params;
+                pso_algorithm_params.x_min = params.x_min;
+                pso_algorithm_params.x_max = params.x_max;
+                pso_algorithm_params.tol = params.tol;
+                pso_algorithm_params.max_iter = params.max_iter;
+                pso_algorithm_params.num_particles = params.num_particles;
+                pso_algorithm_params.w_max = params.w_max;
+                pso_algorithm_params.w_min = params.w_min;
+                pso_algorithm_params.c1 = params.c1;
+                pso_algorithm_params.c2 = params.c2;
+                pso_algorithm_params.stagnation_limit = params.stagnation_limit;
+
+                // Initialize the PSO Algorithm solver with the parameters
+                pso_algorithm_.init(pso_algorithm_params, params.cost_params);
+                break;
+            }          
+
             default:
                 throw std::invalid_argument("Invalid solver mode");
         }
@@ -71,6 +91,12 @@ namespace flychams::coordination
                 break;
             }
 
+            case SolverMode::PSO_ALGORITHM:
+            {
+                pso_algorithm_.destroy();
+                break;
+            }
+
             default:
                 throw std::invalid_argument("Invalid solver mode");
         }
@@ -89,6 +115,11 @@ namespace flychams::coordination
             case SolverMode::ELLIPSOID_METHOD:
             {
                 return ellipsoid_method_.run(tab_P, tab_r, x0, J);
+            }
+
+            case SolverMode::PSO_ALGORITHM:
+            {
+                return pso_algorithm_.run(tab_P, tab_r, J);
             }
 
             default:

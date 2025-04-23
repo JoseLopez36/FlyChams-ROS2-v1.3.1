@@ -25,16 +25,23 @@ namespace flychams::coordination
     class EllipsoidMethod
     {
     public: // Types
+        // Parameters
         struct Parameters
         {
             // Space constraints
             core::Vector3r x_min;
             core::Vector3r x_max;
 
-            // Solver parameters
+            // Generic solver parameters
             float eps = 1e-1f;
             float tol = 1e-5f;
             int max_iter = 100;
+        };
+        // Data
+        struct Ellipsoid
+        {
+            core::Vector3r a0;     // Initial ellipsoid center
+            core::Matrix3Xr A0;    // Initial ellipsoid matrix
         };
         struct Data
         {
@@ -42,10 +49,6 @@ namespace flychams::coordination
             core::Matrix3Xr tab_P;    
             core::RowVectorXr tab_r;   
             core::Vector3r x_hat;      
-
-            // Ellipsoid data
-            core::Vector3r a0;     // Initial ellipsoid center
-            core::Matrix3Xr A0;    // Initial ellipsoid matrix
 
             // Cost function parameters
             CostFunctions::Parameters cost_params;    
@@ -57,6 +60,7 @@ namespace flychams::coordination
     private: // Data
         // Data
         Data data_;
+        Ellipsoid ellipsoid_;
 
     public: // Public methods
         void init(const Parameters& params, const CostFunctions::Parameters& cost_params)
@@ -77,11 +81,11 @@ namespace flychams::coordination
             data_.x_hat = core::Vector3r::Zero();
 
             // Initialize ellipsoid
-            data_.a0 = (params_.x_max + params_.x_min) / 2.0f;
-            data_.A0 = core::Matrix3r::Zero();
-            data_.A0(0, 0) = 3.0f * pow((params_.x_max(0) - params_.x_min(0)) / 2.0f, 2);
-            data_.A0(1, 1) = 3.0f * pow((params_.x_max(1) - params_.x_min(1)) / 2.0f, 2);
-            data_.A0(2, 2) = 3.0f * pow((params_.x_max(2) - params_.x_min(2)) / 2.0f, 2);
+            ellipsoid_.a0 = (params_.x_max + params_.x_min) / 2.0f;
+            ellipsoid_.A0 = core::Matrix3r::Zero();
+            ellipsoid_.A0(0, 0) = 3.0f * pow((params_.x_max(0) - params_.x_min(0)) / 2.0f, 2);
+            ellipsoid_.A0(1, 1) = 3.0f * pow((params_.x_max(1) - params_.x_min(1)) / 2.0f, 2);
+            ellipsoid_.A0(2, 2) = 3.0f * pow((params_.x_max(2) - params_.x_min(2)) / 2.0f, 2);
         }
         void destroy()
         {
@@ -157,8 +161,8 @@ namespace flychams::coordination
         float optimize(core::Vector3r& x_opt, bool approximate_non_convex)
         {
             // Start from initial position
-            core::Vector3r a = data_.a0; 
-            core::Matrix3Xr A = data_.A0;
+            core::Vector3r a = ellipsoid_.a0; 
+            core::Matrix3Xr A = ellipsoid_.A0;
 
             // Compute the gradient of the cost function
             float f;

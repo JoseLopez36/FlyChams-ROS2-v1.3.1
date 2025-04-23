@@ -6,6 +6,7 @@
 // Solver algorithms
 #include "flychams_coordination/positioning/nelder_mead.hpp"
 #include "flychams_coordination/positioning/ellipsoid_method.hpp"
+#include "flychams_coordination/positioning/pso_algorithm.hpp"
 
 // Utilities
 #include "flychams_core/types/core_types.hpp"
@@ -35,7 +36,8 @@ namespace flychams::coordination
         enum class SolverMode
         {
             NELDER_MEAD,
-            ELLIPSOID_METHOD
+            ELLIPSOID_METHOD,
+            PSO_ALGORITHM
         };
         // Parameters
         struct Parameters
@@ -47,10 +49,18 @@ namespace flychams::coordination
             core::Vector3r x_min;
             core::Vector3r x_max;
 
-            // Solver parameters
+            // Generic solver parameters
             float tol = 1e-6f;
             int max_iter = 100;
             float eps = 1.0f;
+
+            // PSO parameters
+            int num_particles = 50;
+            float w_max = 0.4f;
+            float w_min = 0.1f;
+            float c1 = 1.0f;
+            float c2 = 1.0f;
+            int stagnation_limit = 5;
         };   
 
     private: // Parameters
@@ -61,6 +71,7 @@ namespace flychams::coordination
         // Solver algorithms
         NelderMead nelder_mead_;
         EllipsoidMethod ellipsoid_method_;
+        PSOAlgorithm pso_algorithm_;
 
     public: // Public methods
         // Configuration

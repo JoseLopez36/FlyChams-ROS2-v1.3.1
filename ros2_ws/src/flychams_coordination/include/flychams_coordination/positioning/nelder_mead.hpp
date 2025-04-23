@@ -28,17 +28,19 @@ namespace flychams::coordination
     class NelderMead
     {
     public: // Types
+        // Parameters
         struct Parameters
         {
             // Space constraints
             core::Vector3r x_min;
             core::Vector3r x_max;
 
-            // Solver parameters
+            // Generic solver parameters
             float eps = 1e-1f;
             float tol = 1e-5f;
             int max_iter = 100;
         };
+        // Data
         struct Data
         {
             // Cost function data

@@ -15,15 +15,23 @@ namespace flychams::coordination
         update_rate_ = RosUtils::getParameterOr<float>(node_, "agent_assignment.update_rate", 1.0f);
         // Get assignment mode
         AssignmentSolver::SolverMode assignment_solver_mode = static_cast<AssignmentSolver::SolverMode>(RosUtils::getParameterOr<uint8_t>(node_, "agent_assignment.solver_mode", 0));
-        // Get assignment parameters
+        // Get assignment solver parameters
         float observation_weight = RosUtils::getParameterOr<float>(node_, "agent_assignment.observation_weight", 1.0f);
         float distance_weight = RosUtils::getParameterOr<float>(node_, "agent_assignment.distance_weight", 10.0f);
         float switch_weight = RosUtils::getParameterOr<float>(node_, "agent_assignment.switch_weight", 5000.0f);
         // Get position solver parameters
         position_solver_mode_ = static_cast<PositionSolver::SolverMode>(RosUtils::getParameterOr<uint8_t>(node_, "agent_positioning.solver_mode", 0));
-        eps_ = RosUtils::getParameterOr<float>(node_, "agent_positioning.eps", 1.0e-1f);
-        convergence_tolerance_ = RosUtils::getParameterOr<float>(node_, "agent_positioning.convergence_tolerance", 1.0e-5f);
-        max_iterations_ = RosUtils::getParameterOr<int>(node_, "agent_positioning.max_iterations", 100);
+        // Get generic position solver parameters
+        position_solver_params_.eps = RosUtils::getParameterOr<float>(node_, "agent_positioning.eps", 1.0e-1f);
+        position_solver_params_.tol = RosUtils::getParameterOr<float>(node_, "agent_positioning.convergence_tolerance", 1.0e-5f);
+        position_solver_params_.max_iter = RosUtils::getParameterOr<int>(node_, "agent_positioning.max_iterations", 100);
+        // Get PSO parameters
+        position_solver_params_.num_particles = RosUtils::getParameterOr<int>(node_, "agent_positioning.num_particles", 50);
+        position_solver_params_.w_max = RosUtils::getParameterOr<float>(node_, "agent_positioning.w_max", 0.4f);
+        position_solver_params_.w_min = RosUtils::getParameterOr<float>(node_, "agent_positioning.w_min", 0.1f);
+        position_solver_params_.c1 = RosUtils::getParameterOr<float>(node_, "agent_positioning.c1", 1.0f);
+        position_solver_params_.c2 = RosUtils::getParameterOr<float>(node_, "agent_positioning.c2", 1.0f);
+        position_solver_params_.stagnation_limit = RosUtils::getParameterOr<int>(node_, "agent_positioning.stagnation_limit", 5);
 
         // Initialize data
         agents_.clear();
@@ -275,13 +283,23 @@ namespace flychams::coordination
 
         // Create and initialize position solver
         solver = std::make_shared<PositionSolver>();
+        // Create solver parameters
         PositionSolver::Parameters solver_params;
         solver_params.cost_params = cost_params;
         solver_params.x_min = x_min;
         solver_params.x_max = x_max;
-        solver_params.eps = eps_;
-        solver_params.tol = convergence_tolerance_;
-        solver_params.max_iter = max_iterations_;
+        // Generic solver parameters
+        solver_params.eps = position_solver_params_.eps;
+        solver_params.tol = position_solver_params_.tol;
+        solver_params.max_iter = position_solver_params_.max_iter;
+        // PSO parameters
+        solver_params.num_particles = position_solver_params_.num_particles;
+        solver_params.w_max = position_solver_params_.w_max;
+        solver_params.w_min = position_solver_params_.w_min;
+        solver_params.c1 = position_solver_params_.c1;
+        solver_params.c2 = position_solver_params_.c2;
+        solver_params.stagnation_limit = position_solver_params_.stagnation_limit;
+        // Initialize position solver
         solver->init(position_solver_mode_, solver_params);
     }
 
