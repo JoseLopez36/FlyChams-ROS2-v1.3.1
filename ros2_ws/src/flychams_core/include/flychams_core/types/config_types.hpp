@@ -3,7 +3,7 @@
 // Standard includes
 #include <string>
 #include <vector>
-#include <unordered_map>
+#include <map>
 #include <memory>
 
 // Core includes
@@ -190,7 +190,7 @@ namespace flychams::core
         float ref_lambda;
     };
     using WindowConfigPtr = std::shared_ptr<WindowConfig>;
-    using WindowSetConfig = std::unordered_map<ID, WindowConfigPtr>;
+    using WindowSetConfig = std::map<ID, WindowConfigPtr>;
 
     struct HeadConfig
     {
@@ -214,7 +214,7 @@ namespace flychams::core
         CameraConfig camera;
     };
     using HeadConfigPtr = std::shared_ptr<HeadConfig>;
-    using HeadSetConfig = std::unordered_map<ID, HeadConfigPtr>;
+    using HeadSetConfig = std::map<ID, HeadConfigPtr>;
 
     struct TrackingConfig
     {
@@ -254,7 +254,7 @@ namespace flychams::core
         WindowSetConfig window_set;
     };
     using AgentConfigPtr = std::shared_ptr<AgentConfig>;
-    using AgentTeamConfig = std::unordered_map<ID, AgentConfigPtr>;
+    using AgentTeamConfig = std::map<ID, AgentConfigPtr>;
 
     // ════════════════════════════════════════════════════════════════
     // GENERAL TYPES: Mission-related configuration types
@@ -275,7 +275,7 @@ namespace flychams::core
         std::string trajectory_folder;
     };
     using TargetConfigPtr = std::shared_ptr<TargetConfig>;
-    using TargetGroupConfig = std::unordered_map<ID, TargetConfigPtr>;
+    using TargetGroupConfig = std::map<ID, TargetConfigPtr>;
 
     struct EnvironmentConfig
     {
