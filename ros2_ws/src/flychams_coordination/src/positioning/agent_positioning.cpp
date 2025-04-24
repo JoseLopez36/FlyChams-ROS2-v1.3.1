@@ -29,6 +29,8 @@ namespace flychams::coordination
         // Get ALC-PSO parameters
         int max_lifespan = RosUtils::getParameterOr<int>(node_, "agent_positioning.max_lifespan", 60);
         int num_challenger_tests = RosUtils::getParameterOr<int>(node_, "agent_positioning.num_challenger_tests", 10);
+        // Get Nesterov parameters
+        float lipschitz_constant = RosUtils::getParameterOr<float>(node_, "agent_positioning.lipschitz_constant", 0.0f);
         
         // Initialize data
         agent_ = Agent();
@@ -79,6 +81,8 @@ namespace flychams::coordination
         // ALC-PSO parameters
         solver_params.max_lifespan = max_lifespan;
         solver_params.num_challenger_tests = num_challenger_tests;
+        // Nesterov parameters
+        solver_params.lipschitz_constant = lipschitz_constant;
         // Initialize solver
         solver_->init(solver_mode, solver_params);
 

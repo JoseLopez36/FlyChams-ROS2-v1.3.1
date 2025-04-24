@@ -8,6 +8,7 @@
 #include "flychams_coordination/positioning/ellipsoid_method.hpp"
 #include "flychams_coordination/positioning/pso_algorithm.hpp"
 #include "flychams_coordination/positioning/alc_pso_algorithm.hpp"
+#include "flychams_coordination/positioning/nesterov_algorithm.hpp"
 
 // Utilities
 #include "flychams_core/types/core_types.hpp"
@@ -39,7 +40,8 @@ namespace flychams::coordination
             NELDER_MEAD,
             ELLIPSOID_METHOD,
             PSO_ALGORITHM,
-            ALC_PSO_ALGORITHM
+            ALC_PSO_ALGORITHM,
+            NESTEROV_ALGORITHM
         };
         // Parameters
         struct Parameters
@@ -67,6 +69,9 @@ namespace flychams::coordination
             // ALC-PSO parameters
             int max_lifespan = 60;
             int num_challenger_tests = 10;
+
+            // Nesterov parameters
+            float lipschitz_constant = 0.0f;
         };   
 
     private: // Parameters
@@ -79,6 +84,7 @@ namespace flychams::coordination
         EllipsoidMethod ellipsoid_method_;
         PSOAlgorithm pso_algorithm_;
         ALCPSOAlgorithm alc_pso_algorithm_;
+        NesterovAlgorithm nesterov_algorithm_;
 
     public: // Public methods
         // Configuration

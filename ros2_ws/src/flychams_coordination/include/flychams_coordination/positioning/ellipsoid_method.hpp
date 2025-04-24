@@ -158,7 +158,7 @@ namespace flychams::coordination
         }
 
     private: // Optimization methods
-        float optimize(core::Vector3r& x_opt, bool approximate_non_convex)
+        float optimize(core::Vector3r& x_opt, bool convex_relaxation)
         {
             // Start from initial position
             core::Vector3r a = ellipsoid_.a0; 
@@ -167,7 +167,7 @@ namespace flychams::coordination
             // Compute the gradient of the cost function
             float f;
             core::Vector3r grad_f;
-            if (approximate_non_convex)
+            if (convex_relaxation)
                 f = CostFunctions::J2(data_.tab_P, data_.tab_r, a, data_.x_hat, data_.cost_params, grad_f);
             else
                 f = CostFunctions::J1(data_.tab_P, data_.tab_r, a, data_.cost_params, grad_f);
@@ -241,7 +241,7 @@ namespace flychams::coordination
                 ellipsoidal_covering(a, v, d, A);
 
                 // Update the norm of the gradient of the cost function
-                if (approximate_non_convex)
+                if (convex_relaxation)
                     f = CostFunctions::J2(data_.tab_P, data_.tab_r, a, data_.x_hat, data_.cost_params, grad_f);
                 else
                     f = CostFunctions::J1(data_.tab_P, data_.tab_r, a, data_.cost_params, grad_f);

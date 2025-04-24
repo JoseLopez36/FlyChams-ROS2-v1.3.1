@@ -107,7 +107,8 @@ namespace flychams::coordination
         }
         void destroy()
         {
-            // Nothing to destroy
+            // Destroy particles
+            particles_.clear();
         }
         core::Vector3r run(const core::Matrix3Xr& tab_P, const core::RowVectorXr& tab_r, float& J)
         {
@@ -128,8 +129,9 @@ namespace flychams::coordination
         {
             // Prepare variables
             float global_best_score = HUGE_VALF;                                // Global best score
-            float global_best_score_prev = HUGE_VALF;                           // Previous global best score 
+            float global_best_score_prev = HUGE_VALF;                           // Previous global best score
             core::Vector3r global_best_position = core::Vector3r::Zero();       // Global best position
+            core::Vector3r global_best_position_prev = core::Vector3r::Zero();  // Previous global best position
             int stagnant_generations = 0;                                       // Stagnation counter (generations without improvement)
 
             // Initialize leader particle
@@ -151,13 +153,15 @@ namespace flychams::coordination
 
                 // Initialize particle position and best score
                 particles_[k].position = params_.x_min + ((params_.x_max - params_.x_min).array() * r.array()).matrix();
+                particles_[k].best_position = particles_[k].position;
+                particles_[k].velocity = core::Vector3r::Zero();
                 particles_[k].best_score = CostFunctions::J0(data_.tab_P, data_.tab_r, particles_[k].position, data_.cost_params);
 
                 // Update leader particle if current score is better. This will choose an initial leader particle
                 if (particles_[k].best_score < leader_best_score) 
                 {
+                    leader_best_position = particles_[k].best_position;
                     leader_best_score = particles_[k].best_score;
-                    leader_best_position = particles_[k].position;
                 }
             }
 
@@ -336,7 +340,7 @@ namespace flychams::coordination
                 }
 
                 // Verify convergence
-                if (std::abs(global_best_score_prev - global_best_score) < params_.tol) 
+                if ((global_best_position - global_best_position_prev).norm() < params_.tol) 
                 {
                     stagnant_generations++;    // Increase stagnation counter if no improvement
                 }
@@ -344,9 +348,10 @@ namespace flychams::coordination
                 {
                     stagnant_generations = 0;  // Reset if improvement
                 }
-
-                global_best_score_prev = global_best_score;  // Update the best fitness known
-                leader_best_score_prev = leader_best_score;  // Update leader's best fitness known
+                
+                global_best_score_prev = global_best_score;        // Update the previous global best score
+                global_best_position_prev = global_best_position;  // Update the previous global best position
+                leader_best_score_prev = leader_best_score;        // Update leader's best fitness known
 
                 // If there is no improvement in the last stagnation_limit generations, exit optimization
                 if (stagnant_generations >= params_.stagnation_limit) 

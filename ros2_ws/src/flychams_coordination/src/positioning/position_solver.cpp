@@ -91,6 +91,22 @@ namespace flychams::coordination
                 break;
             }        
 
+            case SolverMode::NESTEROV_ALGORITHM:
+            {
+                // Get Nesterov Algorithm parameters
+                NesterovAlgorithm::Parameters nesterov_algorithm_params;
+                nesterov_algorithm_params.x_min = params.x_min;
+                nesterov_algorithm_params.x_max = params.x_max;
+                nesterov_algorithm_params.eps = params.eps;
+                nesterov_algorithm_params.tol = params.tol;
+                nesterov_algorithm_params.max_iter = params.max_iter;
+                nesterov_algorithm_params.lipschitz_constant = params.lipschitz_constant;
+
+                // Initialize the Nesterov Algorithm solver with the parameters
+                nesterov_algorithm_.init(nesterov_algorithm_params, params.cost_params);
+                break;
+            }
+
             default:
                 throw std::invalid_argument("Invalid solver mode");
         }
@@ -125,6 +141,12 @@ namespace flychams::coordination
                 break;
             }
 
+            case SolverMode::NESTEROV_ALGORITHM:
+            {
+                nesterov_algorithm_.destroy();
+                break;
+            }
+
             default:
                 throw std::invalid_argument("Invalid solver mode");
         }
@@ -153,6 +175,11 @@ namespace flychams::coordination
             case SolverMode::ALC_PSO_ALGORITHM:
             {
                 return alc_pso_algorithm_.run(tab_P, tab_r, J);
+            }
+
+            case SolverMode::NESTEROV_ALGORITHM:
+            {
+                return nesterov_algorithm_.run(tab_P, tab_r, x0, J);
             }
 
             default:
