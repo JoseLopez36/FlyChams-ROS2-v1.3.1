@@ -47,12 +47,12 @@ namespace flychams::coordination
         struct Data
         {
             // Cost function data
-            core::Matrix3Xr tab_P;    
-            core::RowVectorXr tab_r;   
-            core::Vector3r x_hat;      
+            core::Matrix3Xr tab_P;
+            core::RowVectorXr tab_r;
+            core::Vector3r x_hat;
 
             // Cost function parameters
-            CostFunctions::Parameters cost_params;    
+            CostFunctions::Parameters cost_params;
         };
 
     private: // Parameters
@@ -169,7 +169,7 @@ namespace flychams::coordination
             float theta_prev = 1.0f;
 
             // Iterate until convergence or max iterations
-            for (int k = 0; k < params_.max_iter; k++) 
+            for (int k = 0; k < params_.max_iter; k++)
             {
                 float beta = (theta_prev - 1.0f) / theta;
 
@@ -185,7 +185,7 @@ namespace flychams::coordination
                     f = CostFunctions::J1(data_.tab_P, data_.tab_r, y, data_.cost_params, grad_f);
 
                 // Check if the cost function is increasing
-                if (f > f_prev) 
+                if (f > f_prev)
                 {
                     // Reset the momentum (avoids overshooting)
                     x_prev = x;
@@ -206,7 +206,7 @@ namespace flychams::coordination
 
                 // Check convergence
                 float norm_diff = (x_next - x).norm();
-                if (norm_diff < params_.tol) 
+                if (norm_diff < params_.tol)
                 {
                     break;
                 }
