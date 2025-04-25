@@ -63,11 +63,11 @@ namespace flychams::coordination
         struct Data
         {
             // Cost function data
-            core::Matrix3Xr tab_P;    
-            core::RowVectorXr tab_r;   
+            core::Matrix3Xr tab_P;
+            core::RowVectorXr tab_r;
 
             // Cost function parameters
-            CostFunctions::Parameters cost_params;    
+            CostFunctions::Parameters cost_params;
         };
 
     private: // Parameters
@@ -83,7 +83,7 @@ namespace flychams::coordination
         {
             // Check parameters
             if ((params.x_min.array() > params.x_max.array()).any() || params.tol <= 0.0f || params.max_iter <= 0
-                || params.num_particles <= 0 || params.w_max <= params.w_min || params.c1 <= 0.0f || params.c2 <= 0.0f 
+                || params.num_particles <= 0 || params.w_max <= params.w_min || params.c1 <= 0.0f || params.c2 <= 0.0f
                 || params.stagnation_limit <= 0)
             {
                 throw std::invalid_argument("Invalid parameters");
@@ -146,7 +146,7 @@ namespace flychams::coordination
             for (int iter = 0; iter < params_.max_iter; iter++)
             {
                 // Update inertia weight
-                w = (params_.w_max  - params_.w_min) * (params_.max_iter - iter) / params_.max_iter + params_.w_min;
+                w = (params_.w_max - params_.w_min) * (params_.max_iter - iter) / params_.max_iter + params_.w_min;
 
                 // Iterate over all particles to compute and update their scores
                 for (int k = 0; k < params_.num_particles; k++)
@@ -177,13 +177,13 @@ namespace flychams::coordination
 
                     // Update velocity
                     particles_[k].velocity = w * particles_[k].velocity + params_.c1 * r1 * (particles_[k].best_position - particles_[k].position) + params_.c2 * r2 * (global_best_position - particles_[k].position);
-                    
+
                     // Update position
                     particles_[k].position += particles_[k].velocity;
                 }
 
                 // Verify convergence
-                if ((global_best_position - global_best_position_prev).norm() < params_.tol) 
+                if ((global_best_position - global_best_position_prev).norm() < params_.tol)
                 {
                     stagnant_generations++;    // Increase stagnation counter if no improvement
                 }
@@ -195,7 +195,7 @@ namespace flychams::coordination
                 global_best_position_prev = global_best_position;  // Update the previous best position
 
                 // If there is no improvement in the last stagnation_limit generations, exit optimization
-                if (stagnant_generations >= params_.stagnation_limit) 
+                if (stagnant_generations >= params_.stagnation_limit)
                 {
                     break;
                 }

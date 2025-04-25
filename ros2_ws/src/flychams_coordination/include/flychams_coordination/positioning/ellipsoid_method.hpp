@@ -46,12 +46,12 @@ namespace flychams::coordination
         struct Data
         {
             // Cost function data
-            core::Matrix3Xr tab_P;    
-            core::RowVectorXr tab_r;   
-            core::Vector3r x_hat;      
+            core::Matrix3Xr tab_P;
+            core::RowVectorXr tab_r;
+            core::Vector3r x_hat;
 
             // Cost function parameters
-            CostFunctions::Parameters cost_params;    
+            CostFunctions::Parameters cost_params;
         };
 
     private: // Parameters
@@ -161,7 +161,7 @@ namespace flychams::coordination
         float optimize(core::Vector3r& x_opt, bool convex_relaxation)
         {
             // Start from initial position
-            core::Vector3r a = ellipsoid_.a0; 
+            core::Vector3r a = ellipsoid_.a0;
             core::Matrix3Xr A = ellipsoid_.A0;
 
             // Compute the gradient of the cost function
@@ -178,25 +178,25 @@ namespace flychams::coordination
                 grad_f(1) * A(1, 1) * grad_f(1) +
                 grad_f(2) * A(2, 2) * grad_f(2) +
                 2.0f * (grad_f(0) * A(0, 1) * grad_f(1) +
-                grad_f(0) * A(0, 2) * grad_f(2) +
-                grad_f(1) * A(1, 2) * grad_f(2)));
+                    grad_f(0) * A(0, 2) * grad_f(2) +
+                    grad_f(1) * A(1, 2) * grad_f(2)));
 
-            // Define the gradient of the constraints
+                // Define the gradient of the constraints
             core::Matrix3Xr grad_g(3, 6);
-            grad_g << 1.0f,  0.0f,  0.0f, -1.0f,  0.0f,  0.0f,
-                      0.0f,  1.0f,  0.0f,  0.0f, -1.0f,  0.0f,
-                      0.0f,  0.0f,  1.0f,  0.0f,  0.0f, -1.0f;
+            grad_g << 1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f,
+                0.0f, 1.0f, 0.0f, 0.0f, -1.0f, 0.0f,
+                0.0f, 0.0f, 1.0f, 0.0f, 0.0f, -1.0f;
 
-            // Define the constraint values
+      // Define the constraint values
             core::VectorXr g(6);
-            g <<  a(0) - params_.x_max(0),
-                  a(1) - params_.x_max(1),
-                  a(2) - params_.x_max(2),
-                 -a(0) + params_.x_min(0),
-                 -a(1) + params_.x_min(1),
-                 -a(2) + params_.x_min(2);
+            g << a(0) - params_.x_max(0),
+                a(1) - params_.x_max(1),
+                a(2) - params_.x_max(2),
+                -a(0) + params_.x_min(0),
+                -a(1) + params_.x_min(1),
+                -a(2) + params_.x_min(2);
 
-            // Find the first constraint that is violated (g[i] > 0)
+           // Find the first constraint that is violated (g[i] > 0)
             bool exists_max_g = false;
             int max_g_index = -1;
             for (int i = 0; i < 6; i++)
@@ -213,7 +213,7 @@ namespace flychams::coordination
             core::Vector3r best_a = a;  // Best solution found
             float best_f = f;           // Best value of the cost function
             int iter = 0;
-            while ((factor_norm_f > params_.tol || exists_max_g) && iter < params_.max_iter) 
+            while ((factor_norm_f > params_.tol || exists_max_g) && iter < params_.max_iter)
             {
                 core::Vector3r v;
                 float d = 0.0f;
@@ -224,15 +224,15 @@ namespace flychams::coordination
                     d = (f - best_f) / factor_norm_f;
                 }
                 else
-                {  
+                {
                     // Calculate the norm of the gradient of the constraint using the matrix A
                     float factor_norm_g = std::sqrt(
                         grad_g(0, max_g_index) * A(0, 0) * grad_g(0, max_g_index) +
                         grad_g(1, max_g_index) * A(1, 1) * grad_g(1, max_g_index) +
                         grad_g(2, max_g_index) * A(2, 2) * grad_g(2, max_g_index) +
                         2.0f * (grad_g(0, max_g_index) * A(0, 1) * grad_g(1, max_g_index) +
-                        grad_g(0, max_g_index) * A(0, 2) * grad_g(2, max_g_index) +
-                        grad_g(1, max_g_index) * A(1, 2) * grad_g(2, max_g_index)));
+                            grad_g(0, max_g_index) * A(0, 2) * grad_g(2, max_g_index) +
+                            grad_g(1, max_g_index) * A(1, 2) * grad_g(2, max_g_index)));
                     v = grad_g.col(max_g_index) / factor_norm_g;
                     d = g(max_g_index) / factor_norm_g;
                 }
@@ -250,11 +250,11 @@ namespace flychams::coordination
                     grad_f(1) * A(1, 1) * grad_f(1) +
                     grad_f(2) * A(2, 2) * grad_f(2) +
                     2.0f * (grad_f(0) * A(0, 1) * grad_f(1) +
-                    grad_f(0) * A(0, 2) * grad_f(2) +
-                    grad_f(1) * A(1, 2) * grad_f(2)));
+                        grad_f(0) * A(0, 2) * grad_f(2) +
+                        grad_f(1) * A(1, 2) * grad_f(2)));
 
-                // Store the best solution
-                if (f < best_f && !exists_max_g) 
+                    // Store the best solution
+                if (f < best_f && !exists_max_g)
                 {
                     best_f = f;
                     best_a = a;
@@ -273,12 +273,12 @@ namespace flychams::coordination
                 }
 
                 // Update the constraint values
-                g <<  a(0) - params_.x_max(0),
-                      a(1) - params_.x_max(1),
-                      a(2) - params_.x_max(2),
-                      -a(0) + params_.x_min(0),
-                      -a(1) + params_.x_min(1),
-                      -a(2) + params_.x_min(2);
+                g << a(0) - params_.x_max(0),
+                    a(1) - params_.x_max(1),
+                    a(2) - params_.x_max(2),
+                    -a(0) + params_.x_min(0),
+                    -a(1) + params_.x_min(1),
+                    -a(2) + params_.x_min(2);
 
                 iter++;
             }
