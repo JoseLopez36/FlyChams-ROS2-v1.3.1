@@ -315,7 +315,7 @@ namespace airsim_wrapper
         body_tf.child_frame_id = camera_ros->body_frame_id;
         body_tf.header.stamp = get_sim_clock_time();
         const auto& pose = client_get_camera_pose(vehicle_ros->vehicle_name, camera_ros->camera_name);
-        body_tf.transform = get_transform_msg_from_airsim(pose.position, pose.orientation);
+        body_tf.transform = get_gimbal_transform_msg_from_airsim(pose.position, pose.orientation);
         tf_broadcaster_->sendTransform(body_tf);
 
         // Body to Optical transform
@@ -440,7 +440,7 @@ namespace airsim_wrapper
                 const auto& orientation = orientations[i];
 
                 // Convert orientation to airlib
-                msr::airlib::Quaternionr attitude = get_airlib_quat(orientation);
+                msr::airlib::Quaternionr attitude = get_gimbal_quat(orientation);
 
                 // Send command to server
                 client_set_gimbal_attitude(attitude, camera_name, vehicle_name);
@@ -944,7 +944,7 @@ namespace airsim_wrapper
 
                         // Update camera body tf
                         camera_ros->body_tf_msg.header.stamp = curr_time;
-                        camera_ros->body_tf_msg.transform = get_transform_msg_from_airsim(pose.position, pose.orientation);
+                        camera_ros->body_tf_msg.transform = get_gimbal_transform_msg_from_airsim(pose.position, pose.orientation);
                     }
                 }
             }
@@ -1478,6 +1478,41 @@ namespace airsim_wrapper
         transformed_twist_msg.angular.z = tf_angular_rotated.z();
 
         return transformed_twist_msg;
+    }
+
+    geometry_msgs::msg::Transform AirsimWrapper::get_gimbal_transform_msg_from_airsim(const msr::airlib::Vector3r& position, const msr::airlib::Quaternionr& quaternion)
+    {
+        geometry_msgs::msg::Transform transform;
+        transform.translation.x = position.x();
+        transform.translation.y = -position.y();
+        transform.translation.z = -position.z();
+        transform.rotation.x = quaternion.x();
+        transform.rotation.y = -quaternion.y();
+        transform.rotation.z = -quaternion.z();
+        transform.rotation.w = quaternion.w();
+
+        // Rotate the transform by 90 degrees around the y-axis
+        tf2::Quaternion quat, quat_gimbal, quat_final;
+        quat.setRPY(0.0, M_PI_2f, 0.0);
+        tf2::fromMsg(transform.rotation, quat_gimbal);
+        quat_final = quat_gimbal * quat;
+        transform.rotation.x = quat_final.x();
+        transform.rotation.y = quat_final.y();
+        transform.rotation.z = quat_final.z();
+        transform.rotation.w = quat_final.w();
+
+        return transform;
+    }
+
+    msr::airlib::Quaternionr AirsimWrapper::get_gimbal_quat(const geometry_msgs::msg::Quaternion& geometry_msgs_quat) const
+    {
+        // Rotate the quaternion by -90 degrees around the y-axis
+        tf2::Quaternion quat, quat_gimbal, quat_final;
+        quat.setRPY(0.0, -M_PI_2f, 0.0);
+        tf2::fromMsg(geometry_msgs_quat, quat_gimbal);
+        quat_final = quat_gimbal * quat;
+
+        return msr::airlib::Quaternionr(quat_final.w(), quat_final.x(), -quat_final.y(), -quat_final.z());
     }
 
 } // namespace airsim_wrapper

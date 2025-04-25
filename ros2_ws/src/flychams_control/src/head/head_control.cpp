@@ -24,7 +24,7 @@ namespace flychams::control
 
 		// Compute central head command
 		const auto& central_head_ptr = config_tools_->getCentralHead(agent_id_);
-		const auto& central_head_rpy = Vector3r(central_head_ptr->orientation.x(), 0.0f, central_head_ptr->orientation.z());
+		const auto& central_head_rpy = Vector3r(central_head_ptr->orientation.x(), central_head_ptr->orientation.y(), central_head_ptr->orientation.z());
 		Vector3Msg central_head_rpy_msg;
 		RosUtils::toMsg(central_head_rpy, central_head_rpy_msg);
 		const auto& [central_cmd_fov, central_cmd_ori] = getCommand(central_head_ptr->ref_focal, central_head_ptr->camera.sensor_size(0), central_head_rpy_msg);

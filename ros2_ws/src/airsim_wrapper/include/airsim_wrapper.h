@@ -289,6 +289,8 @@ namespace airsim_wrapper
         geometry_msgs::msg::Point transform_position_to_local(const geometry_msgs::msg::Point& global_point, const std::string& local_frame) const;
         geometry_msgs::msg::Pose transform_pose_to_global(const geometry_msgs::msg::Pose& local_pose, const std::string& local_frame) const;
         geometry_msgs::msg::Twist transform_twist_to_global(const geometry_msgs::msg::Twist& local_twist, const std::string& local_frame) const;
+        geometry_msgs::msg::Transform get_gimbal_transform_msg_from_airsim(const msr::airlib::Vector3r& position, const msr::airlib::Quaternionr& quaternion);
+        msr::airlib::Quaternionr get_gimbal_quat(const geometry_msgs::msg::Quaternion& geometry_msgs_quat) const;
 
     // ════════════════════════════════════════════════════════════════
     // PRIVATE: ROS Components
