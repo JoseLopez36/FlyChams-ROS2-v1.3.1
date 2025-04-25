@@ -78,7 +78,8 @@ namespace flychams::coordination
             PositionSolver::SolverMode::PSO_ALGORITHM,
             PositionSolver::SolverMode::ALC_PSO_ALGORITHM,
             PositionSolver::SolverMode::NESTEROV_ALGORITHM,
-            PositionSolver::SolverMode::NELDER_MEAD
+            PositionSolver::SolverMode::NELDER_MEAD_NLOPT,
+            PositionSolver::SolverMode::L_BFGS_NLOPT
         };
 
     private: // Data
