@@ -159,6 +159,14 @@ namespace flychams::coordination
         }
 
         std::pair<float, float> calculateCameraBaseSolution(const core::Vector3r& v)
+
+            std::pair<float, float> calculateCameraBaseSolution(const core::Vector3r& v)
+        {
+            return {
+                std::atan2(v.y(), v.x()),     // Yaw (Z-axis rotation)
+                -std::asin(v.z())             // Pitch (Y-axis rotation)
+            };
+        }
         {
             return {
                 std::atan2(v.y(), v.x()),     // Yaw (Z-axis rotation)
@@ -171,7 +179,7 @@ namespace flychams::coordination
             const auto& base = calculateCameraBaseSolution(v);
             return {
                 base.first + M_PIf,
-                M_PIf - base.second      
+                M_PIf - base.second
             };
         }
 

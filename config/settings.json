@@ -258,13 +258,6 @@
             "ImageType": 0,
             "VehicleName": "",
             "Visible": true
-        },
-        {
-            "WindowID": 9,
-            "CameraName": "",
-            "ImageType": 0,
-            "VehicleName": "",
-            "Visible": true
         }
     ]
 }

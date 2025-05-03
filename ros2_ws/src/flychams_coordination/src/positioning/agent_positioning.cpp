@@ -31,7 +31,7 @@ namespace flychams::coordination
         solver_params_.num_challenger_tests = RosUtils::getParameterOr<int>(node_, "agent_positioning.num_challenger_tests", 10);
         // Get Nesterov parameters
         solver_params_.lipschitz_constant = RosUtils::getParameterOr<float>(node_, "agent_positioning.lipschitz_constant", 0.0f);
-        
+
         // Initialize data
         agent_ = Agent();
 
@@ -131,9 +131,9 @@ namespace flychams::coordination
         // Solve agent positioning
         float J;
         Vector3r optimal_position = solver_->run(tab_P, tab_r, x0, J);
-        RCLCPP_INFO(node_->get_logger(), "Agent positioning: Computed optimal position (J = %.2f): (xOpt = %.2f, %.2f, %.2f)", 
+        RCLCPP_INFO(node_->get_logger(), "Agent positioning: Computed optimal position (J = %.2f): (xOpt = %.2f, %.2f, %.2f)",
             J, optimal_position(0), optimal_position(1), optimal_position(2));
-        
+
         // Publish position
         agent_.setpoint.header.stamp = RosUtils::now(node_);
         RosUtils::toMsg(optimal_position, agent_.setpoint.point);
@@ -158,6 +158,7 @@ namespace flychams::coordination
         CostFunctions::Parameters cost_params;
         cost_params.units = createUnitParameters(tracking_params);
         cost_params.n = static_cast<int>(cost_params.units.size());
+        cost_params.n_tracking = static_cast<int>(cost_params.units.size()) - 1;
 
         // Get space constraints
         float min_horizontal = config_ptr->horizontal_constraint(0);
@@ -189,85 +190,85 @@ namespace flychams::coordination
         // Get unit parameters depending on tracking mode
         switch (mode)
         {
-            case TrackingMode::MultiCamera:
+        case TrackingMode::MultiCamera:
+        {
+            // Iterate through heads
+            for (const auto& head : tracking_params.head_params)
             {
-                // Iterate through heads
-                for (const auto& head : tracking_params.head_params)
-                {
-                    CostFunctions::TrackingUnit params;
+                CostFunctions::TrackingUnit params;
 
-                    // Set tracking mode
-                    params.mode = mode;
-                    
-                    // Camera parameters
-                    params.f_min = head.f_min;
-                    params.f_max = head.f_max;
-                    params.f_ref = head.f_ref;
-                    params.s_min = head.s_min;
-                    params.s_max = head.s_max;
-                    params.s_ref = head.s_ref;
+                // Set tracking mode
+                params.mode = mode;
 
-                    // Cost function weights
-                    // Psi
-                    params.tau0 = 1.0f;
-                    params.tau1 = 2.0f;
-                    params.tau2 = 10.0f;
-                    // Lambda
-                    params.sigma0 = 1.0f;
-                    params.sigma1 = 2.0f;
-                    params.sigma2 = 10.0f;
-                    // Gamma
-                    params.mu = 1.0f;
-                    params.nu = 1.0f;
+                // Camera parameters
+                params.f_min = head.f_min;
+                params.f_max = head.f_max;
+                params.f_ref = head.f_ref;
+                params.s_min = head.s_min;
+                params.s_max = head.s_max;
+                params.s_ref = head.s_ref;
 
-                    params_vector.push_back(params);
-                }
-                break;
+                // Cost function weights
+                // Psi
+                params.tau0 = 1.0f;
+                params.tau1 = 2.0f;
+                params.tau2 = 10.0f;
+                // Lambda
+                params.sigma0 = 1.0f;
+                params.sigma1 = 2.0f;
+                params.sigma2 = 10.0f;
+                // Gamma
+                params.mu = 1.0f;
+                params.nu = 1.0f;
+
+                params_vector.push_back(params);
             }
+            break;
+        }
 
-            case TrackingMode::MultiWindow:
+        case TrackingMode::MultiWindow:
+        {
+            // Get central head
+            const auto& central_head = tracking_params.head_params[0];
+
+            // Iterate through windows
+            for (const auto& window : tracking_params.window_params)
             {
-                // Get central head
-                const auto& central_head = tracking_params.head_params[0];
+                CostFunctions::TrackingUnit params;
 
-                // Iterate through windows
-                for (const auto& window : tracking_params.window_params)
-                {
-                    CostFunctions::TrackingUnit params;
+                // Set tracking mode
+                params.mode = mode;
 
-                    // Set tracking mode
-                    params.mode = mode;
+                // Window parameters
+                params.central_f = central_head.f_ref;
+                params.lambda_min = window.lambda_min;
+                params.lambda_max = window.lambda_max;
+                params.lambda_ref = window.lambda_ref;
+                params.s_min = window.s_min;
+                params.s_max = window.s_max;
+                params.s_ref = window.s_ref;
 
-                    // Window parameters
-                    params.central_f = central_head.f_ref;
-                    params.lambda_min = window.lambda_min;
-                    params.lambda_max = window.lambda_max;
-                    params.lambda_ref = window.lambda_ref;
-                    params.s_min = window.s_min;
-                    params.s_max = window.s_max;
-                    params.s_ref = window.s_ref;
+                // Cost function weights
+                // Psi
+                params.tau0 = 1.0f;
+                params.tau1 = 2.0f;
+                params.tau2 = 10.0f;
+                // Lambda
+                params.sigma0 = 1.0f;
+                params.sigma1 = 2.0f;
+                params.sigma2 = 10.0f;
+                // Gamma
+                params.mu = 1.0f;
+                params.nu = 1.0f;
 
-                    // Cost function weights
-                    // Psi
-                    params.tau0 = 1.0f;
-                    params.tau1 = 2.0f;
-                    params.tau2 = 10.0f;
-                    // Lambda
-                    params.sigma0 = 1.0f;
-                    params.sigma1 = 2.0f;
-                    params.sigma2 = 10.0f;
-                    // Gamma
-                    params.mu = 1.0f;
-                    params.nu = 1.0f;
-
-                    params_vector.push_back(params);
-                }
-                break;
+                params_vector.push_back(params);
             }
+            break;
+        }
 
-            default:
-                RCLCPP_ERROR(node_->get_logger(), "Agent positioning: Invalid tracking mode");
-                break;
+        default:
+            RCLCPP_ERROR(node_->get_logger(), "Agent positioning: Invalid tracking mode");
+            break;
         }
 
         return params_vector;

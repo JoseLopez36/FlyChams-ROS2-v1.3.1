@@ -16,7 +16,7 @@ namespace flychams::coordination
 {
     /**
      * ════════════════════════════════════════════════════════════════
-     * @brief Solver for agent assignment using sub-optimal combinatorial 
+     * @brief Solver for agent assignment using sub-optimal combinatorial
      * optimization
      * ════════════════════════════════════════════════════════════════
      * @author Jose Francisco Lopez Ruiz
@@ -49,7 +49,7 @@ namespace flychams::coordination
             core::Vector3r C;
             float r;
         };
-    
+
     private: // Parameters
         Parameters params_;
 
@@ -63,7 +63,7 @@ namespace flychams::coordination
         {
             // Nothing to destroy
         }
-        core::RowVectorXi run(const core::Matrix3Xr& tab_x, const core::Matrix3Xr& tab_P, const core::RowVectorXr& tab_r, 
+        core::RowVectorXi run(const core::Matrix3Xr& tab_x, const core::Matrix3Xr& tab_P, const core::RowVectorXr& tab_r,
             const core::RowVectorXi& X_prev, std::vector<PositionSolver::SharedPtr>& solvers)
         {
             // Get number of agents and tracking units
@@ -71,7 +71,7 @@ namespace flychams::coordination
             core::RowVectorXi nk = core::RowVectorXi::Zero(m);
             for (int k = 0; k < m; k++)
             {
-                nk(k) = solvers[k]->n();
+                nk(k) = solvers[k]->n_tracking();
             }
 
             // Create agent vector
@@ -90,7 +90,7 @@ namespace flychams::coordination
                 A[k].J_hist = core::VectorXr::Zero(0);
                 A[k].X_hist = core::MatrixXi::Zero(0, nk(k));
             }
-            
+
             // Create cluster vector
             int n = tab_P.cols();
             std::vector<Cluster> T(n);
@@ -111,9 +111,9 @@ namespace flychams::coordination
         }
 
     private: // Recursive cost calculation. Branch and bound
-        void globalCost(std::vector<Agent>& A, const std::vector<Cluster>& T, 
+        void globalCost(std::vector<Agent>& A, const std::vector<Cluster>& T,
             const float& J, const core::RowVectorXi& X,
-            float& J_min, core::RowVectorXi& X_min, 
+            float& J_min, core::RowVectorXi& X_min,
             const core::RowVectorXi& nk, std::vector<PositionSolver::SharedPtr>& solvers)
         {
             //std::cout << "---------------> Global cost: " << J << std::endl;
@@ -121,7 +121,7 @@ namespace flychams::coordination
             // Get number of agents and clusters
             int m = static_cast<int>(A.size());
             int n = static_cast<int>(T.size());
-            
+
             // If there are no remaining agents, it is understood that we are at the end of a branch,
             // so the cost is considered as a final cost. We check if J is lower than the minimum found so far,
             // in which case we update the value.
@@ -174,7 +174,7 @@ namespace flychams::coordination
                             }
                         }
                     }
-                    
+
                     // Calculate agent cost with current permutation
                     float Jk;
                     core::RowVectorXi Xk;
@@ -182,7 +182,7 @@ namespace flychams::coordination
                     agentCost(Ak, Tk, Jk, Xk, nk(k), solvers[k]);
                     //std::cout << "Agent cost: " << Jk << std::endl;
                     //std::cout << "Agent assignment: " << Xk << std::endl;
-                                       
+
                     // If current cost plus new cost is less than minimum found so far, continue down this branch,
                     // else, break and backtrack to avoid losing time.
                     if (J + Jk < J_min)
@@ -199,7 +199,7 @@ namespace flychams::coordination
                                 An.push_back(Akn);
                             }
                         }
-                        
+
                         // Create a copy of the cluster vector without the assigned clusters
                         std::vector<Cluster> Tn;
                         for (const auto& Tin : T)
@@ -214,13 +214,13 @@ namespace flychams::coordination
                                     break;
                                 }
                             }
-                            
+
                             if (!is_assigned)
                             {
                                 Tn.push_back(Tin);
                             }
                         }
-                        
+
                         // Concatenate assignment vectors
                         core::RowVectorXi Xn;
                         if (X.size() > 0)
@@ -233,7 +233,7 @@ namespace flychams::coordination
                         {
                             Xn = Xk;
                         }
-                        
+
                         // Recursive call to continue branch exploration
                         globalCost(An, Tn, J + Jk, Xn, J_min, X_min, nk, solvers);
                     }
@@ -244,8 +244,8 @@ namespace flychams::coordination
             //std::cout << "----------------" << std::endl;
         }
 
-        void agentCost(Agent& Ak, const std::vector<Cluster>& Tk, 
-            float& Jk, core::RowVectorXi& Xk, 
+        void agentCost(Agent& Ak, const std::vector<Cluster>& Tk,
+            float& Jk, core::RowVectorXi& Xk,
             const int& nk,
             PositionSolver::SharedPtr solver)
         {
@@ -276,7 +276,7 @@ namespace flychams::coordination
             bool calculated = false;
             float J_calculated = 0.0f;
             core::RowVectorXi X_calculated;
-            
+
             if (Ak.X_hist.rows() > 0)
             {
                 for (int row = 0; row < Ak.J_hist.size(); row++)
@@ -290,7 +290,7 @@ namespace flychams::coordination
                             break;
                         }
                     }
-                    
+
                     if (match)
                     {
                         calculated = true;
@@ -316,10 +316,10 @@ namespace flychams::coordination
             core::Matrix3Xr tab_P = core::Matrix3Xr::Zero(3, nk + 1);
             core::RowVectorXr tab_r = core::RowVectorXr::Zero(nk + 1);
             // Tracking units
-            for (int t = 1; t < nk + 1; t++)
+            for (int t = 1, i = 0; t < nk + 1; t++, i++)
             {
-                tab_P.col(t) = Tk[t].C;
-                tab_r(t) = Tk[t].r;
+                tab_P.col(t) = Tk[i].C;
+                tab_r(t) = Tk[i].r;
             }
             // Central unit (mean of all selected clusters and maximum radius)
             const auto& [central_P, central_r] = computeCentralCluster(tab_P, tab_r);
@@ -345,7 +345,7 @@ namespace flychams::coordination
 
             // Store calculated assignment and cost
             int n_hist = Ak.J_hist.size();
-            
+
             // First allocation
             if (n_hist == 0)
             {
@@ -358,15 +358,15 @@ namespace flychams::coordination
             {
                 core::MatrixXi X_hist_new(n_hist + 1, nk);
                 core::VectorXr J_hist_new(n_hist + 1);
-                
+
                 // Copy existing data
                 X_hist_new.topRows(n_hist) = Ak.X_hist;
                 J_hist_new.head(n_hist) = Ak.J_hist;
-                
+
                 // Add new data
                 X_hist_new.row(n_hist) = Xk;
                 J_hist_new(n_hist) = Jk;
-                
+
                 // Replace old with new
                 Ak.X_hist = X_hist_new;
                 Ak.J_hist = J_hist_new;
@@ -383,32 +383,32 @@ namespace flychams::coordination
             {
                 throw std::invalid_argument("n is greater than the number of clusters");
             }
-            
+
             // Calculate number of permutations: P(m,n) = m!/(m-n)!
             int K = 1;
             for (int i = m; i > m - n; i--)
                 K *= i;
-            
+
             // Initialize matrix to store permutations (K combinations of n)
             core::MatrixXi P(K, n);
-            
+
             // For cases where n = m:
             if (n == m)
             {
                 std::vector<int> I(m);
                 for (int i = 0; i < m; i++)
                     I[i] = i;
-                
+
                 int row = 0;
                 do {
                     for (int col = 0; col < m; col++)
                         P(row, col) = V(I[col]);
                     row++;
                 } while (std::next_permutation(I.begin(), I.end()));
-                
+
                 return P;
             }
-            
+
             // For cases where n < m:
             if (n < m)
             {
@@ -417,28 +417,28 @@ namespace flychams::coordination
                 int row = 0;
 
                 // Recursive function to generate permutations taking n elements from m
-                std::function<void(int)> backtrack = [&](int depth) 
-                {
-                    // depth = how many have we chosen so far
-                    if (depth == n) 
+                std::function<void(int)> backtrack = [&](int depth)
                     {
-                        // Write one permutation into P
-                        for (int j = 0; j < n; j++)
-                            P(row, j) = V(current[j]);
-                        row++;
-                        return;
-                    }
-                    for (int i = 0; i < m; i++) 
-                    {
-                        if (!used[i]) 
+                        // depth = how many have we chosen so far
+                        if (depth == n)
                         {
-                            used[i] = true;
-                            current[depth] = i;
-                            backtrack(depth + 1);
-                            used[i] = false;
+                            // Write one permutation into P
+                            for (int j = 0; j < n; j++)
+                                P(row, j) = V(current[j]);
+                            row++;
+                            return;
                         }
-                    }
-                };
+                        for (int i = 0; i < m; i++)
+                        {
+                            if (!used[i])
+                            {
+                                used[i] = true;
+                                current[depth] = i;
+                                backtrack(depth + 1);
+                                used[i] = false;
+                            }
+                        }
+                    };
 
                 backtrack(0);
             }
@@ -450,7 +450,7 @@ namespace flychams::coordination
         {
             // Get number of tracking units
             int n = tab_P.cols();
-            
+
             // Compute mean of all available clusters
             core::Vector3r z_mean = core::Vector3r::Zero();
             for (int i = 0; i < n; i++)

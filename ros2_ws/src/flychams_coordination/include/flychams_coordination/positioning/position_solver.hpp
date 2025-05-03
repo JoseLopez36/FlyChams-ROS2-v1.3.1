@@ -88,6 +88,7 @@ namespace flychams::coordination
         void destroy();
         // Getters
         int n() const { return params_.cost_params.n; }
+        int n_tracking() const { return params_.cost_params.n_tracking; }
         // Optimization
         core::Vector3r run(const core::Matrix3Xr& tab_P, const core::RowVectorXr& tab_r, const core::Vector3r& x0, float& J);
     };

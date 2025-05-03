@@ -100,64 +100,18 @@ namespace flychams::core
             // Get transform from camera to world
             const Matrix4r cTw = wTc.inverse();
 
-            // Get camera parameters in OpenCV format
-            const cv::Mat K_cv = (cv::Mat_<float>(3, 3) << K(0, 0), K(0, 1), K(0, 2), K(1, 0), K(1, 1), K(1, 2), K(2, 0), K(2, 1), K(2, 2));
-            const cv::Mat D_cv = cv::Mat::zeros(5, 1, CV_64F); // Assuming no distortion
+            // Get homogeneous point
+            const Vector4r wP_ = wP.homogeneous();
 
-            // Transform point to camera frame
-            const Vector4r wP_(wP.x(), wP.y(), wP.z(), 1.0f);
-            const Vector4r cP_ = cTw * wP_;
+            // Project point
+            const Vector3r p = K * cTw.block<3, 4>(0, 0) * wP_;
 
-            // Project point using OpenCV
-            std::vector<cv::Point3f> cP_cv(1);
-            cP_cv[0] = cv::Point3f(cP_.x(), cP_.y(), cP_.z());
-            std::vector<cv::Point2f> p(1);
-            cv::projectPoints(cP_cv, cv::Mat::zeros(3, 1, CV_64F), cv::Mat::zeros(3, 1, CV_64F), K_cv, D_cv, p);
+            // Get projected coordinates
+            const float u = p.x() / p.z();
+            const float v = p.y() / p.z();
 
             // Return projected point
-            return Vector2r(p[0].x, p[0].y);
-        }
-
-        static Matrix2Xr projectPoints(const Matrix3Xr& tab_wP, const Matrix4r& wTc, const Matrix3r& K)
-        {
-            // Args:
-            // - tab_wP: World points
-            // - wTc: World to camera transform
-            // - K: Camera intrinsic matrix
-
-            // Get transform from camera to world
-            const Matrix4r cTw = wTc.inverse();
-
-            // Get camera parameters in OpenCV format
-            const cv::Mat K_cv = (cv::Mat_<float>(3, 3) << K(0, 0), K(0, 1), K(0, 2), K(1, 0), K(1, 1), K(1, 2), K(2, 0), K(2, 1), K(2, 2));
-            const cv::Mat D_cv = cv::Mat::zeros(5, 1, CV_64F); // Assuming no distortion
-
-            // Transform points to camera frame
-            int n = tab_wP.cols();
-            std::vector<cv::Point3f> tab_cP_cv(n);
-            for (int i = 0; i < n; i++)
-            {
-                const Vector3r& wP = tab_wP.col(i);
-                const Vector4r wP_(wP.x(), wP.y(), wP.z(), 1.0f);
-                const Vector4r cP_ = cTw * wP_;
-
-                // Add to vector
-                tab_cP_cv[i] = cv::Point3f(cP_.x(), cP_.y(), cP_.z());
-            }
-
-            // Project points using OpenCV
-            std::vector<cv::Point2f> tab_p_cv(n);
-            cv::projectPoints(tab_cP_cv, cv::Mat::zeros(3, 1, CV_64F), cv::Mat::zeros(3, 1, CV_64F), K_cv, D_cv, tab_p_cv);
-
-            // Return projected points
-            Matrix2Xr tab_p(2, n);
-            for (int i = 0; i < n; i++)
-            {
-                const auto& pi = tab_p_cv[i];
-                tab_p.col(i) << pi.x, pi.y;
-            }
-
-            return tab_p;
+            return Vector2r(u, v);
         }
     };
 

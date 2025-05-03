@@ -354,14 +354,7 @@ namespace flychams::core
                                    {"VehicleName", ""},
                                    {"Visible", true} });
 
-            // Central view sub-window
-            subwindows.push_back({ {"WindowID", idx++},
-                                   {"CameraName", ""},
-                                   {"ImageType", 0},
-                                   {"VehicleName", ""},
-                                   {"Visible", true} });
-
-            // Tracking view sub-windows
+            // Tracking views sub-windows
             for (int i = 0; i < config_ptr->system.tracking_view_ids.size(); i++)
             {
                 subwindows.push_back({ {"WindowID", idx++},

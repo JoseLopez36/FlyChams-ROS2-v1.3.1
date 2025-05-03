@@ -52,8 +52,9 @@ namespace flychams::coordination
         };
         struct Parameters // Parameters for the cost function
         {
-            int n;
-            std::vector<TrackingUnit> units;
+            int n;                              // Number of units (central + tracking)
+            int n_tracking;                     // Number of tracking units
+            std::vector<TrackingUnit> units;    // Units (central + tracking) where 0 is the central unit
         };
 
     public: // Cost functions without gradient calculation
@@ -278,18 +279,18 @@ namespace flychams::coordination
             const float U2 = r * f_max / s_min;
 
             // Calculate the index terms based on intervals
-            const float psi_i = 
-                tau0 * pow(max(0.0f, d - U0), 2) + 
-                tau1 * pow(max(0.0f, d - U1), 2) + 
+            const float psi_i =
+                tau0 * pow(max(0.0f, d - U0), 2) +
+                tau1 * pow(max(0.0f, d - U1), 2) +
                 tau2 * pow(max(0.0f, d - U2), 2);
-            const float lambda_i = 
-                sigma0 * pow(max(0.0f, L0 - d), 2) + 
-                sigma1 * pow(max(0.0f, L1 - d), 2) + 
+            const float lambda_i =
+                sigma0 * pow(max(0.0f, L0 - d), 2) +
+                sigma1 * pow(max(0.0f, L1 - d), 2) +
                 sigma2 * pow(max(0.0f, L2 - d), 2);
-            const float gamma_i = 
-                mu * (x - p_ref).transpose() * (x - p_ref) + 
+            const float gamma_i =
+                mu * (x - p_ref).transpose() * (x - p_ref) +
                 nu * pow((d - (x - z).transpose() * core::Vector3r(0.0f, 0.0f, 1.0f)), 2);
-                            
+
             // Return the value of Ji
             return psi_i + lambda_i + gamma_i;
         }
@@ -335,13 +336,13 @@ namespace flychams::coordination
             const float U2 = r * f_max / s_min;
 
             // Calculate the index terms based on intervals
-            const float psi_i = 
-                tau0 * pow(max(0.0f, d - U0), 2) + 
-                tau1 * pow(max(0.0f, d - U1), 2) + 
+            const float psi_i =
+                tau0 * pow(max(0.0f, d - U0), 2) +
+                tau1 * pow(max(0.0f, d - U1), 2) +
                 tau2 * pow(max(0.0f, d - U2), 2);
             // const float lambda_i = 0.0f; // Non-convex term is not considered
-            const float gamma_i = 
-                mu * (x - p_ref).transpose() * (x - p_ref) + 
+            const float gamma_i =
+                mu * (x - p_ref).transpose() * (x - p_ref) +
                 nu * pow((d - (x - z).transpose() * core::Vector3r(0.0f, 0.0f, 1.0f)), 2);
 
             // Return the value of Ji
@@ -407,18 +408,18 @@ namespace flychams::coordination
             const float U2 = r * f_max / s_min;
 
             // Calculate the index terms based on intervals
-            const float psi_i = 
-                tau0 * pow(max(0.0f, d - U0), 2) + 
-                tau1 * pow(max(0.0f, d - U1), 2) + 
+            const float psi_i =
+                tau0 * pow(max(0.0f, d - U0), 2) +
+                tau1 * pow(max(0.0f, d - U1), 2) +
                 tau2 * pow(max(0.0f, d - U2), 2);
-            const float lambda_i = 
-                sigma0 * pow(max(0.0f, L0 - d_proj), 2) + 
-                sigma1 * pow(max(0.0f, L1 - d_proj), 2) + 
+            const float lambda_i =
+                sigma0 * pow(max(0.0f, L0 - d_proj), 2) +
+                sigma1 * pow(max(0.0f, L1 - d_proj), 2) +
                 sigma2 * pow(max(0.0f, L2 - d_proj), 2);
-            const float gamma_i = 
-                mu * (x - p_ref).transpose() * (x - p_ref) + 
+            const float gamma_i =
+                mu * (x - p_ref).transpose() * (x - p_ref) +
                 nu * pow((d - (x - z).transpose() * core::Vector3r(0.0f, 0.0f, 1.0f)), 2);
-                            
+
             // Return the value of Ji
             return psi_i + lambda_i + gamma_i;
         }
@@ -469,16 +470,16 @@ namespace flychams::coordination
             const float U2 = (r * f * lambda_max) / s_min;
 
             // Calculate the index terms based on intervals
-            const float psi_i = 
-                tau0 * pow(max(0.0f, d - U0), 2) + 
-                tau1 * pow(max(0.0f, d - U1), 2) + 
+            const float psi_i =
+                tau0 * pow(max(0.0f, d - U0), 2) +
+                tau1 * pow(max(0.0f, d - U1), 2) +
                 tau2 * pow(max(0.0f, d - U2), 2);
-            const float lambda_i = 
-                sigma0 * pow(max(0.0f, L0 - d), 2) + 
-                sigma1 * pow(max(0.0f, L1 - d), 2) + 
+            const float lambda_i =
+                sigma0 * pow(max(0.0f, L0 - d), 2) +
+                sigma1 * pow(max(0.0f, L1 - d), 2) +
                 sigma2 * pow(max(0.0f, L2 - d), 2);
-            const float gamma_i = 
-                mu * (x - p_ref).transpose() * (x - p_ref) + 
+            const float gamma_i =
+                mu * (x - p_ref).transpose() * (x - p_ref) +
                 nu * pow((d - (x - z).transpose() * core::Vector3r(0.0f, 0.0f, 1.0f)), 2);
 
             // Return the value of Ji
@@ -527,13 +528,13 @@ namespace flychams::coordination
             const float U2 = (r * f * lambda_max) / s_min;
 
             // Calculate the index terms based on intervals
-            const float psi_i = 
-                tau0 * pow(max(0.0f, d - U0), 2) + 
-                tau1 * pow(max(0.0f, d - U1), 2) + 
+            const float psi_i =
+                tau0 * pow(max(0.0f, d - U0), 2) +
+                tau1 * pow(max(0.0f, d - U1), 2) +
                 tau2 * pow(max(0.0f, d - U2), 2);
             // const float lambda_i = 0.0f; // Non-convex term is not considered
-            const float gamma_i = 
-                mu * (x - p_ref).transpose() * (x - p_ref) + 
+            const float gamma_i =
+                mu * (x - p_ref).transpose() * (x - p_ref) +
                 nu * pow((d - (x - z).transpose() * core::Vector3r(0.0f, 0.0f, 1.0f)), 2);
 
             // Return the value of Ji
@@ -600,16 +601,16 @@ namespace flychams::coordination
             const float U2 = (r * f * lambda_max) / s_min;
 
             // Calculate the index terms based on intervals
-            const float psi_i = 
-                tau0 * pow(max(0.0f, d - U0), 2) + 
-                tau1 * pow(max(0.0f, d - U1), 2) + 
+            const float psi_i =
+                tau0 * pow(max(0.0f, d - U0), 2) +
+                tau1 * pow(max(0.0f, d - U1), 2) +
                 tau2 * pow(max(0.0f, d - U2), 2);
-            const float lambda_i = 
-                sigma0 * pow(max(0.0f, L0 - d_proj), 2) + 
-                sigma1 * pow(max(0.0f, L1 - d_proj), 2) + 
+            const float lambda_i =
+                sigma0 * pow(max(0.0f, L0 - d_proj), 2) +
+                sigma1 * pow(max(0.0f, L1 - d_proj), 2) +
                 sigma2 * pow(max(0.0f, L2 - d_proj), 2);
-            const float gamma_i = 
-                mu * (x - p_ref).transpose() * (x - p_ref) + 
+            const float gamma_i =
+                mu * (x - p_ref).transpose() * (x - p_ref) +
                 nu * pow((d - (x - z).transpose() * core::Vector3r(0.0f, 0.0f, 1.0f)), 2);
 
             // Return the value of Ji
@@ -669,20 +670,20 @@ namespace flychams::coordination
             const float U2 = r * f_max / s_min;
 
             // Calculate the index terms based on intervals
-            const float psi_i = 
-                tau0 * pow(max(0.0f, d - U0), 2) + 
-                tau1 * pow(max(0.0f, d - U1), 2) + 
+            const float psi_i =
+                tau0 * pow(max(0.0f, d - U0), 2) +
+                tau1 * pow(max(0.0f, d - U1), 2) +
                 tau2 * pow(max(0.0f, d - U2), 2);
             // const float lambda_i = 0.0f; // Non-convex term is not considered
-            const float gamma_i = 
-                mu * (x - p_ref).transpose() * (x - p_ref) + 
+            const float gamma_i =
+                mu * (x - p_ref).transpose() * (x - p_ref) +
                 nu * pow((d - (x - z).transpose() * core::Vector3r(0.0f, 0.0f, 1.0f)), 2);
 
             // Compute the gradient of the cost function
             // Psi gradient
             float grad_psi = 2.0f *
-                    (tau0 * max(0.0f, d - U0) * heaviside(d, U0) + 
-                    tau1 * max(0.0f, d - U1) * heaviside(d, U1) + 
+                (tau0 * max(0.0f, d - U0) * heaviside(d, U0) +
+                    tau1 * max(0.0f, d - U1) * heaviside(d, U1) +
                     tau2 * max(0.0f, d - U2) * heaviside(d, U2));
             // Gamma gradient
             core::Vector3r grad_gamma;
@@ -765,28 +766,28 @@ namespace flychams::coordination
             const float U2 = r * f_max / s_min;
 
             // Calculate the index terms based on intervals
-            const float psi_i = 
-                tau0 * pow(max(0.0f, d - U0), 2) + 
-                tau1 * pow(max(0.0f, d - U1), 2) + 
+            const float psi_i =
+                tau0 * pow(max(0.0f, d - U0), 2) +
+                tau1 * pow(max(0.0f, d - U1), 2) +
                 tau2 * pow(max(0.0f, d - U2), 2);
-            const float lambda_i = 
-                sigma0 * pow(max(0.0f, L0 - d_proj), 2) + 
-                sigma1 * pow(max(0.0f, L1 - d_proj), 2) + 
+            const float lambda_i =
+                sigma0 * pow(max(0.0f, L0 - d_proj), 2) +
+                sigma1 * pow(max(0.0f, L1 - d_proj), 2) +
                 sigma2 * pow(max(0.0f, L2 - d_proj), 2);
-            const float gamma_i = 
-                mu * (x - p_ref).transpose() * (x - p_ref) + 
+            const float gamma_i =
+                mu * (x - p_ref).transpose() * (x - p_ref) +
                 nu * pow((d - (x - z).transpose() * core::Vector3r(0.0f, 0.0f, 1.0f)), 2);
 
             // Compute the gradient of the cost function
             // Psi gradient
             float grad_psi = 2.0f *
-                    (tau0 * max(0.0f, d - U0) * heaviside(d, U0) + 
-                    tau1 * max(0.0f, d - U1) * heaviside(d, U1) + 
+                (tau0 * max(0.0f, d - U0) * heaviside(d, U0) +
+                    tau1 * max(0.0f, d - U1) * heaviside(d, U1) +
                     tau2 * max(0.0f, d - U2) * heaviside(d, U2));
             // Lambda gradient
             float grad_lambda = -2.0f *
-                    (sigma0 * max(0.0f, L0 - d_proj) * heaviside(L0, d_proj) + 
-                    sigma1 * max(0.0f, L1 - d_proj) * heaviside(L1, d_proj) + 
+                (sigma0 * max(0.0f, L0 - d_proj) * heaviside(L0, d_proj) +
+                    sigma1 * max(0.0f, L1 - d_proj) * heaviside(L1, d_proj) +
                     sigma2 * max(0.0f, L2 - d_proj) * heaviside(L2, d_proj));
             // Gamma gradient
             core::Vector3r grad_gamma;
@@ -852,20 +853,20 @@ namespace flychams::coordination
             const float U2 = (r * f * lambda_max) / s_min;
 
             // Calculate the index terms based on intervals
-            const float psi_i = 
-                tau0 * pow(max(0.0f, d - U0), 2) + 
-                tau1 * pow(max(0.0f, d - U1), 2) + 
+            const float psi_i =
+                tau0 * pow(max(0.0f, d - U0), 2) +
+                tau1 * pow(max(0.0f, d - U1), 2) +
                 tau2 * pow(max(0.0f, d - U2), 2);
             // const float lambda_i = 0.0f; // Non-convex term is not considered
-            const float gamma_i = 
-                mu * (x - p_ref).transpose() * (x - p_ref) + 
+            const float gamma_i =
+                mu * (x - p_ref).transpose() * (x - p_ref) +
                 nu * pow((d - (x - z).transpose() * core::Vector3r(0.0f, 0.0f, 1.0f)), 2);
 
             // Compute the gradient of the cost function
             // Psi gradient
             float grad_psi = 2.0f *
-                    (tau0 * max(0.0f, d - U0) * heaviside(d, U0) + 
-                    tau1 * max(0.0f, d - U1) * heaviside(d, U1) + 
+                (tau0 * max(0.0f, d - U0) * heaviside(d, U0) +
+                    tau1 * max(0.0f, d - U1) * heaviside(d, U1) +
                     tau2 * max(0.0f, d - U2) * heaviside(d, U2));
             // Gamma gradient
             core::Vector3r grad_gamma;
@@ -948,28 +949,28 @@ namespace flychams::coordination
             const float U2 = (r * f * lambda_max) / s_min;
 
             // Calculate the index terms based on intervals
-            const float psi_i = 
-                tau0 * pow(max(0.0f, d - U0), 2) + 
-                tau1 * pow(max(0.0f, d - U1), 2) + 
+            const float psi_i =
+                tau0 * pow(max(0.0f, d - U0), 2) +
+                tau1 * pow(max(0.0f, d - U1), 2) +
                 tau2 * pow(max(0.0f, d - U2), 2);
-            const float lambda_i = 
-                sigma0 * pow(max(0.0f, L0 - d_proj), 2) + 
-                sigma1 * pow(max(0.0f, L1 - d_proj), 2) + 
+            const float lambda_i =
+                sigma0 * pow(max(0.0f, L0 - d_proj), 2) +
+                sigma1 * pow(max(0.0f, L1 - d_proj), 2) +
                 sigma2 * pow(max(0.0f, L2 - d_proj), 2);
-            const float gamma_i = 
-                mu * (x - p_ref).transpose() * (x - p_ref) + 
+            const float gamma_i =
+                mu * (x - p_ref).transpose() * (x - p_ref) +
                 nu * pow((d - (x - z).transpose() * core::Vector3r(0.0f, 0.0f, 1.0f)), 2);
 
             // Compute the gradient of the cost function
             // Psi gradient
             float grad_psi = 2.0f *
-                    (tau0 * max(0.0f, d - U0) * heaviside(d, U0) + 
-                    tau1 * max(0.0f, d - U1) * heaviside(d, U1) + 
+                (tau0 * max(0.0f, d - U0) * heaviside(d, U0) +
+                    tau1 * max(0.0f, d - U1) * heaviside(d, U1) +
                     tau2 * max(0.0f, d - U2) * heaviside(d, U2));
             // Lambda gradient
             float grad_lambda = -2.0f *
-                    (sigma0 * max(0.0f, L0 - d_proj) * heaviside(L0, d_proj) + 
-                    sigma1 * max(0.0f, L1 - d_proj) * heaviside(L1, d_proj) + 
+                (sigma0 * max(0.0f, L0 - d_proj) * heaviside(L0, d_proj) +
+                    sigma1 * max(0.0f, L1 - d_proj) * heaviside(L1, d_proj) +
                     sigma2 * max(0.0f, L2 - d_proj) * heaviside(L2, d_proj));
             // Gamma gradient
             core::Vector3r grad_gamma;
@@ -984,18 +985,18 @@ namespace flychams::coordination
         }
 
     private: // Utils
-        static float max(const float& a, const float& b) 
-        { 
+        static float max(const float& a, const float& b)
+        {
             return std::max(a, b);
         }
 
         static float heaviside(const float& d, const float& U)
         {
-            if (d < U) 
+            if (d < U)
                 return 0.0f;
-            else if (d > U) 
+            else if (d > U)
                 return 1.0f;
-            else 
+            else
                 return 0.5f;
         }
     };
