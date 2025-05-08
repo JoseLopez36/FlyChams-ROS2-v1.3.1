@@ -30,6 +30,8 @@
 // TF2 includes
 #include <tf2_ros/transform_listener.h>
 #include <tf2_ros/buffer.h>
+#include <tf2_ros/transform_broadcaster.h>
+#include <tf2_ros/static_transform_broadcaster.h>
 #include <tf2/transform_datatypes.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #include <tf2/LinearMath/Transform.h>
@@ -44,8 +46,7 @@
 #include "flychams_interfaces/msg/agent_status.hpp"
 #include "flychams_interfaces/msg/agent_assignment.hpp"
 #include "flychams_interfaces/msg/agent_clusters.hpp"
-#include "flychams_interfaces/msg/agent_head_setpoints.hpp"
-#include "flychams_interfaces/msg/agent_window_setpoints.hpp"
+#include "flychams_interfaces/msg/agent_tracking_setpoints.hpp"
 #include "flychams_interfaces/msg/agent_metrics.hpp"
 // Target messages
 #include "flychams_interfaces/msg/target_metrics.hpp"
@@ -53,6 +54,8 @@
 #include "flychams_interfaces/msg/cluster_assignment.hpp"
 #include "flychams_interfaces/msg/cluster_geometry.hpp"
 #include "flychams_interfaces/msg/cluster_metrics.hpp"
+// GUI messages
+#include "flychams_interfaces/msg/gui_setpoints.hpp"
 
 namespace flychams::core
 {
@@ -77,6 +80,8 @@ namespace flychams::core
     // TF2
     using BufferPtr = std::shared_ptr<tf2_ros::Buffer>;
     using ListenerPtr = std::shared_ptr<tf2_ros::TransformListener>;
+    using BroadcasterPtr = std::shared_ptr<tf2_ros::TransformBroadcaster>;
+    using StaticBroadcasterPtr = std::shared_ptr<tf2_ros::StaticTransformBroadcaster>;
     // Time
     using Time = rclcpp::Time;
     using TimerPtr = rclcpp::TimerBase::SharedPtr;
@@ -147,8 +152,7 @@ namespace flychams::core
     using AgentStatusMsg = flychams_interfaces::msg::AgentStatus;
     using AgentAssignmentMsg = flychams_interfaces::msg::AgentAssignment;
     using AgentClustersMsg = flychams_interfaces::msg::AgentClusters;
-    using AgentHeadSetpointsMsg = flychams_interfaces::msg::AgentHeadSetpoints;
-    using AgentWindowSetpointsMsg = flychams_interfaces::msg::AgentWindowSetpoints;
+    using AgentTrackingSetpointsMsg = flychams_interfaces::msg::AgentTrackingSetpoints;
     using AgentMetricsMsg = flychams_interfaces::msg::AgentMetrics;
     // Target messages
     using TargetMetricsMsg = flychams_interfaces::msg::TargetMetrics;
@@ -156,5 +160,7 @@ namespace flychams::core
     using ClusterAssignmentMsg = flychams_interfaces::msg::ClusterAssignment;
     using ClusterGeometryMsg = flychams_interfaces::msg::ClusterGeometry;
     using ClusterMetricsMsg = flychams_interfaces::msg::ClusterMetrics;
+    // GUI messages
+    using GuiSetpointsMsg = flychams_interfaces::msg::GuiSetpoints;
 
 } // namespace flychams::core

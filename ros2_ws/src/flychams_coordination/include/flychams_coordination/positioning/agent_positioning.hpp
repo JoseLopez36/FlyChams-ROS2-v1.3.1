@@ -15,11 +15,6 @@ namespace flychams::coordination
     /**
      * ════════════════════════════════════════════════════════════════
      * @brief Agent positioning module
-     *
-     * @details
-     * This class is responsible for computing the position of an agent
-     * based on its cluster distribution.
-     *
      * ════════════════════════════════════════════════════════════════
      * @author Jose Francisco Lopez Ruiz
      * @date 2025-03-28
@@ -81,6 +76,9 @@ namespace flychams::coordination
             PositionSolver::SolverMode::NELDER_MEAD_NLOPT,
             PositionSolver::SolverMode::L_BFGS_NLOPT
         };
+        // Position solver parameters
+        PositionSolver::SolverMode solver_mode_;
+        PositionSolver::Parameters solver_params_;
 
     private: // Data
         // Agent
@@ -98,8 +96,8 @@ namespace flychams::coordination
         void update();
 
     private: // Positioning methods
-        CostFunctions::TrackingUnit centralUnitParameters(const core::TrackingParameters& tracking_params);
-        std::vector<CostFunctions::TrackingUnit> trackingUnitParameters(const core::TrackingParameters& tracking_params);
+        PositionSolver::SharedPtr createSolver(const std::string& agent_id, const PositionSolver::Parameters& solver_params, const PositionSolver::SolverMode& solver_mode);
+        std::vector<CostFunctions::TrackingUnit> createUnitParameters(const core::TrackingParameters& tracking_params);
 
     private: // ROS components
         // Timer

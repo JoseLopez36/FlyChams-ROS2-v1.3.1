@@ -110,14 +110,15 @@ namespace flychams::core
 
         static Quaternionr fromMsg(const QuaternionMsg& quat)
         {
-            return Quaternionr{ static_cast<float>(quat.x), static_cast<float>(quat.y), static_cast<float>(quat.z), static_cast<float>(quat.w) };
+            return Quaternionr{ static_cast<float>(quat.w), static_cast<float>(quat.x), static_cast<float>(quat.y), static_cast<float>(quat.z) };
         }
 
         static Matrix4r fromMsg(const TransformMsg& transform)
         {
             Matrix4r T = Matrix4r::Identity();
             T.block<3, 1>(0, 3) = fromMsg(transform.translation);
-            T.block<3, 3>(0, 0) = MathUtils::quaternionToRotationMatrix(fromMsg(transform.rotation));
+            Quaternionr q = fromMsg(transform.rotation);
+            T.block<3, 3>(0, 0) = MathUtils::quaternionToRotationMatrix(q);
             return T;
         }
 
@@ -147,6 +148,15 @@ namespace flychams::core
         {
             toMsg(matrix.block<3, 1>(0, 3), transform.translation);
             toMsg(MathUtils::rotationMatrixToQuaternion(matrix.block<3, 3>(0, 0)), transform.rotation);
+        }
+
+        static void toMsg(const Crop& crop, CropMsg& crop_msg)
+        {
+            crop_msg.x = crop.x;
+            crop_msg.y = crop.y;
+            crop_msg.w = crop.w;
+            crop_msg.h = crop.h;
+            crop_msg.is_out_of_bounds = crop.is_out_of_bounds;
         }
 
         // ════════════════════════════════════════════════════════════════════════════

@@ -8,11 +8,6 @@ namespace flychams::coordination
     /**
      * ════════════════════════════════════════════════════════════════
      * @brief Cost functions for agent positioning
-     *
-     * @details
-     * This class implements the cost functions for agent positioning.
-     * It is used to calculate the cost of the agent position.
-     *
      * ════════════════════════════════════════════════════════════════
      * @author Jose Francisco Lopez Ruiz
      * @date 2025-04-17
@@ -57,9 +52,9 @@ namespace flychams::coordination
         };
         struct Parameters // Parameters for the cost function
         {
-            int n;
-            TrackingUnit central;
-            std::vector<TrackingUnit> tracking;
+            int n;                              // Number of units (central + tracking)
+            int n_tracking;                     // Number of tracking units
+            std::vector<TrackingUnit> units;    // Units (central + tracking) where 0 is the central unit
         };
 
     public: // Cost functions without gradient calculation
@@ -73,51 +68,22 @@ namespace flychams::coordination
                 // Get relevant data
                 const auto& z = tab_P.col(i);
                 const auto& r = tab_r(i);
-                const auto& tracking = params.tracking[i];
+                const auto& unit = params.units[i];
 
                 // Compute the value of the index based on tracking mode
-                switch (tracking.mode)
+                switch (unit.mode)
                 {
                 case core::TrackingMode::MultiCamera:
-                    J += CostFunctions::cameraJ0(z, r, x, tracking);
+                    J += CostFunctions::cameraJ0(z, r, x, unit);
                     break;
 
                 case core::TrackingMode::MultiWindow:
-                    J += CostFunctions::windowJ0(z, r, x, tracking);
+                    J += CostFunctions::windowJ0(z, r, x, unit);
                     break;
 
                 default:
                     throw std::invalid_argument("Invalid tracking mode");
                 }
-            }
-
-            // Account for the central window cost to ensure targets are inside the bounds of the central window
-            // We use the mean of the centers
-            core::Vector3r z_mean = core::Vector3r::Zero();
-            for (int i = 0; i < params.n; i++)
-            {
-                z_mean += tab_P.col(i);
-            }
-            z_mean /= static_cast<float>(params.n);
-            // Get the largest possible radius
-            float r_max = 0.0f;
-            for (int i = 0; i < params.n; i++)
-            {
-                r_max = std::max(r_max, (z_mean - tab_P.col(i)).norm() + tab_r(i));
-            }
-            // Compute the cost of the central window based on tracking mode
-            switch (params.central.mode)
-            {
-            case core::TrackingMode::MultiCamera:
-                J += CostFunctions::cameraJ0(z_mean, r_max, x, params.central);
-                break;
-
-            case core::TrackingMode::MultiWindow:
-                J += CostFunctions::windowJ0(z_mean, r_max, x, params.central);
-                break;
-
-            default:
-                throw std::invalid_argument("Invalid tracking mode");
             }
 
             // Return the value of J
@@ -134,51 +100,22 @@ namespace flychams::coordination
                 // Get relevant data
                 const auto& z = tab_P.col(i);
                 const auto& r = tab_r(i);
-                const auto& tracking = params.tracking[i];
+                const auto& unit = params.units[i];
 
                 // Compute the value of the index based on tracking mode
-                switch (tracking.mode)
+                switch (unit.mode)
                 {
                 case core::TrackingMode::MultiCamera:
-                    J += CostFunctions::cameraJ1(z, r, x, tracking);
+                    J += CostFunctions::cameraJ1(z, r, x, unit);
                     break;
 
                 case core::TrackingMode::MultiWindow:
-                    J += CostFunctions::windowJ1(z, r, x, tracking);
+                    J += CostFunctions::windowJ1(z, r, x, unit);
                     break;
 
                 default:
                     throw std::invalid_argument("Invalid tracking mode");
                 }
-            }
-
-            // Account for the central window cost to ensure targets are inside the bounds of the central window
-            // We use the mean of the centers
-            core::Vector3r z_mean = core::Vector3r::Zero();
-            for (int i = 0; i < params.n; i++)
-            {
-                z_mean += tab_P.col(i);
-            }
-            z_mean /= static_cast<float>(params.n);
-            // Get the largest possible radius
-            float r_max = 0.0f;
-            for (int i = 0; i < params.n; i++)
-            {
-                r_max = std::max(r_max, (z_mean - tab_P.col(i)).norm() + tab_r(i));
-            }
-            // Compute the cost of the central window based on tracking mode
-            switch (params.central.mode)
-            {
-            case core::TrackingMode::MultiCamera:
-                J += CostFunctions::cameraJ1(z_mean, r_max, x, params.central);
-                break;
-
-            case core::TrackingMode::MultiWindow:
-                J += CostFunctions::windowJ1(z_mean, r_max, x, params.central);
-                break;
-
-            default:
-                throw std::invalid_argument("Invalid tracking mode");
             }
 
             // Return the value of J
@@ -195,51 +132,22 @@ namespace flychams::coordination
                 // Get relevant data
                 const auto& z = tab_P.col(i);
                 const auto& r = tab_r(i);
-                const auto& tracking = params.tracking[i];
+                const auto& unit = params.units[i];
 
                 // Compute the value of the index based on tracking mode
-                switch (tracking.mode)
+                switch (unit.mode)
                 {
                 case core::TrackingMode::MultiCamera:
-                    J += CostFunctions::cameraJ2(z, r, x, x_hat, tracking);
+                    J += CostFunctions::cameraJ2(z, r, x, x_hat, unit);
                     break;
 
                 case core::TrackingMode::MultiWindow:
-                    J += CostFunctions::windowJ2(z, r, x, x_hat, tracking);
+                    J += CostFunctions::windowJ2(z, r, x, x_hat, unit);
                     break;
 
                 default:
                     throw std::invalid_argument("Invalid tracking mode");
                 }
-            }
-
-            // Account for the central window cost to ensure targets are inside the bounds of the central window
-            // We use the mean of the centers
-            core::Vector3r z_mean = core::Vector3r::Zero();
-            for (int i = 0; i < params.n; i++)
-            {
-                z_mean += tab_P.col(i);
-            }
-            z_mean /= static_cast<float>(params.n);
-            // Get the largest possible radius
-            float r_max = 0.0f;
-            for (int i = 0; i < params.n; i++)
-            {
-                r_max = std::max(r_max, (z_mean - tab_P.col(i)).norm() + tab_r(i));
-            }
-            // Compute the cost of the central window based on tracking mode
-            switch (params.central.mode)
-            {
-            case core::TrackingMode::MultiCamera:
-                J += CostFunctions::cameraJ2(z_mean, r_max, x, x_hat, params.central);
-                break;
-
-            case core::TrackingMode::MultiWindow:
-                J += CostFunctions::windowJ2(z_mean, r_max, x, x_hat, params.central);
-                break;
-
-            default:
-                throw std::invalid_argument("Invalid tracking mode");
             }
 
             // Return the value of J
@@ -260,18 +168,18 @@ namespace flychams::coordination
                 // Get relevant data
                 const auto& z = tab_P.col(i);
                 const auto& r = tab_r(i);
-                const auto& tracking = params.tracking[i];
+                const auto& unit = params.units[i];
 
                 // Compute the value of the index based on tracking mode
                 core::Vector3r grad_i;
-                switch (tracking.mode)
+                switch (unit.mode)
                 {
                 case core::TrackingMode::MultiCamera:
-                    J += CostFunctions::cameraJ1(z, r, x, tracking, grad_i);
+                    J += CostFunctions::cameraJ1(z, r, x, unit, grad_i);
                     break;
 
                 case core::TrackingMode::MultiWindow:
-                    J += CostFunctions::windowJ1(z, r, x, tracking, grad_i);
+                    J += CostFunctions::windowJ1(z, r, x, unit, grad_i);
                     break;
 
                 default:
@@ -281,38 +189,6 @@ namespace flychams::coordination
                 // Integrate the gradient
                 grad += grad_i;
             }
-
-            // Account for the central window cost to ensure targets are inside the bounds of the central window
-            // We use the mean of the centers
-            core::Vector3r z_mean = core::Vector3r::Zero();
-            for (int i = 0; i < params.n; i++)
-            {
-                z_mean += tab_P.col(i);
-            }
-            z_mean /= static_cast<float>(params.n);
-            // Get the largest possible radius
-            float r_max = 0.0f;
-            for (int i = 0; i < params.n; i++)
-            {
-                r_max = std::max(r_max, (z_mean - tab_P.col(i)).norm() + tab_r(i));
-            }
-            // Compute the cost of the central window based on tracking mode
-            core::Vector3r grad_central;
-            switch (params.central.mode)
-            {
-            case core::TrackingMode::MultiCamera:
-                J += CostFunctions::cameraJ1(z_mean, r_max, x, params.central, grad_central);
-                break;
-
-            case core::TrackingMode::MultiWindow:
-                J += CostFunctions::windowJ1(z_mean, r_max, x, params.central, grad_central);
-                break;
-
-            default:
-                throw std::invalid_argument("Invalid tracking mode");
-            }
-            // Integrate the gradient of the central window
-            grad += grad_central;
 
             // Return the value of J
             return J;
@@ -331,18 +207,18 @@ namespace flychams::coordination
                 // Get relevant data
                 const auto& z = tab_P.col(i);
                 const auto& r = tab_r(i);
-                const auto& tracking = params.tracking[i];
+                const auto& unit = params.units[i];
 
                 // Compute the value of the index based on tracking mode
                 core::Vector3r grad_i;
-                switch (tracking.mode)
+                switch (unit.mode)
                 {
                 case core::TrackingMode::MultiCamera:
-                    J += CostFunctions::cameraJ2(z, r, x, x_hat, tracking, grad_i);
+                    J += CostFunctions::cameraJ2(z, r, x, x_hat, unit, grad_i);
                     break;
 
                 case core::TrackingMode::MultiWindow:
-                    J += CostFunctions::windowJ2(z, r, x, x_hat, tracking, grad_i);
+                    J += CostFunctions::windowJ2(z, r, x, x_hat, unit, grad_i);
                     break;
 
                 default:
@@ -352,38 +228,6 @@ namespace flychams::coordination
                 // Integrate the gradient
                 grad += grad_i;
             }
-
-            // Account for the central window cost to ensure targets are inside the bounds of the central window
-            // We use the mean of the centers
-            core::Vector3r z_mean = core::Vector3r::Zero();
-            for (int i = 0; i < params.n; i++)
-            {
-                z_mean += tab_P.col(i);
-            }
-            z_mean /= static_cast<float>(params.n);
-            // Get the largest possible radius
-            float r_max = 0.0f;
-            for (int i = 0; i < params.n; i++)
-            {
-                r_max = std::max(r_max, (z_mean - tab_P.col(i)).norm() + tab_r(i));
-            }
-            // Compute the cost of the central window based on tracking mode
-            core::Vector3r grad_central;
-            switch (params.central.mode)
-            {
-            case core::TrackingMode::MultiCamera:
-                J += CostFunctions::cameraJ2(z_mean, r_max, x, x_hat, params.central, grad_central);
-                break;
-
-            case core::TrackingMode::MultiWindow:
-                J += CostFunctions::windowJ2(z_mean, r_max, x, x_hat, params.central, grad_central);
-                break;
-
-            default:
-                throw std::invalid_argument("Invalid tracking mode");
-            }
-            // Integrate the gradient of the central window
-            grad += grad_central;
 
             // Return the value of J
             return J;
@@ -435,18 +279,18 @@ namespace flychams::coordination
             const float U2 = r * f_max / s_min;
 
             // Calculate the index terms based on intervals
-            const float psi_i = 
-                tau0 * pow(max(0.0f, d - U0), 2) + 
-                tau1 * pow(max(0.0f, d - U1), 2) + 
+            const float psi_i =
+                tau0 * pow(max(0.0f, d - U0), 2) +
+                tau1 * pow(max(0.0f, d - U1), 2) +
                 tau2 * pow(max(0.0f, d - U2), 2);
-            const float lambda_i = 
-                sigma0 * pow(max(0.0f, L0 - d), 2) + 
-                sigma1 * pow(max(0.0f, L1 - d), 2) + 
+            const float lambda_i =
+                sigma0 * pow(max(0.0f, L0 - d), 2) +
+                sigma1 * pow(max(0.0f, L1 - d), 2) +
                 sigma2 * pow(max(0.0f, L2 - d), 2);
-            const float gamma_i = 
-                mu * (x - p_ref).transpose() * (x - p_ref) + 
+            const float gamma_i =
+                mu * (x - p_ref).transpose() * (x - p_ref) +
                 nu * pow((d - (x - z).transpose() * core::Vector3r(0.0f, 0.0f, 1.0f)), 2);
-                            
+
             // Return the value of Ji
             return psi_i + lambda_i + gamma_i;
         }
@@ -492,13 +336,13 @@ namespace flychams::coordination
             const float U2 = r * f_max / s_min;
 
             // Calculate the index terms based on intervals
-            const float psi_i = 
-                tau0 * pow(max(0.0f, d - U0), 2) + 
-                tau1 * pow(max(0.0f, d - U1), 2) + 
+            const float psi_i =
+                tau0 * pow(max(0.0f, d - U0), 2) +
+                tau1 * pow(max(0.0f, d - U1), 2) +
                 tau2 * pow(max(0.0f, d - U2), 2);
             // const float lambda_i = 0.0f; // Non-convex term is not considered
-            const float gamma_i = 
-                mu * (x - p_ref).transpose() * (x - p_ref) + 
+            const float gamma_i =
+                mu * (x - p_ref).transpose() * (x - p_ref) +
                 nu * pow((d - (x - z).transpose() * core::Vector3r(0.0f, 0.0f, 1.0f)), 2);
 
             // Return the value of Ji
@@ -564,18 +408,18 @@ namespace flychams::coordination
             const float U2 = r * f_max / s_min;
 
             // Calculate the index terms based on intervals
-            const float psi_i = 
-                tau0 * pow(max(0.0f, d - U0), 2) + 
-                tau1 * pow(max(0.0f, d - U1), 2) + 
+            const float psi_i =
+                tau0 * pow(max(0.0f, d - U0), 2) +
+                tau1 * pow(max(0.0f, d - U1), 2) +
                 tau2 * pow(max(0.0f, d - U2), 2);
-            const float lambda_i = 
-                sigma0 * pow(max(0.0f, L0 - d_proj), 2) + 
-                sigma1 * pow(max(0.0f, L1 - d_proj), 2) + 
+            const float lambda_i =
+                sigma0 * pow(max(0.0f, L0 - d_proj), 2) +
+                sigma1 * pow(max(0.0f, L1 - d_proj), 2) +
                 sigma2 * pow(max(0.0f, L2 - d_proj), 2);
-            const float gamma_i = 
-                mu * (x - p_ref).transpose() * (x - p_ref) + 
+            const float gamma_i =
+                mu * (x - p_ref).transpose() * (x - p_ref) +
                 nu * pow((d - (x - z).transpose() * core::Vector3r(0.0f, 0.0f, 1.0f)), 2);
-                            
+
             // Return the value of Ji
             return psi_i + lambda_i + gamma_i;
         }
@@ -626,16 +470,16 @@ namespace flychams::coordination
             const float U2 = (r * f * lambda_max) / s_min;
 
             // Calculate the index terms based on intervals
-            const float psi_i = 
-                tau0 * pow(max(0.0f, d - U0), 2) + 
-                tau1 * pow(max(0.0f, d - U1), 2) + 
+            const float psi_i =
+                tau0 * pow(max(0.0f, d - U0), 2) +
+                tau1 * pow(max(0.0f, d - U1), 2) +
                 tau2 * pow(max(0.0f, d - U2), 2);
-            const float lambda_i = 
-                sigma0 * pow(max(0.0f, L0 - d), 2) + 
-                sigma1 * pow(max(0.0f, L1 - d), 2) + 
+            const float lambda_i =
+                sigma0 * pow(max(0.0f, L0 - d), 2) +
+                sigma1 * pow(max(0.0f, L1 - d), 2) +
                 sigma2 * pow(max(0.0f, L2 - d), 2);
-            const float gamma_i = 
-                mu * (x - p_ref).transpose() * (x - p_ref) + 
+            const float gamma_i =
+                mu * (x - p_ref).transpose() * (x - p_ref) +
                 nu * pow((d - (x - z).transpose() * core::Vector3r(0.0f, 0.0f, 1.0f)), 2);
 
             // Return the value of Ji
@@ -684,13 +528,13 @@ namespace flychams::coordination
             const float U2 = (r * f * lambda_max) / s_min;
 
             // Calculate the index terms based on intervals
-            const float psi_i = 
-                tau0 * pow(max(0.0f, d - U0), 2) + 
-                tau1 * pow(max(0.0f, d - U1), 2) + 
+            const float psi_i =
+                tau0 * pow(max(0.0f, d - U0), 2) +
+                tau1 * pow(max(0.0f, d - U1), 2) +
                 tau2 * pow(max(0.0f, d - U2), 2);
             // const float lambda_i = 0.0f; // Non-convex term is not considered
-            const float gamma_i = 
-                mu * (x - p_ref).transpose() * (x - p_ref) + 
+            const float gamma_i =
+                mu * (x - p_ref).transpose() * (x - p_ref) +
                 nu * pow((d - (x - z).transpose() * core::Vector3r(0.0f, 0.0f, 1.0f)), 2);
 
             // Return the value of Ji
@@ -757,16 +601,16 @@ namespace flychams::coordination
             const float U2 = (r * f * lambda_max) / s_min;
 
             // Calculate the index terms based on intervals
-            const float psi_i = 
-                tau0 * pow(max(0.0f, d - U0), 2) + 
-                tau1 * pow(max(0.0f, d - U1), 2) + 
+            const float psi_i =
+                tau0 * pow(max(0.0f, d - U0), 2) +
+                tau1 * pow(max(0.0f, d - U1), 2) +
                 tau2 * pow(max(0.0f, d - U2), 2);
-            const float lambda_i = 
-                sigma0 * pow(max(0.0f, L0 - d_proj), 2) + 
-                sigma1 * pow(max(0.0f, L1 - d_proj), 2) + 
+            const float lambda_i =
+                sigma0 * pow(max(0.0f, L0 - d_proj), 2) +
+                sigma1 * pow(max(0.0f, L1 - d_proj), 2) +
                 sigma2 * pow(max(0.0f, L2 - d_proj), 2);
-            const float gamma_i = 
-                mu * (x - p_ref).transpose() * (x - p_ref) + 
+            const float gamma_i =
+                mu * (x - p_ref).transpose() * (x - p_ref) +
                 nu * pow((d - (x - z).transpose() * core::Vector3r(0.0f, 0.0f, 1.0f)), 2);
 
             // Return the value of Ji
@@ -826,20 +670,20 @@ namespace flychams::coordination
             const float U2 = r * f_max / s_min;
 
             // Calculate the index terms based on intervals
-            const float psi_i = 
-                tau0 * pow(max(0.0f, d - U0), 2) + 
-                tau1 * pow(max(0.0f, d - U1), 2) + 
+            const float psi_i =
+                tau0 * pow(max(0.0f, d - U0), 2) +
+                tau1 * pow(max(0.0f, d - U1), 2) +
                 tau2 * pow(max(0.0f, d - U2), 2);
             // const float lambda_i = 0.0f; // Non-convex term is not considered
-            const float gamma_i = 
-                mu * (x - p_ref).transpose() * (x - p_ref) + 
+            const float gamma_i =
+                mu * (x - p_ref).transpose() * (x - p_ref) +
                 nu * pow((d - (x - z).transpose() * core::Vector3r(0.0f, 0.0f, 1.0f)), 2);
 
             // Compute the gradient of the cost function
             // Psi gradient
             float grad_psi = 2.0f *
-                    (tau0 * max(0.0f, d - U0) * heaviside(d, U0) + 
-                    tau1 * max(0.0f, d - U1) * heaviside(d, U1) + 
+                (tau0 * max(0.0f, d - U0) * heaviside(d, U0) +
+                    tau1 * max(0.0f, d - U1) * heaviside(d, U1) +
                     tau2 * max(0.0f, d - U2) * heaviside(d, U2));
             // Gamma gradient
             core::Vector3r grad_gamma;
@@ -922,28 +766,28 @@ namespace flychams::coordination
             const float U2 = r * f_max / s_min;
 
             // Calculate the index terms based on intervals
-            const float psi_i = 
-                tau0 * pow(max(0.0f, d - U0), 2) + 
-                tau1 * pow(max(0.0f, d - U1), 2) + 
+            const float psi_i =
+                tau0 * pow(max(0.0f, d - U0), 2) +
+                tau1 * pow(max(0.0f, d - U1), 2) +
                 tau2 * pow(max(0.0f, d - U2), 2);
-            const float lambda_i = 
-                sigma0 * pow(max(0.0f, L0 - d_proj), 2) + 
-                sigma1 * pow(max(0.0f, L1 - d_proj), 2) + 
+            const float lambda_i =
+                sigma0 * pow(max(0.0f, L0 - d_proj), 2) +
+                sigma1 * pow(max(0.0f, L1 - d_proj), 2) +
                 sigma2 * pow(max(0.0f, L2 - d_proj), 2);
-            const float gamma_i = 
-                mu * (x - p_ref).transpose() * (x - p_ref) + 
+            const float gamma_i =
+                mu * (x - p_ref).transpose() * (x - p_ref) +
                 nu * pow((d - (x - z).transpose() * core::Vector3r(0.0f, 0.0f, 1.0f)), 2);
 
             // Compute the gradient of the cost function
             // Psi gradient
             float grad_psi = 2.0f *
-                    (tau0 * max(0.0f, d - U0) * heaviside(d, U0) + 
-                    tau1 * max(0.0f, d - U1) * heaviside(d, U1) + 
+                (tau0 * max(0.0f, d - U0) * heaviside(d, U0) +
+                    tau1 * max(0.0f, d - U1) * heaviside(d, U1) +
                     tau2 * max(0.0f, d - U2) * heaviside(d, U2));
             // Lambda gradient
             float grad_lambda = -2.0f *
-                    (sigma0 * max(0.0f, L0 - d_proj) * heaviside(L0, d_proj) + 
-                    sigma1 * max(0.0f, L1 - d_proj) * heaviside(L1, d_proj) + 
+                (sigma0 * max(0.0f, L0 - d_proj) * heaviside(L0, d_proj) +
+                    sigma1 * max(0.0f, L1 - d_proj) * heaviside(L1, d_proj) +
                     sigma2 * max(0.0f, L2 - d_proj) * heaviside(L2, d_proj));
             // Gamma gradient
             core::Vector3r grad_gamma;
@@ -1009,20 +853,20 @@ namespace flychams::coordination
             const float U2 = (r * f * lambda_max) / s_min;
 
             // Calculate the index terms based on intervals
-            const float psi_i = 
-                tau0 * pow(max(0.0f, d - U0), 2) + 
-                tau1 * pow(max(0.0f, d - U1), 2) + 
+            const float psi_i =
+                tau0 * pow(max(0.0f, d - U0), 2) +
+                tau1 * pow(max(0.0f, d - U1), 2) +
                 tau2 * pow(max(0.0f, d - U2), 2);
             // const float lambda_i = 0.0f; // Non-convex term is not considered
-            const float gamma_i = 
-                mu * (x - p_ref).transpose() * (x - p_ref) + 
+            const float gamma_i =
+                mu * (x - p_ref).transpose() * (x - p_ref) +
                 nu * pow((d - (x - z).transpose() * core::Vector3r(0.0f, 0.0f, 1.0f)), 2);
 
             // Compute the gradient of the cost function
             // Psi gradient
             float grad_psi = 2.0f *
-                    (tau0 * max(0.0f, d - U0) * heaviside(d, U0) + 
-                    tau1 * max(0.0f, d - U1) * heaviside(d, U1) + 
+                (tau0 * max(0.0f, d - U0) * heaviside(d, U0) +
+                    tau1 * max(0.0f, d - U1) * heaviside(d, U1) +
                     tau2 * max(0.0f, d - U2) * heaviside(d, U2));
             // Gamma gradient
             core::Vector3r grad_gamma;
@@ -1105,28 +949,28 @@ namespace flychams::coordination
             const float U2 = (r * f * lambda_max) / s_min;
 
             // Calculate the index terms based on intervals
-            const float psi_i = 
-                tau0 * pow(max(0.0f, d - U0), 2) + 
-                tau1 * pow(max(0.0f, d - U1), 2) + 
+            const float psi_i =
+                tau0 * pow(max(0.0f, d - U0), 2) +
+                tau1 * pow(max(0.0f, d - U1), 2) +
                 tau2 * pow(max(0.0f, d - U2), 2);
-            const float lambda_i = 
-                sigma0 * pow(max(0.0f, L0 - d_proj), 2) + 
-                sigma1 * pow(max(0.0f, L1 - d_proj), 2) + 
+            const float lambda_i =
+                sigma0 * pow(max(0.0f, L0 - d_proj), 2) +
+                sigma1 * pow(max(0.0f, L1 - d_proj), 2) +
                 sigma2 * pow(max(0.0f, L2 - d_proj), 2);
-            const float gamma_i = 
-                mu * (x - p_ref).transpose() * (x - p_ref) + 
+            const float gamma_i =
+                mu * (x - p_ref).transpose() * (x - p_ref) +
                 nu * pow((d - (x - z).transpose() * core::Vector3r(0.0f, 0.0f, 1.0f)), 2);
 
             // Compute the gradient of the cost function
             // Psi gradient
             float grad_psi = 2.0f *
-                    (tau0 * max(0.0f, d - U0) * heaviside(d, U0) + 
-                    tau1 * max(0.0f, d - U1) * heaviside(d, U1) + 
+                (tau0 * max(0.0f, d - U0) * heaviside(d, U0) +
+                    tau1 * max(0.0f, d - U1) * heaviside(d, U1) +
                     tau2 * max(0.0f, d - U2) * heaviside(d, U2));
             // Lambda gradient
             float grad_lambda = -2.0f *
-                    (sigma0 * max(0.0f, L0 - d_proj) * heaviside(L0, d_proj) + 
-                    sigma1 * max(0.0f, L1 - d_proj) * heaviside(L1, d_proj) + 
+                (sigma0 * max(0.0f, L0 - d_proj) * heaviside(L0, d_proj) +
+                    sigma1 * max(0.0f, L1 - d_proj) * heaviside(L1, d_proj) +
                     sigma2 * max(0.0f, L2 - d_proj) * heaviside(L2, d_proj));
             // Gamma gradient
             core::Vector3r grad_gamma;
@@ -1141,18 +985,18 @@ namespace flychams::coordination
         }
 
     private: // Utils
-        static float max(const float& a, const float& b) 
-        { 
+        static float max(const float& a, const float& b)
+        {
             return std::max(a, b);
         }
 
         static float heaviside(const float& d, const float& U)
         {
-            if (d < U) 
+            if (d < U)
                 return 0.0f;
-            else if (d > U) 
+            else if (d > U)
                 return 1.0f;
-            else 
+            else
                 return 0.5f;
         }
     };

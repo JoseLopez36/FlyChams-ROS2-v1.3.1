@@ -19,13 +19,6 @@ namespace flychams::coordination
     /**
      * ════════════════════════════════════════════════════════════════
      * @brief Solver for agent positioning
-     *
-     * @details
-     * This class implements optimization algorithms for finding optimal
-     * agent positions based on target positions and visibility constraints.
-     * It uses non-linear optimization techniques to minimize cost functions
-     * that consider camera parameters, target sizes, and height constraints.
-     *
      * ════════════════════════════════════════════════════════════════
      * @author Jose Francisco Lopez Ruiz
      * @date 2025-01-31
@@ -96,6 +89,7 @@ namespace flychams::coordination
         // Getters
         int n() const { return params_.cost_params.n; }
         SolverMode getMode() const { return mode_; }
+        int n_tracking() const { return params_.cost_params.n_tracking; }
         // Optimization
         core::Vector3r run(const core::Matrix3Xr& tab_P, const core::RowVectorXr& tab_r, const core::Vector3r& x0, float& J);
     };
