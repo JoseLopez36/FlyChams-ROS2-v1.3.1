@@ -53,28 +53,16 @@ namespace flychams::coordination
 
         // Create publisher for solver data
         solver_debug_pub_ = node_->create_publisher<flychams_interfaces::msg::SolverDebug>(
-            RosUtils::replace("coordination/AGENTID/debug/solvers", "AGENTID", agent_id_), 10);
+            RosUtils::replace("coordination/AGENTID/debug/solver_experiment", "AGENTID", agent_id_), 10);
 
         // Log
         RCLCPP_INFO(node_->get_logger(), "Agent positioning experiment: Running with %d clusters...", K_);
 
-        // Iterate
-        float t = 0.0f;
-        for (int n = 0; n < N_; n++)
-        {
-            // Update
-            update(n, t);
-
-            // Update time
-            float T = 1.0f / update_rate_;
-            t += T;
-
-            // Log
-            RCLCPP_INFO(node_->get_logger(), "Agent positioning experiment: Completed %d iterations", n + 1);
-
-            // Sleep
-            std::this_thread::sleep_for(std::chrono::duration<float>(T));
-        }
+        // Set update timer
+        n_step_ = 0;
+        t_step_ = 0.0f;
+        update_timer_ = RosUtils::createWallTimer(node_, update_rate_,
+            std::bind(&AgentPositioningExperiment::update, this), module_cb_group_);
     }
 
     void AgentPositioningExperiment::onShutdown()
@@ -87,14 +75,28 @@ namespace flychams::coordination
         solvers_.clear();
         // Destroy publisher
         solver_debug_pub_.reset();
+        // Destroy timer
+        update_timer_.reset();
     }
 
     // ════════════════════════════════════════════════════════════════════════════
     // UPDATE: Update positioning
     // ════════════════════════════════════════════════════════════════════════════
 
-    void AgentPositioningExperiment::update(const int& n_step, const float& t_step)
+    void AgentPositioningExperiment::update()
     {
+        // Check if experiment has ended
+        if (n_step_ >= N_)
+        {
+            // Log
+            RCLCPP_INFO(node_->get_logger(), "Agent positioning experiment: Experiment ended");
+            return;
+        }
+
+        // Update time
+        float T = 1.0f / update_rate_;
+        t_step_ += T;
+
         // Add configured random Gaussian noise to cluster centers and radii
         const auto& [tab_P_noisy, tab_r_noisy] = addNoise(tab_P_, tab_r_, tab_P_noise_, tab_r_noise_);
 
@@ -110,8 +112,8 @@ namespace flychams::coordination
         RosUtils::toMsg(x0_, msg.x0);
 
         // Fill per-iteration data
-        msg.n = n_step + 1;
-        msg.t = t_step;
+        msg.n = n_step_ + 1;
+        msg.t = t_step_;
         msg.tab_p.resize(K_);
         msg.tab_r.resize(K_);
         for (int i = 0; i < K_; i++)
@@ -213,6 +215,12 @@ namespace flychams::coordination
 
         // Publish results
         solver_debug_pub_->publish(msg);
+
+        // Update step
+        n_step_++;
+
+        // Log
+        RCLCPP_INFO(node_->get_logger(), "Agent positioning experiment: Completed %d iterations", n_step_);
     }
 
     // ════════════════════════════════════════════════════════════════════════════

@@ -13,24 +13,24 @@ def generate_launch_description():
     # Build list of topics to record
     topics = []
 
-    # Loop over agent IDs to add agent metrics topics
-    for agent in AGENT_IDS:
-        topics.append(f'/flychams/dashboard/{agent}/metrics')
+    # # Loop over agent IDs to add agent metrics topics
+    # for agent in AGENT_IDS:
+    #     topics.append(f'/flychams/dashboard/{agent}/metrics')
 
-    # Loop over target IDs to add target metrics topics
-    for target in TARGET_IDS:
-        topics.append(f'/flychams/dashboard/{target}/metrics')
+    # # Loop over target IDs to add target metrics topics
+    # for target in TARGET_IDS:
+    #     topics.append(f'/flychams/dashboard/{target}/metrics')
 
-    # Loop over cluster IDs to add cluster metrics topics
-    for cluster in CLUSTER_IDS:
-        topics.append(f'/flychams/dashboard/{cluster}/metrics')
+    # # Loop over cluster IDs to add cluster metrics topics
+    # for cluster in CLUSTER_IDS:
+    #     topics.append(f'/flychams/dashboard/{cluster}/metrics')
 
-    # Append the global metrics topic
-    topics.append('/flychams/dashboard/global/metrics')
+    # # Append the global metrics topic
+    # topics.append('/flychams/dashboard/global/metrics')
 
     # Append the solver debug topic
     for agent in AGENT_IDS:
-        topics.append(f'/flychams/coordination/{agent}/debug/solvers')
+        topics.append(f'/flychams/coordination/{agent}/debug/solver_experiment')
 
     # Generate a unique output directory name using an index
     # Check existing directories to find the next available index

@@ -59,11 +59,14 @@ namespace flychams::coordination
         PositionSolver::Parameters solver_params_;
 
     private: // Data
+        // Experiment data
+        int n_step_;
+        float t_step_;
         // Position solvers
         std::unordered_map<PositionSolver::SolverMode, PositionSolver::SharedPtr> solvers_;
 
     private: // Positioning management
-        void update(const int& n_step, const float& t_step);
+        void update();
 
     private: // Positioning methods
         PositionSolver::SharedPtr createSolver(const std::string& agent_id, const PositionSolver::Parameters& solver_params, const PositionSolver::SolverMode& solver_mode);
@@ -73,13 +76,15 @@ namespace flychams::coordination
         float random();
 
     private: // ROS components
+        // Timer
+        core::TimerPtr update_timer_;
         // Publishers
         core::PublisherPtr<flychams_interfaces::msg::SolverDebug> solver_debug_pub_;
 
     private: // Experiment parameters
         // General parameters
-        const int N_ = 1000;  // Number of iterations per cluster distribution and algorithm
-        const int K_ = 4;     // Number of clusters
+        const int N_ = 1000; // Number of iterations per cluster distribution and algorithm
+        const int K_ = 4;    // Number of clusters
         // Agent parameters (x mean position)
         const core::Vector3r x0_ = { 0.0f, 0.0f, 90.0f };
         // Cluster parameters
