@@ -51,6 +51,10 @@ namespace flychams::coordination
             solvers_[mode] = createSolver(agent_id_, solver_params_, solver_mode);
         }
 
+        // Initialize random number generator
+        rng_ = std::mt19937(std::random_device{}());
+        normal_dist_ = std::normal_distribution<float>(0.0f, 1.0f);
+
         // Create publisher for solver data
         solver_debug_pub_ = node_->create_publisher<flychams_interfaces::msg::SolverDebug>(
             RosUtils::replace("coordination/AGENTID/debug/solver_experiment", "AGENTID", agent_id_), 10);
@@ -114,12 +118,16 @@ namespace flychams::coordination
         // Fill per-iteration data
         msg.n = n_step_ + 1;
         msg.t = t_step_;
-        msg.tab_p.resize(K_);
-        msg.tab_r.resize(K_);
-        for (int i = 0; i < K_; i++)
+        for (int i = 0; i < tab_P_noisy.cols(); i++)
         {
-            RosUtils::toMsg(tab_P_k_with_central.col(i + 1), msg.tab_p[i]);
-            msg.tab_r[i] = tab_r_k_with_central(i + 1);
+            // Get center and radius
+            PointMsg center;
+            RosUtils::toMsg(tab_P_noisy.col(i), center);
+            float radius = tab_r_noisy(i);
+
+            // Fill message
+            msg.tab_p.push_back(center);
+            msg.tab_r.push_back(radius);
         }
 
         // Solve with each solver
@@ -366,22 +374,19 @@ namespace flychams::coordination
 
     std::pair<core::Matrix3Xr, core::RowVectorXr> AgentPositioningExperiment::addNoise(const std::vector<core::Vector3r>& centers, const std::vector<float>& radii, const std::vector<Noise>& centers_noise, const std::vector<Noise>& radii_noise)
     {
-        // Get number of tracking units
-        int n = static_cast<int>(centers.size());
-
         // Add noise to cluster centers and radii
-        core::Matrix3Xr centers_noisy(3, n);
-        core::RowVectorXr radii_noisy(n);
-        for (int i = 0; i < n; i++)
+        core::Matrix3Xr centers_noisy(3, K_);
+        core::RowVectorXr radii_noisy(K_);
+        for (int i = 0; i < K_; i++)
         {
             // Add center noise (only horizontal)
             for (int j = 0; j < 2; j++)
             {
-                centers_noisy(j, i) = centers[i](j) + centers_noise[i].mean + random() * centers_noise[i].std;
+                centers_noisy(j, i) = centers[i](j) + centers_noise[i].mean + randomNormal() * centers_noise[i].std;
             }
             centers_noisy(2, i) = centers[i](2);
             // Add radius noise
-            radii_noisy(i) = radii[i] + radii_noise[i].mean + random() * radii_noise[i].std;
+            radii_noisy(i) = radii[i] + radii_noise[i].mean + randomNormal() * radii_noise[i].std;
         }
 
         // Return noisy cluster centers and radii
@@ -422,10 +427,10 @@ namespace flychams::coordination
         return std::make_pair(centers_with_central, radii_with_central);
     }
 
-    float AgentPositioningExperiment::random()
+    float AgentPositioningExperiment::randomNormal()
     {
-        // Generate a random number between 0 and 1
-        return static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX);
+        // Generate a random number with normal distribution (mean 0, std 1)
+        return normal_dist_(rng_);
     }
 
 } // namespace flychams::coordination
